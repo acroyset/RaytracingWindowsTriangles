@@ -214,6 +214,13 @@ void traverseBVH(int nodeOffset, vec3 rayPos, vec3 rayDir, vec3 invRayDir, inout
 }
 
 vec3 trace(vec3 pos, vec3 dir, inout uint state){
+    vec3 sky = vec3(0.5,0.7,0.9);
+    vec3 sunDir = vec3(-0.1, 1, 0.1);
+    float sunStrength = 10;
+    vec3 sunColor = vec3(100, 70, 30);
+
+    sunDir = normalize(sunDir);
+
     vec3 invDir = 1/dir;
     vec3 color = vec3(1, 1, 1);
 
@@ -274,27 +281,25 @@ vec3 trace(vec3 pos, vec3 dir, inout uint state){
                 dir = normalize(mix(random, reflect, 0));
                 invDir = 1/dir;
             } else {
-                vec3 sky = vec3(0.5,0.7,0.9);
-                vec3 sunDir = vec3(-0.5, 1, 1);
-                vec3 sunColor = vec3(100, 70, 30);
-                float sunStrength = pow(max(dot(dir, sunDir)-0.5,0), 128);
-                sky += sunColor*sunStrength;
-                color *= sky;
+                float sunStrengthD = pow(max(dot(dir, sunDir),0), 1024);
+                color *= sky + sunColor*sunStrength*sunStrengthD;
                 break;
             }
         }
         else {
-            vec3 sky = vec3(0.5,0.7,0.9);
-            vec3 sunDir = vec3(-0.5, 1, 1);
-            vec3 sunColor = vec3(100, 70, 30);
-            float sunStrength = pow(max(dot(dir, sunDir)-0.5,0), 128);
-            sky += sunColor*sunStrength;
-            color *= sky;
+            float sunStrengthD = pow(max(dot(dir, sunDir),0), 1024);
+            color *= sky + sunColor*sunStrength*sunStrengthD;
             break;
         }
 
+        float p = max(color.r, max(color.g, color.b));
+        if (randomValue(state) >= p) {
+            return vec3(0);
+        }
+        color *= 1.0f / p;
+
         if (i == bounceLim-1){
-            color = vec3(0, 0, 0);
+            return vec3(0);
         }
     }
 
@@ -302,7 +307,7 @@ vec3 trace(vec3 pos, vec3 dir, inout uint state){
 }
 
 void main() {
-    float aspectRatio = 16./10.;
+    float aspectRatio = 16./9.;
     vec2 sceenCoord = vec2((2*fragCoord.x-1) * aspectRatio, 2*fragCoord.y-1);
 
     uvec2 pixel = uvec2(fragCoord.x * resolution.x, fragCoord.y * resolution.y * aspectRatio);
@@ -311,7 +316,7 @@ void main() {
 
     vec3 totalColor = vec3(0,0,0);
 
-    int aaCycle = 0;
+    int aaCycle = frameCount%(aa*aa);
     for (int s = 0; s < samples; s++) {
         float xi = float(aaCycle % aa);
         float yi = float(aaCycle) / float(aa);
