@@ -14,7 +14,9 @@ include_directories(glm)
 
 # Executable
 add_executable(RaytracingWindowsTriangles main.cpp
-        Scene.cpp)
+        Scene.cpp
+        BaseModel.cpp
+        BaseModel.h)
 target_link_libraries(RaytracingWindowsTriangles glfw glad OpenGL::GL)
 target_include_directories(RaytracingWindowsTriangles PRIVATE external/glad/include)
 
