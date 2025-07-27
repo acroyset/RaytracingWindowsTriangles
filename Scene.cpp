@@ -5,159 +5,18 @@
 #include "Scene.h"
 #include <iostream>
 #include <fstream>
-#include <sstream>
-#include <limits>
 #include <GLFW/glfw3.h>
 #include <chrono>
+#include "BaseModel.h"
 
 using Clock = std::chrono::high_resolution_clock;
 
 auto start = Clock::now();
 
-void splitSlash(const std::string& s, std::string tokens[3]) {
-    std::string token;
-    int i = 0;
-    int loc = 0;
-    int size = int(s.size());
-    while (i < size) {
-        token.clear();
-        char c = s[i];
-        bool empty = true;
-        while (i < size and c != '/') {
-            empty = false;
-            token += c;
-            i++;
-            c = s[i];
-        }
-        if (!empty) {
-            tokens[loc] = token;
-        }
-        loc++;
-        i++;
-    }
-}
-void splitSpace3(const std::string& s, std::string words[3]) {
-    std::string word;
-    int loc = 0;
-    int i = 0;
-    const int size = int(s.size());
-    while (i < size) {
-        word.clear();
-        char c = s[i];
-        while (i < size and c != ' ') {
-            word += c;
-            i++;
-            c = s[i];
-        }
-        if (!word.empty()) {
-            words[loc] = word;
-            loc++;
-        }
-        i++;
-    }
-}
-void splitSpace4(const std::string& s, std::string words[4], int& num) {
-    std::string word;
-    num = 0;
-    int i = 0;
-    const int size = int(s.size());
-    while (i < size) {
-        word.clear();
-        char c = s[i];
-        while (i < size and c != ' ') {
-            word += c;
-            i++;
-            c = s[i];
-        }
-        if (!word.empty()) {
-            words[num] = word;
-            num++;
-        }
-        i++;
-    }
-}
-void growToInclude(glm::vec3& min, glm::vec3& max, const glm::vec3 point) {
-    if (point.x < min.x) min.x = point.x;
-    if (point.y < min.y) min.y = point.y;
-    if (point.z < min.z) min.z = point.z;
-    if (point.x > max.x) max.x = point.x;
-    if (point.y > max.y) max.y = point.y;
-    if (point.z > max.z) max.z = point.z;
-}
-void growToInclude(glm::vec4& min, glm::vec4& max, const glm::vec3 point) {
-    if (point.x < min.x) min.x = point.x;
-    if (point.y < min.y) min.y = point.y;
-    if (point.z < min.z) min.z = point.z;
-    if (point.x > max.x) max.x = point.x;
-    if (point.y > max.y) max.y = point.y;
-    if (point.z > max.z) max.z = point.z;
-}
-void makeBoundingBox(glm::vec3& min, glm::vec3& max, const std::vector<glm::vec3>& vertices) {
-    for (const auto & vertice : vertices) {
-        growToInclude(min, max, vertice);
-    }
-}
-void makeBoundingBox(glm::vec3& min, glm::vec3& max, const std::vector<glm::vec4>& vertices) {
-    for (glm::vec4 vertice : vertices) {
-        growToInclude(min, max, xyz(vertice));
-    }
-}
-void center(std::vector<glm::vec3>& points) {
-    auto min = glm::vec3(1000000000.0f), max = glm::vec3(-1000000000.0f);
-    makeBoundingBox(min, max, points);
-
-    const glm::vec3 offset = {(max.x+min.x)/2, (max.y+min.y)/2, (max.z+min.z)/2};
-    const float biggestDiff = fmax(fmax(max.x-min.x, max.y-min.y), max.z-min.z);
-    const float scaler = 2/biggestDiff;
-
-    for (glm::vec3 &point : points) {
-        point -= offset;
-        point *= scaler;
-    }
-}
-void createNormals(const std::vector<glm::vec3>& vertices, std::vector<glm::vec3>& normals, std::vector<glm::ivec3>& triangles) {
-    normals.resize(vertices.size());
-    std::vector<int> num(vertices.size());
-
-    for (int i = 0; i < triangles.size()/3; ++i) {
-        const glm::ivec3 v = {triangles[3*i+0].x, triangles[3*i+1].x, triangles[3*i+2].x};
-        const glm::vec3 a = vertices[v.x];
-        const glm::vec3 b = vertices[v.y];
-        const glm::vec3 c = vertices[v.z];
-        triangles[3*i+0].z = v.x;
-        triangles[3*i+1].z = v.y;
-        triangles[3*i+2].z = v.z;
-        const glm::vec3 AB = b-a;
-        const glm::vec3 AC = c-a;
-        glm::vec3 normal = {
-            AB.y * AC.z - AB.z * AC.y,
-            AB.z * AC.x - AB.x * AC.z,
-            AB.x * AC.y - AB.y * AC.x
-        };
-        normal = glm::normalize(normal);
-
-        normals[v.x] += normal;
-        num[v.x] ++;
-        normals[v.y] += normal;
-        num[v.y] ++;
-        normals[v.z] += normal;
-        num[v.z] ++;
-    }
-
-    for (int i = 0; i < normals.size(); ++i) {
-        normals[i] /= num[i];
-        normals[i] = glm::normalize(normals[i]);
-    }
-    }
 void setBasisVectors(const glm::vec3& forward, glm::vec3& up, glm::vec3& right) {
     constexpr glm::vec3 world_up(0, 1, 0);
     right = glm::normalize(glm::cross(forward, world_up));
     up = glm::normalize(glm::cross(right, forward));
-}
-float nodeCost(const glm::vec4 min, const glm::vec4 max) {
-    const glm::vec3 size = xyz(max-min);
-    const float halfArea = size.x * (size.y + size.z) + size.y * size.z;
-    return halfArea * -max.w;
 }
 
 Scene::Scene() {
@@ -173,7 +32,7 @@ Scene::Scene() {
     lock = false;
 }
 
-Scene::Scene(int width, int height, int samples, int aa, int bounceLim)
+Scene::Scene(const int width, const int height, const int samples, const int aa, const int bounceLim)
     : samples(samples), aa(aa), bounceLim(bounceLim), frameCount(0), width(width), height(height){
     camForward = glm::vec3(0, 0, -1);
     setBasisVectors(camForward, camUp, camRight);
@@ -181,310 +40,43 @@ Scene::Scene(int width, int height, int samples, int aa, int bounceLim)
     lock = false;
 }
 
-void Scene::parse(const std::string& nfilename, const glm::vec3 position, const glm::vec3 scale, std::vector<glm::vec3>& vertices, std::vector<glm::ivec3>& triangles) {
-    const std::string filename = "" + nfilename;
-    std::ifstream model(filename, std::ios::binary | std::ios::ate);
+void Scene::addModel(const std::string& filename, const glm::vec3 position, const glm::vec3 scale, const glm::vec3 color, const float smoothness, const float emission) {
+    BaseModel model(filename);
 
-    if (!model.is_open()) {
-        std::cerr << "Failed to open file: " << filename << std::endl;
-        return;
-    }
-
-    std::streamsize size = model.tellg();
-    std::cout << size << std::endl;
-    model.seekg(0, std::ios::beg);
-    std::vector<char> buffer(size + 1);  // Add 1 for null-terminator
-    model.read(buffer.data(), size);
-
-    buffer[size] = '\0';  // Null-terminate for safe parsing
-
-    char* ptr = buffer.data();
-    char* end = ptr + size;
-    std::string start;
-    bool prefix;
-
-    int quads = 0;
-
-    std::string line;
-    while (ptr < end) {
-        line.clear();
-        start.clear();
-        prefix = true;
-        while (*ptr != '\n' and *ptr != '\r' and ptr < end) {
-            if (prefix) {
-                start += *ptr;
-            }
-            else {
-                line += *ptr;
-            }
-            if (*ptr == ' ') {
-                prefix = false;
-            }
-            ptr++;
-        }
-        ptr++;
-
-        if (start == "v ") {
-            std::string parts[3];
-            splitSpace3(line, parts);
-            float x = std::stof(parts[0]);
-            float y = std::stof(parts[1]);
-            float z = std::stof(parts[2]);
-            auto p = glm::vec3(x, y, z);
-            vertices.emplace_back(p);
-        } // vertex line
-        else if (start == "f ") {
-            std::string parts[4];
-            int s;
-            splitSpace4(line, parts, s);
-            for (int i = 0; i < s; ++i) {
-                std::string indexGroup[3];
-                indexGroup[0] = "0";
-                indexGroup[1] = "0";
-                indexGroup[2] = "0";
-                splitSlash(parts[i], indexGroup);
-
-                int pointIndex = std::stoi(indexGroup[0]);
-                int textureIndex = std::stoi(indexGroup[1]);
-                int normalIndex = std::stoi(indexGroup[2]);
-
-                // triangle fan for n-gon
-                if (i >= 3) {
-                    quads++;
-                    triangles.emplace_back(triangles[triangles.size() - (3 * i - 6)]);
-                    triangles.emplace_back(triangles[triangles.size() - 2]);
-                }
-
-                triangles.emplace_back(pointIndex, textureIndex, normalIndex);
-            }
-        } // face line
-    }
-
-    for (glm::ivec3& i : triangles) {
-        if (i.x < 0) i.x += vertices.size()+1;
-        if (i.y < 0) i.y += vertices.size()+1;
-        if (i.z < 0) i.z += vertices.size()+1;
-        i.x --;
-        i.y --;
-        i.z --;
-        if (i.x > vertices.size()) std::cout << "Error" << std::endl;
-        //if (i.y > vertices.size()) std::cout << "Error" << std::endl;
-        //if (i.z > vertices.size()) std::cout << "Error" << std::endl;
-    }
-
-    center(vertices);
-
-    for (glm::vec3 &point : vertices) {
-        point *= scale;
-        point += position;
-    }
+    addModel(model, position, scale, color, smoothness, emission);
 }
 
-void Scene::addModel(const std::string& filename, glm::vec3 position, glm::vec3 scale, glm::vec3 color, float smoothness, float emission) {
+void Scene::addModel(BaseModel& model, glm::vec3 position, glm::vec3 scale, glm::vec3 color, float smoothness, float emission) {
     int Voffset = int(vertices.size());
+    int Toffset = int(triangles.size());
+    int BBoffset = int(boundingBoxMin.size());
 
-    auto min = glm::vec3(1000000000.0f);
-    auto max = glm::vec3(-1000000000.0f);
-    models.emplace_back(boundingBoxMin.size());
+    models.emplace_back(BBoffset);
 
-    std::vector<glm::vec3> tempVertices;
-    std::vector<glm::ivec3> tempTriangles;
-
-    parse(filename, position, scale, tempVertices, tempTriangles);
-
-    int triStart = int(triangles.size());
-    int numTris = int(tempTriangles.size())/3;
-
-    for (glm::vec3 tempVertice : tempVertices) {
-        growToInclude(min, max, tempVertice);
-        vertices.emplace_back(tempVertice, 0);
+    for (glm::vec3 vertex : model.vertices) {
+        vertex *= scale;
+        vertex += position;
+        vertices.emplace_back(vertex, 0);
     }
-    for (int i = 0; i < numTris; ++i) {
-        triangles.emplace_back(tempTriangles[i*3+0].x+Voffset, tempTriangles[i*3+1].x+Voffset, tempTriangles[i*3+2].x+Voffset, colors.size());
+    for (glm::ivec3 triangle : model.triangles) {
+        triangle += Voffset;
+        triangles.emplace_back(triangle, colors.size());
     }
-
-    std::string prefix = "   ";
-    std::cout << std::endl;
-    std::cout << filename << std::endl;
-    std::cout << prefix << tempVertices.size() << std::endl;
-    std::cout << prefix << numTris << std::endl;
-    std::cout << prefix << min.x << ' ' << min.y << ' ' << min.z << std::endl;
-    std::cout << prefix << max.x << ' ' << max.y << ' ' << max.z << std::endl;
-    std::cout << std::endl;
+    for (glm::vec4 bboxMin : model.boundingBoxMin) {
+        bboxMin *= glm::vec4(scale,1);
+        int offset = bboxMin.w <= 0 ? Toffset : BBoffset;
+        bboxMin += glm::vec4(position,offset);
+        boundingBoxMin.emplace_back(bboxMin);
+    }
+    for (glm::vec4 bboxMax : model.boundingBoxMax) {
+        bboxMax *= glm::vec4(scale,1);
+        int offset = bboxMax.w <= 0 ? 0 : BBoffset;
+        bboxMax += glm::vec4(position,offset);
+        boundingBoxMax.emplace_back(bboxMax);
+    }
 
     colors.emplace_back(color, smoothness);
     this->emission.push_back(emission);
-
-    createBVH(32, 5, triStart, numTris);
-}
-
-void Scene::createBVH(const int depth, const int numTestsPerAxis, int triStart, int numTris) {
-
-    auto min = glm::vec3(1000000000.0f);
-    auto max = glm::vec3(-1000000000.0f);
-
-    for (int i = triStart; i < triStart + numTris; ++i) {
-        glm::ivec4 tri = triangles[i];
-        glm::vec4 v1 = vertices[tri.x];
-        glm::vec4 v2 = vertices[tri.y];
-        glm::vec4 v3 = vertices[tri.z];
-        growToInclude(min, max, v1);
-        growToInclude(min, max, v2);
-        growToInclude(min, max, v3);
-    }
-
-    glm::vec4 bboxMin = glm::vec4(min, -triStart);
-    glm::vec4 bboxMax = glm::vec4(max, -numTris);
-
-    int index = int(boundingBoxMin.size());
-    boundingBoxMin.emplace_back(bboxMin);
-    boundingBoxMax.emplace_back(bboxMax);
-
-    split(numTestsPerAxis, bboxMin, bboxMax, depth-1);
-    boundingBoxMin[index] = bboxMin;
-    boundingBoxMax[index] = bboxMax;
-}
-
-float Scene::evaluateSplit(glm::vec4 min, glm::vec4 max, int axis, float pos) const {
-    auto minA = glm::vec4(1000000000.0f), maxA = glm::vec4(-1000000000.0f);
-    auto minB = glm::vec4(1000000000.0f), maxB = glm::vec4(-1000000000.0f);
-    maxA.w = 0; maxB.w = 0;
-
-    int triStart = -int(min.w);
-    int numTri = -int(max.w);
-
-    for (int i = triStart; i < numTri+triStart; ++i) {
-        glm::ivec4 tri = triangles[i];
-        glm::vec4 v1 = vertices[tri.x];
-        glm::vec4 v2 = vertices[tri.y];
-        glm::vec4 v3 = vertices[tri.z];
-        glm::vec3 center = (v1 + v2 + v3) / 3.0f;
-
-        if (center[axis] < pos) {
-            growToInclude(minA, maxA, v1);
-            growToInclude(minA, maxA, v2);
-            growToInclude(minA, maxA, v3);
-            maxA.w --;
-        } else {
-            growToInclude(minB, maxB, v1);
-            growToInclude(minB, maxB, v2);
-            growToInclude(minB, maxB, v3);
-            maxB.w --;
-        }
-    }
-
-    return nodeCost(minA, maxA) + nodeCost(minB, maxB);
-}
-
-void Scene::chooseSplit(const int numTestsPerAxis, glm::vec4 min, glm::vec4 max, int& bestAxis, float& bestPos, float& bestCost) const {
-
-    for (int axis = 0; axis < 3; ++axis) {
-        float bStart = min[axis];
-        float bEnd = max[axis];
-
-        for (int i = 0; i < numTestsPerAxis; ++i) {
-            float splitT = float(i+1) / float(numTestsPerAxis+1);
-
-            float pos = bStart + (bEnd - bStart) * splitT;
-            float cost = evaluateSplit(min, max, axis, pos);
-
-            if (cost < bestCost) {
-                bestPos = pos;
-                bestCost = cost;
-                bestAxis = axis;
-            }
-        }
-    }
-
-}
-
-void Scene::split(int numTestsPerAxis, glm::vec4& bboxMin, glm::vec4& bboxMax, int depth) {
-    if (depth <= 0) {return;};
-
-    int triStart = -int(bboxMin.w);
-    int numTris = -int(bboxMax.w);
-
-    if (numTris <= 1) {return;}
-
-    auto minA = glm::vec3(1000000000.0f);
-    auto minB = glm::vec3(1000000000.0f);
-    auto maxA = glm::vec3(-1000000000.0f);
-    auto maxB = glm::vec3(-1000000000.0f);
-
-    int numA = 0, numB = 0;
-    int startA = triStart, startB = triStart;
-
-    int splitAxis;
-    glm::vec4 size = bboxMax - bboxMin;
-    if (size.x > size.y && size.x > size.z) {
-        splitAxis = 0;
-    } else if (size.y > size.z && size.y > size.x) {
-        splitAxis = 1;
-    } else {
-        splitAxis = 2;
-    }
-
-    float splitPos = (bboxMin[splitAxis]+bboxMax[splitAxis])/2;
-
-    float bestCost = 1000000000000.0f;
-    chooseSplit(numTestsPerAxis, bboxMin, bboxMax, splitAxis, splitPos, bestCost);
-    if (bestCost >= nodeCost(bboxMin, bboxMax)) {return;}
-
-    //std::cout << depth << ' ' << splitAxix << ' ' << splitPos << std::endl;
-
-    for (int i = triStart; i < triStart+numTris; i++) {
-        glm::ivec4 tri = triangles[i];
-        glm::vec4 v1 = vertices[tri.x];
-        glm::vec4 v2 = vertices[tri.y];
-        glm::vec4 v3 = vertices[tri.z];
-        glm::vec3 center = (v1 + v2 + v3)/3.0f;
-        bool triInA = center[splitAxis] < splitPos;
-        if (triInA) {
-            growToInclude(minA, maxA, v1);
-            growToInclude(minA, maxA, v2);
-            growToInclude(minA, maxA, v3);
-            numA++;
-            startB ++;
-            int swap = startA + numA - 1;
-            std::swap(triangles[i], triangles[swap]);
-        } else {
-            growToInclude(minB, maxB, v1);
-            growToInclude(minB, maxB, v2);
-            growToInclude(minB, maxB, v3);
-            numB++;
-        }
-    }
-    //std::cout << depth << std::endl;
-    //std::cout << "  " << numA << ' ' << numB << ' ' << splitAxis << ' ' << splitPos << std::endl;
-    //std::cout << "  " << minA.x << ' ' << minA.y << ' ' << minA.z << std::endl;
-    //std::cout << "  " << maxA.x << ' ' << maxA.y << ' ' << maxA.z << std::endl;
-    //std::cout << "  " << minB.x << ' ' << minB.y << ' ' << minB.z << std::endl;
-    //std::cout << "  " << maxB.x << ' ' << maxB.y << ' ' << maxB.z << std::endl;
-
-    if (numA > 0 and numB > 0) {
-        auto minAOut = glm::vec4(minA, -startA);
-        auto maxAOut = glm::vec4(maxA, -numA);
-        auto minBOut = glm::vec4(minB, -startB);
-        auto maxBOut = glm::vec4(maxB, -numB);
-
-        boundingBoxMin.emplace_back(0);
-        boundingBoxMax.emplace_back(0);
-        boundingBoxMin.emplace_back(0);
-        boundingBoxMax.emplace_back(0);
-        int indexA = int(boundingBoxMin.size())-2;
-        int indexB = int(boundingBoxMax.size())-1;
-
-        bboxMin.w = float(indexA);
-        bboxMax.w = float(indexB);
-
-        split(numTestsPerAxis, minAOut, maxAOut, depth-1);
-        split(numTestsPerAxis, minBOut, maxBOut, depth-1);
-
-        boundingBoxMin[indexA] = minAOut;
-        boundingBoxMax[indexA] = maxAOut;
-        boundingBoxMin[indexB] = minBOut;
-        boundingBoxMax[indexB] = maxBOut;
-    }
 }
 
 void Scene::set_ssbo() const {
@@ -564,14 +156,15 @@ bool Scene::updateCamera(GLFWwindow& window, float speed, float sensitivity, flo
     double xpos, ypos;
     bool moved = false;
     glfwGetCursorPos(&window, &xpos, &ypos);
-    glm::vec2 delta = glm::vec2(xpos - width/2, -(ypos - height/2));
+    glm::vec2 center = glm::vec2(float(width)/2, float(height)/2);
+    glm::vec2 delta = glm::vec2(xpos - center.x, -(ypos - center.y));
     if (delta.x*delta.x + delta.y*delta.y > 0 and !lock) {
-        delta *= 2.0f/height * sensitivity;
+        delta *= 2.0f/float(height) * sensitivity;
         camForward += delta.x * camRight + delta.y * camUp;
         camForward = glm::normalize(camForward);
         moved = true;
         setBasisVectors(camForward, camUp, camRight);
-        glfwSetCursorPos(&window, width/2, height/2);
+        glfwSetCursorPos(&window, center.x, center.y);
     }
 
     glm::vec3 change = glm::vec3(0, 0, 0);
@@ -598,7 +191,7 @@ bool Scene::updateCamera(GLFWwindow& window, float speed, float sensitivity, flo
     }
     if (glfwGetKey(&window, GLFW_KEY_U) == GLFW_PRESS) {
         lock = false;
-        glfwSetCursorPos(&window, width/2, height/2);
+        glfwSetCursorPos(&window, center.x, center.y);
     }
     if (glfwGetKey(&window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
        glfwGetKey(&window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
@@ -623,9 +216,9 @@ void Scene::updateFrame(const GLuint shaderProgram, GLFWwindow& window, float dt
 }
 
 int Scene::numTriBelow(int index) {
-    glm::vec4 bboxMin = boundingBoxMin[index];
-    glm::vec4 bboxMax = boundingBoxMax[index];
-    if (bboxMax.w > index and bboxMin.w > index) {
+    const glm::vec4 bboxMin = boundingBoxMin[index];
+    const glm::vec4 bboxMax = boundingBoxMax[index];
+    if (int(bboxMax.w) > index and int(bboxMin.w) > index) {
         return numTriBelow(int(bboxMin.w)) + numTriBelow(int(bboxMax.w));
     }
     return -int(bboxMax.w);
@@ -650,11 +243,18 @@ void Scene::get_BVH_stats(int index, int& leafNodes, int& depth, int& minDepth, 
     if (numTris < minTriPerLeaf) minTriPerLeaf = numTris;
 }
 
+void Scene::displayBVH() {
+    for (const int model : models) {
+        const std::string prefix;
+        displayBVH(model, prefix);
+    }
+}
+
 void Scene::displayBVH(int index, std::string prefix) {
     glm::vec4 bboxMin = boundingBoxMin[index];
     glm::vec4 bboxMax = boundingBoxMax[index];
     int numTris = numTriBelow(index);
-    if (numTris < 1000) return;
+    if (numTris < 5000) return;
     std::cout << prefix << "Index: " << index << "  -  Tris: " << numTris << std::endl;
     std::cout << prefix << "Bounding Box Min: " << bboxMin.x << ", " << bboxMin.y << ", " << bboxMin.z << ", " << bboxMin.w << std::endl;
     std::cout << prefix << "Bounding Box Max: " << bboxMax.x << ", " << bboxMax.y << ", " << bboxMax.z << ", " << bboxMax.w << std::endl;

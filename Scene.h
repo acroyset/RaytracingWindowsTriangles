@@ -7,7 +7,7 @@
 #include <glm/glm.hpp>
 #include <string>
 #include <GLFW/glfw3.h>
-
+#include "BaseModel.h"
 
 class Scene {
     std::vector<glm::vec4> vertices;
@@ -45,15 +45,9 @@ class Scene {
 
     static void parse(const std::string& nfilename, glm::vec3 position, glm::vec3 scale, std::vector<glm::vec3>& vertices, std::vector<glm::ivec3>& triangles);
 
-    void addModel(const ::std::string &filename, glm::vec3 position, glm::vec3 scale, glm::vec3 color, float smoothness, float emission);
+    void addModel(const std::string &filename, glm::vec3 position, glm::vec3 scale, glm::vec3 color, float smoothness, float emission);
 
-    [[nodiscard]] float evaluateSplit(glm::vec4 min, glm::vec4 max, int axis, float pos) const;
-
-    void chooseSplit(int numTestsPerAxis, glm::vec4 min, glm::vec4 max, int& bestAxis, float& bestPos, float& bestCost) const;
-
-    void split(int numTestsPerAxis, glm::vec4& bboxMin, glm::vec4& bboxMax, int depth);
-
-    void createBVH(int depth, int numTestsPerAxis, int triStart, int numTris);
+    void addModel(BaseModel& model, glm::vec3 position, glm::vec3 scale, glm::vec3 color, float smoothness, float emission);
 
     void set_ssbo() const;
 
@@ -70,6 +64,8 @@ class Scene {
     int numTriBelow(int index);
 
     void get_BVH_stats(int index, int& leafNodes, int& depth, int& minDepth, int& maxDepth, int& triPerLeaf, int& minTriPerLeaf, int& maxTriPerLeaf, int current_depth);
+
+    void displayBVH();
 
     void displayBVH(int index, std::string prefix);
 };
