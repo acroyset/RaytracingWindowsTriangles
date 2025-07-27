@@ -43,6 +43,10 @@ uniform int bounceLim;
 uniform sampler2D uPrevFrame;   // Previous accumulated result
 uniform uint time;
 
+uniform vec3 skyColor;
+uniform vec3 sunDir;
+uniform vec3 sunColor;
+
 const int MAX_STACK_SIZE = 33;
 int stack[MAX_STACK_SIZE];
 
@@ -214,15 +218,9 @@ void traverseBVH(int nodeOffset, vec3 rayPos, vec3 rayDir, vec3 invRayDir, inout
 }
 
 vec3 trace(vec3 pos, vec3 dir, inout uint state){
-    vec3 sky = vec3(0.5,0.7,0.9);
-    vec3 sunDir = vec3(-0.1, 1, 0.1);
-    float sunStrength = 10;
-    vec3 sunColor = vec3(100, 70, 30);
-
-    sunDir = normalize(sunDir);
 
     vec3 invDir = 1/dir;
-    vec3 color = vec3(1, 1, 1);
+    vec3 color = vec3(1);
 
     for (int i = 0; i < bounceLim; i++) {
 
@@ -282,13 +280,13 @@ vec3 trace(vec3 pos, vec3 dir, inout uint state){
                 invDir = 1/dir;
             } else {
                 float sunStrengthD = pow(max(dot(dir, sunDir),0), 1024);
-                color *= sky + sunColor*sunStrength*sunStrengthD;
+                color *= skyColor + sunColor*sunStrength*sunStrengthD;
                 break;
             }
         }
         else {
             float sunStrengthD = pow(max(dot(dir, sunDir),0), 1024);
-            color *= sky + sunColor*sunStrength*sunStrengthD;
+            color *= skyColor + sunColor*sunStrength*sunStrengthD;
             break;
         }
 
