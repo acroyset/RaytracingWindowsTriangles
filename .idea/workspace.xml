@@ -25,6 +25,7 @@
     <list default="true" id="cd06d447-a7c8-42f4-a8e5-4bf88ac1888b" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Scene.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/Scene.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/.ninja_deps" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/.ninja_deps" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/.ninja_log" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/.ninja_log" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/RaytracingWindowsTriangles.exe" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/RaytracingWindowsTriangles.exe" afterDir="false" />
@@ -69,7 +70,7 @@
     "RunOnceActivity.west.config.association.type.startup.service": "true",
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
-    "git-widget-placeholder": "dde76102",
+    "git-widget-placeholder": "94b1e79d",
     "last_opened_file_path": "C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/CMakeLists.txt",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
@@ -121,7 +122,7 @@
       <option name="presentableId" value="Default" />
       <updated>1753554814286</updated>
       <workItem from="1753554815329" duration="5000" />
-      <workItem from="1753577774920" duration="7573000" />
+      <workItem from="1753577774920" duration="9561000" />
     </task>
     <servers />
   </component>

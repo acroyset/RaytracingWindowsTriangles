@@ -557,7 +557,7 @@ void Scene::setUniforms(const GLuint shaderProgram) const {
     glUniform1ui(glGetUniformLocation(shaderProgram, "time"), duration);
     glUniform3f(glGetUniformLocation(shaderProgram, "skyColor"), skyColor.x, skyColor.y, skyColor.z);
     glUniform3f(glGetUniformLocation(shaderProgram, "sunDir"), sunDir.x, sunDir.y, sunDir.z);
-    glUniform3f(glGetUniformLocation(shaderProgram, "sunColor"), sunStrength*sunColor.x, sunStrength*sunDir.y, sunStrength*sunDir.z);
+    glUniform3f(glGetUniformLocation(shaderProgram, "sunColor"), sunStrength*sunColor.x, sunStrength*sunColor.y, sunStrength*sunColor.z);
 }
 
 bool Scene::updateCamera(GLFWwindow& window, float speed, float sensitivity, float dt) {
