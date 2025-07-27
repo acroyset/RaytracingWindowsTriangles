@@ -279,18 +279,18 @@ vec3 trace(vec3 pos, vec3 dir, inout uint state){
                 dir = normalize(mix(random, reflect, 0));
                 invDir = 1/dir;
             } else {
-                float sunStrengthD = pow(max(dot(dir, sunDir),0), 1024);
-                color *= skyColor + sunColor*sunStrength*sunStrengthD;
+                float sunStrength = pow(max(dot(dir, sunDir),0), 1024);
+                color *= skyColor + sunColor*sunStrength;
                 break;
             }
         }
         else {
-            float sunStrengthD = pow(max(dot(dir, sunDir),0), 1024);
-            color *= skyColor + sunColor*sunStrength*sunStrengthD;
+            float sunStrength = pow(max(dot(dir, sunDir),0), 1024);
+            color *= skyColor + sunColor*sunStrength;
             break;
         }
 
-        float p = max(color.r, max(color.g, color.b));
+        float p = min(max(color.r, max(color.g, color.b))*10, 1);
         if (randomValue(state) >= p) {
             return vec3(0);
         }
