@@ -86,7 +86,7 @@
 					[
 						0
 					],
-					"name" : "RaytracingWindows",
+					"name" : "RaytracingWindowsTriangles",
 					"targetIndexes" : 
 					[
 						0,
@@ -114,9 +114,9 @@
 			[
 				{
 					"directoryIndex" : 0,
-					"id" : "RaytracingWindows::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-RaytracingWindows-Debug-6bbba341fd2eeac44dc6.json",
-					"name" : "RaytracingWindows",
+					"id" : "RaytracingWindowsTriangles::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-RaytracingWindowsTriangles-Debug-f5d48c70d07f03ade5fd.json",
+					"name" : "RaytracingWindowsTriangles",
 					"projectIndex" : 0
 				},
 				{
@@ -129,7 +129,7 @@
 				{
 					"directoryIndex" : 2,
 					"id" : "glfw::@ca12bac854c2ac6b2230",
-					"jsonFile" : "target-glfw-Debug-e3447249259207cdf094.json",
+					"jsonFile" : "target-glfw-Debug-d6606d764ad3cdd00735.json",
 					"name" : "glfw",
 					"projectIndex" : 1
 				},

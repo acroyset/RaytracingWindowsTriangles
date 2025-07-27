@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(RaytracingWindows)
+project(RaytracingWindowsTriangles)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -13,9 +13,9 @@ target_include_directories(glad PUBLIC "external/glad/include")
 include_directories(glm)
 
 # Executable
-add_executable(RaytracingWindows main.cpp
+add_executable(RaytracingWindowsTriangles main.cpp
         Scene.cpp)
-target_link_libraries(RaytracingWindows glfw glad OpenGL::GL)
-target_include_directories(RaytracingWindows PRIVATE external/glad/include)
+target_link_libraries(RaytracingWindowsTriangles glfw glad OpenGL::GL)
+target_include_directories(RaytracingWindowsTriangles PRIVATE external/glad/include)
 
 

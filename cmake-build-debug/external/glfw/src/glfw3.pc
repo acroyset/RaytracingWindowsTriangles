@@ -1,7 +1,7 @@
-prefix=C:/Program Files (x86)/RaytracingWindows
+prefix=C:/Program Files (x86)/RaytracingWindowsTriangles
 exec_prefix=${prefix}
-includedir=C:/Program Files (x86)/RaytracingWindows/include
-libdir=C:/Program Files (x86)/RaytracingWindows/lib
+includedir=C:/Program Files (x86)/RaytracingWindowsTriangles/include
+libdir=C:/Program Files (x86)/RaytracingWindowsTriangles/lib
 
 Name: GLFW
 Description: A multi-platform library for OpenGL, window and input

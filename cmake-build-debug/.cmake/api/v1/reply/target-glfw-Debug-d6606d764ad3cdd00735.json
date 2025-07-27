@@ -184,7 +184,7 @@
 		],
 		"prefix" : 
 		{
-			"path" : "C:/Program Files (x86)/RaytracingWindows"
+			"path" : "C:/Program Files (x86)/RaytracingWindowsTriangles"
 		}
 	},
 	"name" : "glfw",

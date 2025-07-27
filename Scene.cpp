@@ -8,6 +8,11 @@
 #include <sstream>
 #include <limits>
 #include <GLFW/glfw3.h>
+#include <chrono>
+
+using Clock = std::chrono::high_resolution_clock;
+
+auto start = Clock::now();
 
 void splitSlash(const std::string& s, std::string tokens[3]) {
     std::string token;
@@ -180,7 +185,13 @@ void Scene::parse(const std::string& nfilename, const glm::vec3 position, const 
     const std::string filename = "" + nfilename;
     std::ifstream model(filename, std::ios::binary | std::ios::ate);
 
+    if (!model.is_open()) {
+        std::cerr << "Failed to open file: " << filename << std::endl;
+        return;
+    }
+
     std::streamsize size = model.tellg();
+    std::cout << size << std::endl;
     model.seekg(0, std::ios::beg);
     std::vector<char> buffer(size + 1);  // Add 1 for null-terminator
     model.read(buffer.data(), size);
@@ -528,6 +539,9 @@ int Scene::getNumTris() const {
 }
 
 void Scene::setUniforms(const GLuint shaderProgram) const {
+    const auto end = Clock::now();
+    const glm::uint duration = static_cast<glm::uint>(std::chrono::duration_cast<std::chrono::microseconds>(end - start).count());
+
     glUniform1i(glGetUniformLocation(shaderProgram, "numModels"), int(models.size()));
     glUniform3f(glGetUniformLocation(shaderProgram, "cameraPos"), cameraPos.x, cameraPos.y, cameraPos.z);
     glUniform3f(glGetUniformLocation(shaderProgram, "camForward"), camForward.x, camForward.y, camForward.z);
@@ -539,6 +553,7 @@ void Scene::setUniforms(const GLuint shaderProgram) const {
     glUniform1i(glGetUniformLocation(shaderProgram, "samples"), samples);
     glUniform1i(glGetUniformLocation(shaderProgram, "aa"), aa);
     glUniform1i(glGetUniformLocation(shaderProgram, "bounceLim"), bounceLim);
+    glUniform1ui(glGetUniformLocation(shaderProgram, "time"), duration);
 }
 
 bool Scene::updateCamera(GLFWwindow& window, float speed, float sensitivity, float dt) {

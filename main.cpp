@@ -160,14 +160,14 @@ int main() {
 
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
-    Scene scene(width, height, 4,2, 15);
+    Scene scene(width, height, 4,2, 12);
 
     Timer t;
 
-    scene.addModel("dragon800K.txt", glm::vec3(-1200, -929.502, 500), glm::vec3(100, 100, 100), glm::vec3(0.8, 0.6, 0.1), 0.3, 0);
-    scene.addModel("dragon800K.txt", glm::vec3(-1000, -859.004, 500), glm::vec3(200, 200, 200), glm::vec3(0.1, 0.8, 0.1), 0.3, 0);
-    scene.addModel("dragon800K.txt", glm::vec3(-630, -647.51, 500), glm::vec3(500, 500, 500), glm::vec3(0.1, 0.1, 0.8), 0.3, 0);
-    scene.addModel("dragon800K.txt", glm::vec3(0, -436.016, 500), glm::vec3(800, 800, 800), glm::vec3(0.8, 0.1, 0.1), 0.3, 0);
+    //scene.addModel("dragon80K.txt", glm::vec3(-1200, -929.502, 500), glm::vec3(100, 100, 100), glm::vec3(0.8, 0.6, 0.1), 0.3, 0);
+    //scene.addModel("dragon80K.txt", glm::vec3(-1000, -859.004, 500), glm::vec3(200, 200, 200), glm::vec3(0.1, 0.8, 0.1), 0.3, 0);
+    //scene.addModel("dragon80K.txt", glm::vec3(-630, -647.51, 500), glm::vec3(500, 500, 500), glm::vec3(0.1, 0.1, 0.8), 0.3, 0);
+    scene.addModel("dragon800K.txt", glm::vec3(0, -436.016, 500), glm::vec3(800, 800, 800), glm::vec3(0.8, 0.6, 0.1), 0.9, 0);
     //scene.addModel("sponza.txt", glm::vec3(0, 0, 500), glm::vec3(800, 800, 800), glm::vec3(0.9, 0.2, 0.2), 0.6, 0);
 
     float duration = t.reset();

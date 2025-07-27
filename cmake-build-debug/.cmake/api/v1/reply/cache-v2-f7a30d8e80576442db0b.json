@@ -891,7 +891,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "C:/Program Files (x86)/RaytracingWindows"
+			"value" : "C:/Program Files (x86)/RaytracingWindowsTriangles"
 		},
 		{
 			"name" : "CMAKE_INSTALL_RUNSTATEDIR",
@@ -1171,7 +1171,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "RaytracingWindows"
+			"value" : "RaytracingWindowsTriangles"
 		},
 		{
 			"name" : "CMAKE_PROJECT_VERSION",
@@ -1842,7 +1842,7 @@
 			"value" : "glu32"
 		},
 		{
-			"name" : "RaytracingWindows_BINARY_DIR",
+			"name" : "RaytracingWindowsTriangles_BINARY_DIR",
 			"properties" : 
 			[
 				{
@@ -1854,7 +1854,7 @@
 			"value" : "C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug"
 		},
 		{
-			"name" : "RaytracingWindows_IS_TOP_LEVEL",
+			"name" : "RaytracingWindowsTriangles_IS_TOP_LEVEL",
 			"properties" : 
 			[
 				{
@@ -1866,7 +1866,7 @@
 			"value" : "ON"
 		},
 		{
-			"name" : "RaytracingWindows_SOURCE_DIR",
+			"name" : "RaytracingWindowsTriangles_SOURCE_DIR",
 			"properties" : 
 			[
 				{
@@ -1923,7 +1923,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "C:/Program Files (x86)/RaytracingWindows"
+			"value" : "C:/Program Files (x86)/RaytracingWindowsTriangles"
 		}
 	],
 	"kind" : "cache",

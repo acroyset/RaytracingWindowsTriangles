@@ -41,6 +41,7 @@ uniform int samples;
 uniform int aa;
 uniform int bounceLim;
 uniform sampler2D uPrevFrame;   // Previous accumulated result
+uniform uint time;
 
 const int MAX_STACK_SIZE = 33;
 int stack[MAX_STACK_SIZE];
@@ -306,7 +307,7 @@ void main() {
 
     uvec2 pixel = uvec2(fragCoord.x * resolution.x, fragCoord.y * resolution.y * aspectRatio);
     int pixels = int(resolution.x*resolution.y);
-    uint state = pixel.x + pixel.y * uint(resolution.x) + uint(frameCount * 719447u);
+    uint state = pixel.x + pixel.y * uint(resolution.x) + uint(time);
 
     vec3 totalColor = vec3(0,0,0);
 

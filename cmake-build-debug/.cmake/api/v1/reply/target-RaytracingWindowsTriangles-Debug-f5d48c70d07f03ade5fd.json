@@ -2,10 +2,10 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "RaytracingWindows.exe"
+			"path" : "RaytracingWindowsTriangles.exe"
 		},
 		{
-			"path" : "RaytracingWindows.pdb"
+			"path" : "RaytracingWindowsTriangles.pdb"
 		}
 	],
 	"backtrace" : 1,
@@ -104,7 +104,7 @@
 			"id" : "glfw::@ca12bac854c2ac6b2230"
 		}
 	],
-	"id" : "RaytracingWindows::@6890427a1f51a3e7e1df",
+	"id" : "RaytracingWindowsTriangles::@6890427a1f51a3e7e1df",
 	"link" : 
 	{
 		"commandFragments" : 
@@ -139,8 +139,8 @@
 		],
 		"language" : "CXX"
 	},
-	"name" : "RaytracingWindows",
-	"nameOnDisk" : "RaytracingWindows.exe",
+	"name" : "RaytracingWindowsTriangles",
+	"nameOnDisk" : "RaytracingWindowsTriangles.exe",
 	"paths" : 
 	{
 		"build" : ".",

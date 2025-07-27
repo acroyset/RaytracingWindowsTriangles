@@ -155,7 +155,7 @@ CMAKE_INSTALL_MANDIR:PATH=
 CMAKE_INSTALL_OLDINCLUDEDIR:PATH=/usr/include
 
 //Install path prefix, prepended onto install directories.
-CMAKE_INSTALL_PREFIX:PATH=C:/Program Files (x86)/RaytracingWindows
+CMAKE_INSTALL_PREFIX:PATH=C:/Program Files (x86)/RaytracingWindowsTriangles
 
 //Run-time variable data (LOCALSTATEDIR/run)
 CMAKE_INSTALL_RUNSTATEDIR:PATH=
@@ -211,7 +211,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=RaytracingWindows
+CMAKE_PROJECT_NAME:STATIC=RaytracingWindowsTriangles
 
 //Value Computed by CMake
 CMAKE_PROJECT_VERSION:STATIC=3.5.0
@@ -352,13 +352,13 @@ OPENGL_gl_LIBRARY:STRING=opengl32
 OPENGL_glu_LIBRARY:STRING=glu32
 
 //Value Computed by CMake
-RaytracingWindows_BINARY_DIR:STATIC=C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug
+RaytracingWindowsTriangles_BINARY_DIR:STATIC=C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug
 
 //Value Computed by CMake
-RaytracingWindows_IS_TOP_LEVEL:STATIC=ON
+RaytracingWindowsTriangles_IS_TOP_LEVEL:STATIC=ON
 
 //Value Computed by CMake
-RaytracingWindows_SOURCE_DIR:STATIC=C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles
+RaytracingWindowsTriangles_SOURCE_DIR:STATIC=C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles
 
 
 ########################
@@ -576,5 +576,5 @@ _CMAKE_C_LINKER_PUSHPOP_STATE_SUPPORTED:INTERNAL=TRUE
 //linker supports push/pop state
 _CMAKE_LINKER_PUSHPOP_STATE_SUPPORTED:INTERNAL=TRUE
 //CMAKE_INSTALL_PREFIX during last run
-_GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX:INTERNAL=C:/Program Files (x86)/RaytracingWindows
+_GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX:INTERNAL=C:/Program Files (x86)/RaytracingWindowsTriangles
 
