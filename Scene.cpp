@@ -346,8 +346,9 @@ void Scene::createBVH(const int depth, const int numTestsPerAxis, int triStart, 
 }
 
 float Scene::evaluateSplit(glm::vec4 min, glm::vec4 max, int axis, float pos) const {
-    auto minA = glm::vec4(1000000000.0f), maxA = glm::vec4(0);
-    auto minB = glm::vec4(1000000000.0f), maxB = glm::vec4(0);
+    auto minA = glm::vec4(1000000000.0f), maxA = glm::vec4(-1000000000.0f);
+    auto minB = glm::vec4(1000000000.0f), maxB = glm::vec4(-1000000000.0f);
+    maxA.w = 0; maxB.w = 0;
 
     int triStart = -int(min.w);
     int numTri = -int(max.w);
@@ -403,6 +404,8 @@ void Scene::split(int numTestsPerAxis, glm::vec4& bboxMin, glm::vec4& bboxMax, i
     int triStart = -int(bboxMin.w);
     int numTris = -int(bboxMax.w);
 
+    if (numTris <= 1) {return;}
+
     auto minA = glm::vec3(1000000000.0f);
     auto minB = glm::vec3(1000000000.0f);
     auto maxA = glm::vec3(-1000000000.0f);
@@ -423,9 +426,9 @@ void Scene::split(int numTestsPerAxis, glm::vec4& bboxMin, glm::vec4& bboxMax, i
 
     float splitPos = (bboxMin[splitAxis]+bboxMax[splitAxis])/2;
 
-    float bestCost = 1000000000.0f;
+    float bestCost = 1000000000000.0f;
     chooseSplit(numTestsPerAxis, bboxMin, bboxMax, splitAxis, splitPos, bestCost);
-    //if (bestCost >= nodeCost(bboxMin, bboxMax)) {return;}
+    if (bestCost >= nodeCost(bboxMin, bboxMax)) {return;}
 
     //std::cout << depth << ' ' << splitAxix << ' ' << splitPos << std::endl;
 
@@ -459,8 +462,6 @@ void Scene::split(int numTestsPerAxis, glm::vec4& bboxMin, glm::vec4& bboxMax, i
     //std::cout << "  " << maxB.x << ' ' << maxB.y << ' ' << maxB.z << std::endl;
 
     if (numA > 0 and numB > 0) {
-        bboxMin.w = 0;
-        bboxMax.w = 0;
         auto minAOut = glm::vec4(minA, -startA);
         auto maxAOut = glm::vec4(maxA, -numA);
         auto minBOut = glm::vec4(minB, -startB);
