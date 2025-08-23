@@ -220,7 +220,7 @@ BaseModel::BaseModel(const std::string &filename) {
     std::cout << tempVertices.size() << std::endl;
     std::cout << tempTriangles.size()/3 << std::endl;
 
-    int triStart = int(triangles.size());
+    int triStart = 0;
     int numTris = int(tempTriangles.size())/3;
 
     for (glm::vec3 tempVertice : tempVertices) {

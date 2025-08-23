@@ -37,6 +37,8 @@ Scene::Scene(const int width, const int height, const int samples, const int aa,
     camForward = glm::vec3(0, 0, -1);
     setBasisVectors(camForward, camUp, camRight);
 
+    cameraPos = glm::vec3(0, 0, 0);
+
     lock = false;
 }
 
@@ -62,18 +64,23 @@ void Scene::addModel(BaseModel& model, glm::vec3 position, glm::vec3 scale, glm:
         triangle += Voffset;
         triangles.emplace_back(triangle, colors.size());
     }
-    for (glm::vec4 bboxMin : model.boundingBoxMin) {
+    for (int i = 0; i < model.boundingBoxMin.size(); i++) {
+        glm::vec4 bboxMin = model.boundingBoxMin[i];
+        glm::vec4 bboxMax = model.boundingBoxMax[i];
         bboxMin *= glm::vec4(scale,1);
-        int offset = bboxMin.w <= 0 ? Toffset : BBoffset;
-        bboxMin += glm::vec4(position,offset);
-        boundingBoxMin.emplace_back(bboxMin);
-    }
-    for (glm::vec4 bboxMax : model.boundingBoxMax) {
         bboxMax *= glm::vec4(scale,1);
-        int offset = bboxMax.w <= 0 ? 0 : BBoffset;
-        bboxMax += glm::vec4(position,offset);
+        int offsetMin = bboxMin.w <= 0 ? -Toffset : BBoffset;
+        int offsetMax = bboxMin.w <= 0 ? 0 : BBoffset;
+        bboxMin += glm::vec4(position,offsetMin);
+        bboxMax += glm::vec4(position,offsetMax);
+        boundingBoxMin.emplace_back(bboxMin);
         boundingBoxMax.emplace_back(bboxMax);
     }
+
+    std::cout << std::endl;
+    std::cout << BBoffset << std::endl;
+    std::cout << boundingBoxMin[BBoffset].x << ' ' << boundingBoxMin[BBoffset].y << ' ' << boundingBoxMin[BBoffset].z << ' ' << boundingBoxMin[BBoffset].w << std::endl;
+    std::cout << boundingBoxMax[BBoffset].x << ' ' << boundingBoxMax[BBoffset].y << ' ' << boundingBoxMax[BBoffset].z << ' ' << boundingBoxMax[BBoffset].w << std::endl;
 
     colors.emplace_back(color, smoothness);
     this->emission.push_back(emission);
@@ -245,6 +252,10 @@ void Scene::get_BVH_stats(int index, int& leafNodes, int& depth, int& minDepth, 
 
 void Scene::displayBVH() {
     for (const int model : models) {
+        std::cout << model << " ";
+    }
+    std::cout << std::endl;
+    for (const int model : models) {
         const std::string prefix;
         displayBVH(model, prefix);
     }
@@ -254,7 +265,7 @@ void Scene::displayBVH(int index, std::string prefix) {
     glm::vec4 bboxMin = boundingBoxMin[index];
     glm::vec4 bboxMax = boundingBoxMax[index];
     int numTris = numTriBelow(index);
-    if (numTris < 5000) return;
+    //if (numTris < 100000) return;
     std::cout << prefix << "Index: " << index << "  -  Tris: " << numTris << std::endl;
     std::cout << prefix << "Bounding Box Min: " << bboxMin.x << ", " << bboxMin.y << ", " << bboxMin.z << ", " << bboxMin.w << std::endl;
     std::cout << prefix << "Bounding Box Max: " << bboxMax.x << ", " << bboxMax.y << ", " << bboxMax.z << ", " << bboxMax.w << std::endl;

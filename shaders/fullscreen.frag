@@ -290,7 +290,7 @@ vec3 trace(vec3 pos, vec3 dir, inout uint state){
             break;
         }
 
-        float p = min(max(color.r, max(color.g, color.b))*10, 1);
+        float p = min(max(color.r, max(color.g, color.b))*5, 1);
         if (randomValue(state) >= p) {
             return vec3(0);
         }
