@@ -27,19 +27,19 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 11,
+				"line" : 17,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 12,
+				"line" : 18,
 				"parent" : 0
 			},
 			{
 				"command" : 2,
 				"file" : 0,
-				"line" : 13,
+				"line" : 21,
 				"parent" : 0
 			}
 		]
@@ -57,11 +57,11 @@
 			[
 				{
 					"backtrace" : 2,
-					"path" : "C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glad/include"
+					"path" : "/home/aroyset/C++ Projects/RaytracingWindowsTriangles/external/glad/include"
 				},
 				{
 					"backtrace" : 3,
-					"path" : "C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/glm"
+					"path" : "/home/aroyset/C++ Projects/RaytracingWindowsTriangles/glm"
 				}
 			],
 			"language" : "C",

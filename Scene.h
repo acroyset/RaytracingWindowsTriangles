@@ -8,6 +8,7 @@
 #include <string>
 #include <GLFW/glfw3.h>
 #include "BaseModel.h"
+#include <vector>
 
 class Scene {
     std::vector<glm::vec4> vertices;

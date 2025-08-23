@@ -7,7 +7,7 @@
 
 #include <glm/glm.hpp>
 #include <string>
-#include <GLFW/glfw3.h>
+#include <vector>
 
 class BaseModel {
     public:

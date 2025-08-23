@@ -206,7 +206,7 @@ bool Scene::updateCamera(GLFWwindow& window, float speed, float sensitivity, flo
 }
 
 void Scene::updateFrame(const GLuint shaderProgram, GLFWwindow& window, float dt) {
-    const bool moved = updateCamera(window, 500, 2, dt);
+    const bool moved = updateCamera(window, 500, 0.2f, dt);
 
     setUniforms(shaderProgram);
 
