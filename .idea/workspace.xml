@@ -35,8 +35,7 @@
     <list default="true" id="cd06d447-a7c8-42f4-a8e5-4bf88ac1888b" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/BaseModel.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/BaseModel.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Scene.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/Scene.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BaseModel.h" beforeDir="false" afterPath="$PROJECT_DIR$/BaseModel.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/.ninja_deps" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/.ninja_deps" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/.ninja_log" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/.ninja_log" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/RaytracingWindowsTriangles.dir/BaseModel.cpp.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/RaytracingWindowsTriangles.dir/BaseModel.cpp.obj" afterDir="false" />
@@ -89,7 +88,7 @@
     &quot;RunOnceActivity.west.config.association.type.startup.service&quot;: &quot;true&quot;,
     &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;31bbf671&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;675f2f59&quot;,
     &quot;last_opened_file_path&quot;: &quot;C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/CMakeLists.txt&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
@@ -145,7 +144,10 @@
       <workItem from="1753669531588" duration="1956000" />
       <workItem from="1753672823576" duration="756000" />
       <workItem from="1753752599647" duration="3093000" />
-      <workItem from="1755915356692" duration="696000" />
+      <workItem from="1755915356692" duration="4875000" />
+      <workItem from="1756013652922" duration="1834000" />
+      <workItem from="1756015583353" duration="384000" />
+      <workItem from="1756016125975" duration="3479000" />
     </task>
     <servers />
   </component>

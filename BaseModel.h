@@ -20,11 +20,16 @@ class BaseModel {
     std::vector<glm::vec4> boundingBoxMin;
     std::vector<glm::vec4> boundingBoxMax;
 
+    std::vector<glm::vec3> triangleCenters;
+    std::vector<glm::vec3> triangleMin, triangleMax;
+
     BaseModel();
 
     static void parse(const std::string& nfilename, std::vector<glm::vec3>& vertices, std::vector<glm::ivec3>& triangles);
 
     explicit BaseModel(const std::string& filename);
+
+    void precomputeTriangleData();
 
     [[nodiscard]] float evaluateSplit(glm::vec4 min, glm::vec4 max, int axis, float pos) const;
 

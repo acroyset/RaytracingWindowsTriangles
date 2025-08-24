@@ -47,7 +47,7 @@ uniform vec3 skyColor;
 uniform vec3 sunDir;
 uniform vec3 sunColor;
 
-const int MAX_STACK_SIZE = 33;
+const int MAX_STACK_SIZE = 65;
 int stack[MAX_STACK_SIZE];
 
 float randomValue(inout uint state){
@@ -252,6 +252,9 @@ vec3 trace(vec3 pos, vec3 dir, inout uint state){
             vec3 v2 = vertices[tri.y].xyz;
             vec3 v3 = vertices[tri.z].xyz;
             vec3 normal = normalize(cross(v2 - v1, v3 - v1));
+            if (dot(normal, dir) >= 0){
+                normal *= -1;
+            }
 
             color *= colors[material_i].xyz;
             if (emission[material_i] > 0.0) {

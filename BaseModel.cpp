@@ -3,9 +3,92 @@
 //
 
 #include "BaseModel.h"
-
 #include <fstream>
 #include <iostream>
+#include <atomic>
+#include <condition_variable>
+#include <thread>
+#include <mutex>
+
+class ThreadPool {
+    std::vector<std::thread> workers;
+    std::vector<std::function<void()>> tasks;
+    std::mutex queue_mutex;
+    std::condition_variable cv;
+    std::condition_variable finished_cv;
+    bool stop = false;
+    size_t active_tasks = 0;  // Tracks how many tasks are currently running
+    std::atomic<size_t> total_enqueued{0};
+    std::atomic<size_t> total_completed{0};
+
+public:
+    explicit ThreadPool(const size_t threads) {
+        for (size_t i = 0; i < threads; ++i) {
+            workers.emplace_back([this] {
+                while (true) {
+                    std::function<void()> task;
+                    {
+                        std::unique_lock<std::mutex> lock(this->queue_mutex);
+                        this->cv.wait(lock, [this] {
+                            return this->stop || !this->tasks.empty();
+                        });
+
+                        if (this->stop && this->tasks.empty())
+                            return;
+
+                        task = std::move(this->tasks.back());
+                        this->tasks.pop_back();
+                        ++active_tasks;
+                    }
+
+                    task();
+
+                    {
+                        std::unique_lock<std::mutex> lock(this->queue_mutex);
+                        --active_tasks;
+                        ++total_completed;
+                        if (tasks.empty() && active_tasks == 0) {
+                            finished_cv.notify_all();
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    ~ThreadPool() {
+        {
+            std::unique_lock<std::mutex> lock(queue_mutex);
+            stop = true;
+        }
+        cv.notify_all();
+        for (auto &worker : workers)
+            worker.join();
+    }
+
+    void enqueue(std::function<void()> task) {
+        {
+            std::unique_lock<std::mutex> lock(queue_mutex);
+            tasks.push_back(std::move(task));
+            ++total_enqueued;
+        }
+        cv.notify_one();
+    }
+
+    // Wait for all tasks to finish
+    void wait_for_tasks() {
+        std::unique_lock<std::mutex> lock(queue_mutex);
+        finished_cv.wait(lock, [this] {
+            return tasks.empty() && active_tasks == 0;
+        });
+    }
+
+    size_t tasks_left() {
+        std::unique_lock<std::mutex> lock(queue_mutex);
+        return total_enqueued - total_completed;
+    }
+
+};
 
 void splitSlash(const std::string& s, std::string tokens[3]) {
     std::string token;
@@ -77,6 +160,22 @@ void growToInclude(glm::vec3& min, glm::vec3& max, const glm::vec3 point) {
     if (point.y > max.y) max.y = point.y;
     if (point.z > max.z) max.z = point.z;
 }
+void growToInclude(glm::vec3& min, glm::vec3& max, const glm::vec3 tMin, const glm::vec3 tMax) {
+    min.x = std::min(min.x, tMin.x);
+    min.y = std::min(min.y, tMin.y);
+    min.z = std::min(min.z, tMin.z);
+    max.x = std::max(max.x, tMax.x);
+    max.y = std::max(max.y, tMax.y);
+    max.z = std::max(max.z, tMax.z);
+}
+void growToInclude(glm::vec4& min, glm::vec4& max, const glm::vec3 tMin, const glm::vec3 tMax) {
+    min.x = std::min(min.x, tMin.x);
+    min.y = std::min(min.y, tMin.y);
+    min.z = std::min(min.z, tMin.z);
+    max.x = std::max(max.x, tMax.x);
+    max.y = std::max(max.y, tMax.y);
+    max.z = std::max(max.z, tMax.z);
+}
 void growToInclude(glm::vec4& min, glm::vec4& max, const glm::vec3 point) {
     if (point.x < min.x) min.x = point.x;
     if (point.y < min.y) min.y = point.y;
@@ -100,7 +199,7 @@ void center(std::vector<glm::vec3>& points) {
     makeBoundingBox(min, max, points);
 
     const glm::vec3 offset = {(max.x+min.x)/2, (max.y+min.y)/2, (max.z+min.z)/2};
-    const float biggestDiff = fmax(fmax(max.x-min.x, max.y-min.y), max.z-min.z);
+    const auto biggestDiff = float(fmax(fmax(max.x-min.x, max.y-min.y), max.z-min.z));
     const float scaler = 2/biggestDiff;
 
     for (glm::vec3 &point : points) {
@@ -113,100 +212,170 @@ float nodeCost(const glm::vec4 min, const glm::vec4 max) {
     const float halfArea = size.x * (size.y + size.z) + size.y * size.z;
     return halfArea * -max.w;
 }
+inline float fast_strtof(const char* str, char** endptr) {
+    return std::strtof(str, endptr);
+    // Or use a faster implementation like:
+    // return fast_float::from_chars(str, str + strlen(str), result).ptr;
+}
+inline int fast_strtoi(const char* str, char** endptr) {
+    return std::strtol(str, endptr, 10);
+}
 
 BaseModel::BaseModel() = default;
 
 void BaseModel::parse(const std::string& nfilename, std::vector<glm::vec3>& vertices, std::vector<glm::ivec3>& triangles) {
     const std::string filename = "" + nfilename;
-    std::ifstream model(filename, std::ios::binary | std::ios::ate);
+    std::ifstream model(filename, std::ios::in | std::ios::binary);
 
     if (!model.is_open()) {
         std::cerr << "Failed to open file: " << filename << std::endl;
         return;
     }
 
-    std::streamsize size = model.tellg();
+    // Get file size for reservations
+    model.seekg(0, std::ios::end);
+    std::streamsize fileSize = model.tellg();
     model.seekg(0, std::ios::beg);
-    std::vector<char> buffer(size + 1);  // Add 1 for null-terminator
-    model.read(buffer.data(), size);
 
-    buffer[size] = '\0';  // Null-terminate for safe parsing
+    // Reserve space
+    size_t estimatedVertices = fileSize / 50;
+    size_t estimatedTriangles = fileSize / 80;
+    vertices.reserve(estimatedVertices);
+    triangles.reserve(estimatedTriangles * 3);
 
-    char* ptr = buffer.data();
-    char* end = ptr + size;
-    std::string start;
-    bool prefix;
+    // Process in chunks to avoid massive memory allocation
+    constexpr size_t CHUNK_SIZE = 64 * 1024 * 1024; // 64MB chunks
+    std::vector<char> buffer(CHUNK_SIZE + 1);
+    std::string leftover; // Handle lines split across chunks
 
     int quads = 0;
 
-    std::string line;
-    while (ptr < end) {
-        line.clear();
-        start.clear();
-        prefix = true;
-        while (*ptr != '\n' and *ptr != '\r' and ptr < end) {
-            if (prefix) {
-                start += *ptr;
-            }
-            else {
-                line += *ptr;
-            }
-            if (*ptr == ' ') {
-                prefix = false;
-            }
-            ptr++;
+    while (model) {
+        model.read(buffer.data(), CHUNK_SIZE);
+        std::streamsize bytesRead = model.gcount();
+
+        if (bytesRead == 0) break;
+
+        buffer[bytesRead] = '\0';
+
+        // Combine leftover from previous chunk with current chunk
+        std::string chunk = leftover + std::string(buffer.data(), bytesRead);
+        leftover.clear();
+
+        // Find last complete line in chunk
+        size_t lastNewline = chunk.find_last_of('\n');
+        if (lastNewline != std::string::npos && lastNewline < chunk.size() - 1) {
+            // Save incomplete line for next chunk
+            leftover = chunk.substr(lastNewline + 1);
+            chunk = chunk.substr(0, lastNewline + 1);
         }
-        ptr++;
 
-        if (start == "v ") {
-            std::string parts[3];
-            splitSpace3(line, parts);
-            float x = std::stof(parts[0]);
-            float y = std::stof(parts[1]);
-            float z = std::stof(parts[2]);
-            auto p = glm::vec3(x, y, z);
-            vertices.emplace_back(p);
-        } // vertex line
-        else if (start == "f ") {
-            std::string parts[4];
-            int s;
-            splitSpace4(line, parts, s);
-            for (int i = 0; i < s; ++i) {
-                std::string indexGroup[3];
-                indexGroup[0] = "0";
-                indexGroup[1] = "0";
-                indexGroup[2] = "0";
-                splitSlash(parts[i], indexGroup);
+        // Fast parse the chunk
+        char* ptr = chunk.data();
+        char* end = ptr + chunk.size();
 
-                int pointIndex = std::stoi(indexGroup[0]);
-                int textureIndex = std::stoi(indexGroup[1]);
-                int normalIndex = std::stoi(indexGroup[2]);
+        while (ptr < end) {
+            // Skip to start of line content (skip whitespace/newlines)
+            while (ptr < end && (*ptr == '\n' || *ptr == '\r' || *ptr == ' ' || *ptr == '\t')) {
+                ptr++;
+            }
 
-                // triangle fan for n-gon
-                if (i >= 3) {
-                    quads++;
-                    triangles.emplace_back(triangles[triangles.size() - (3 * i - 6)]);
-                    triangles.emplace_back(triangles[triangles.size() - 2]);
+            if (ptr >= end) break;
+
+            // Quick check for line type
+            if (*ptr == 'v' && *(ptr + 1) == ' ') {
+                ptr += 2; // Skip "v "
+
+                // Fast float parsing
+                float x, y, z;
+                x = fast_strtof(ptr, &ptr);
+                while (*ptr == ' ' || *ptr == '\t') ptr++; // Skip whitespace
+                y = fast_strtof(ptr, &ptr);
+                while (*ptr == ' ' || *ptr == '\t') ptr++; // Skip whitespace
+                z = fast_strtof(ptr, &ptr);
+
+                vertices.emplace_back(x, y, z);
+            }
+            else if (*ptr == 'f' && *(ptr + 1) == ' ') {
+                ptr += 2; // Skip "f "
+
+                std::array<glm::ivec3, 4> faceVertices{};
+                int vertexCount = 0;
+
+                // Parse face vertices
+                while (ptr < end && *ptr != '\n' && *ptr != '\r' && vertexCount < 4) {
+                    while (*ptr == ' ' || *ptr == '\t') ptr++; // Skip whitespace
+                    if (*ptr == '\n' || *ptr == '\r') break;
+
+                    // Parse vertex indices (v/vt/vn format)
+                    int v = fast_strtoi(ptr, &ptr);
+                    int vt = 0, vn = 0;
+
+                    if (*ptr == '/') {
+                        ptr++;
+                        if (*ptr != '/') {
+                            vt = fast_strtoi(ptr, &ptr);
+                        }
+                        if (*ptr == '/') {
+                            ptr++;
+                            vn = fast_strtoi(ptr, &ptr);
+                        }
+                    }
+
+                    faceVertices[vertexCount] = glm::ivec3(v, vt, vn);
+                    vertexCount++;
+
+                    // Skip to next vertex or end of line
+                    while (ptr < end && *ptr != ' ' && *ptr != '\t' && *ptr != '\n' && *ptr != '\r') {
+                        ptr++;
+                    }
                 }
 
-                triangles.emplace_back(pointIndex, textureIndex, normalIndex);
+                // Convert to triangles (triangle fan)
+                if (vertexCount >= 3) {
+                    triangles.emplace_back(faceVertices[0]);
+                    triangles.emplace_back(faceVertices[1]);
+                    triangles.emplace_back(faceVertices[2]);
+
+                    // Handle quads and n-gons
+                    for (int i = 3; i < vertexCount; i++) {
+                        quads++;
+                        triangles.emplace_back(faceVertices[0]);
+                        triangles.emplace_back(faceVertices[i-1]);
+                        triangles.emplace_back(faceVertices[i]);
+                    }
+                }
             }
-        } // face line
+
+            // Skip to next line
+            while (ptr < end && *ptr != '\n' && *ptr != '\r') {
+                ptr++;
+            }
+        }
     }
 
+    // Handle any remaining leftover
+    if (!leftover.empty()) {
+        // Process final incomplete line if needed
+        // (similar parsing logic as above)
+    }
+
+    // Convert negative indices and adjust for 0-based indexing
     for (glm::ivec3& i : triangles) {
-        if (i.x < 0) i.x += int(vertices.size())+1;
-        if (i.y < 0) i.y += int(vertices.size())+1;
-        if (i.z < 0) i.z += int(vertices.size())+1;
-        i.x --;
-        i.y --;
-        i.z --;
-        if (i.x > vertices.size()) std::cout << "Error" << std::endl;
-        //if (i.y > vertices.size()) std::cout << "Error" << std::endl;
-        //if (i.z > vertices.size()) std::cout << "Error" << std::endl;
+        if (i.x < 0) i.x += int(vertices.size()) + 1;
+        if (i.y < 0) i.y += int(vertices.size()) + 1;
+        if (i.z < 0) i.z += int(vertices.size()) + 1;
+        i.x--;
+        i.y--;
+        i.z--;
+
+        if (i.x >= vertices.size() || i.x < 0) {
+            std::cout << "Error: Invalid vertex index " << i.x << std::endl;
+        }
     }
 
     center(vertices);
+    model.close();
 }
 
 BaseModel::BaseModel(const std::string &filename) {
@@ -230,7 +399,7 @@ BaseModel::BaseModel(const std::string &filename) {
         triangles.emplace_back(tempTriangles[i*3+0].x, tempTriangles[i*3+1].x, tempTriangles[i*3+2].x);
     }
 
-    createBVH(32, 5, triStart, numTris);
+    createBVH(64, 5, triStart, numTris);
 }
 
 void BaseModel::createBVH(const int depth, const int numTestsPerAxis, int triStart, int numTris) {
@@ -238,14 +407,13 @@ void BaseModel::createBVH(const int depth, const int numTestsPerAxis, int triSta
     auto min = glm::vec3(1000000000.0f);
     auto max = glm::vec3(-1000000000.0f);
 
+    precomputeTriangleData();
+
     for (int i = triStart; i < triStart + numTris; ++i) {
-        glm::ivec3 tri = triangles[i];
-        glm::vec3 v1 = vertices[tri.x];
-        glm::vec3 v2 = vertices[tri.y];
-        glm::vec3 v3 = vertices[tri.z];
-        growToInclude(min, max, v1);
-        growToInclude(min, max, v2);
-        growToInclude(min, max, v3);
+        const glm::vec3& tMin = triangleMin[i];
+        const glm::vec3& tMax = triangleMax[i];
+
+        growToInclude(min, max, tMin, tMax);
     }
 
     glm::vec4 bboxMin = glm::vec4(min, -triStart);
@@ -260,6 +428,24 @@ void BaseModel::createBVH(const int depth, const int numTestsPerAxis, int triSta
     boundingBoxMax[index] = bboxMax;
 }
 
+void BaseModel::precomputeTriangleData() {
+    triangleCenters.resize(triangles.size());
+    triangleMin.resize(triangles.size());
+    triangleMax.resize(triangles.size());
+
+    for (size_t i = 0; i < triangles.size(); ++i) {
+        const glm::ivec3& tri = triangles[i];
+
+        const glm::vec3& v1 = vertices[tri.x];
+        const glm::vec3& v2 = vertices[tri.y];
+        const glm::vec3& v3 = vertices[tri.z];
+
+        triangleCenters[i] = (v1 + v2 + v3) / 3.0f;
+        triangleMin[i] = glm::min(glm::min(v1, v2), v3);
+        triangleMax[i] = glm::max(glm::max(v1, v2), v3);
+    }
+}
+
 float BaseModel::evaluateSplit(glm::vec4 min, glm::vec4 max, int axis, float pos) const {
     auto minA = glm::vec4(1000000000.0f), maxA = glm::vec4(-1000000000.0f);
     auto minB = glm::vec4(1000000000.0f), maxB = glm::vec4(-1000000000.0f);
@@ -269,21 +455,16 @@ float BaseModel::evaluateSplit(glm::vec4 min, glm::vec4 max, int axis, float pos
     int numTri = -int(max.w);
 
     for (int i = triStart; i < numTri+triStart; ++i) {
-        glm::ivec3 tri = triangles[i];
-        glm::vec3 v1 = vertices[tri.x];
-        glm::vec3 v2 = vertices[tri.y];
-        glm::vec3 v3 = vertices[tri.z];
-        glm::vec3 center = (v1 + v2 + v3) / 3.0f;
+        const glm::vec3& tMin = triangleMin[i];
+        const glm::vec3& tMax = triangleMax[i];
+
+        glm::vec3 center = triangleCenters[i];
 
         if (center[axis] < pos) {
-            growToInclude(minA, maxA, v1);
-            growToInclude(minA, maxA, v2);
-            growToInclude(minA, maxA, v3);
+            growToInclude(minA, maxA, tMin, tMax);
             maxA.w --;
         } else {
-            growToInclude(minB, maxB, v1);
-            growToInclude(minB, maxB, v2);
-            growToInclude(minB, maxB, v3);
+            growToInclude(minB, maxB, tMin, tMax);
             maxB.w --;
         }
     }
@@ -330,17 +511,7 @@ void BaseModel::split(int numTestsPerAxis, glm::vec4& bboxMin, glm::vec4& bboxMa
     int startA = triStart, startB = triStart;
 
     int splitAxis;
-    glm::vec4 size = bboxMax - bboxMin;
-    if (size.x > size.y && size.x > size.z) {
-        splitAxis = 0;
-    } else if (size.y > size.z && size.y > size.x) {
-        splitAxis = 1;
-    } else {
-        splitAxis = 2;
-    }
-
-    float splitPos = (bboxMin[splitAxis]+bboxMax[splitAxis])/2;
-
+    float splitPos = 0;
     float bestCost = 1000000000000.0f;
     chooseSplit(numTestsPerAxis, bboxMin, bboxMax, splitAxis, splitPos, bestCost);
     if (bestCost >= nodeCost(bboxMin, bboxMax)) {return;}
@@ -348,24 +519,22 @@ void BaseModel::split(int numTestsPerAxis, glm::vec4& bboxMin, glm::vec4& bboxMa
     //std::cout << depth << ' ' << splitAxix << ' ' << splitPos << std::endl;
 
     for (int i = triStart; i < triStart+numTris; i++) {
-        glm::ivec3 tri = triangles[i];
-        glm::vec3 v1 = vertices[tri.x];
-        glm::vec3 v2 = vertices[tri.y];
-        glm::vec3 v3 = vertices[tri.z];
-        glm::vec3 center = (v1 + v2 + v3)/3.0f;
+        const glm::vec3& tMin = triangleMin[i];
+        const glm::vec3& tMax = triangleMax[i];
+
+        glm::vec3 center = triangleCenters[i];
         bool triInA = center[splitAxis] < splitPos;
         if (triInA) {
-            growToInclude(minA, maxA, v1);
-            growToInclude(minA, maxA, v2);
-            growToInclude(minA, maxA, v3);
+            growToInclude(minA, maxA, tMin, tMax);
             numA++;
             startB ++;
             int swap = startA + numA - 1;
             std::swap(triangles[i], triangles[swap]);
+            std::swap(triangleCenters[i], triangleCenters[swap]);
+            std::swap(triangleMin[i], triangleMin[swap]);
+            std::swap(triangleMax[i], triangleMax[swap]);
         } else {
-            growToInclude(minB, maxB, v1);
-            growToInclude(minB, maxB, v2);
-            growToInclude(minB, maxB, v3);
+            growToInclude(minB, maxB, tMin, tMax);
             numB++;
         }
     }

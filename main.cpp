@@ -6,7 +6,6 @@
 #include <sstream>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
 #include "Scene.h"
 
 
@@ -164,9 +163,10 @@ int main() {
 
     Timer t;
 
-    BaseModel dragon("dragon800K.txt");
+    //BaseModel dragon("dragon800K.txt");
 
-    scene.addModel(dragon, glm::vec3(0,759.79, 0), glm::vec3(2500, 2500, 2500), glm::vec3(0.8, 0.6, 0.1), 0.6, 0);
+    scene.addModel("terrain.txt", glm::vec3(0,0, 0), glm::vec3(10000, 500, 10000), glm::vec3(0.5, 0.5, 0.5), 0.0, 0);
+    //scene.addModel(dragon, glm::vec3(0,759.79, 0), glm::vec3(2500, 2500, 2500), glm::vec3(0.8, 0.6, 0.1), 0.6, 0);
     //scene.addModel(dragon, glm::vec3(-170, -300, 0), glm::vec3(50, 50, 50), glm::vec3(0.1, 0.8, 0.1), 0.6, 0);
     //scene.addModel(dragon, glm::vec3(-100, -285, 0), glm::vec3(75, 75, 75), glm::vec3(0.1, 0.1, 0.8), 0.6, 0);
     //scene.addModel(dragon, glm::vec3(0, -265, 0), glm::vec3(100, 100, 100), glm::vec3(0.8, 0.1, 0.1), 0.6, 0);
