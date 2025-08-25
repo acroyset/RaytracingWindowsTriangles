@@ -3,6 +3,10 @@
 //
 
 #include "BaseModel.h"
+#include "BaseModel.h"
+#include "BaseModel.h"
+#include "BaseModel.h"
+#include "BaseModel.h"
 #include <fstream>
 #include <iostream>
 #include <atomic>
@@ -207,10 +211,10 @@ void center(std::vector<glm::vec3>& points) {
         point *= scaler;
     }
 }
-float nodeCost(const glm::vec4 min, const glm::vec4 max) {
-    const glm::vec3 size = xyz(max-min);
+float nodeCost(const glm::vec3 min, const glm::vec3 max, const int numTris) {
+    const glm::vec3 size = max-min;
     const float halfArea = size.x * (size.y + size.z) + size.y * size.z;
-    return halfArea * -max.w;
+    return halfArea * float(numTris);
 }
 inline float fast_strtof(const char* str, char** endptr) {
     return std::strtof(str, endptr);
@@ -374,7 +378,7 @@ void BaseModel::parse(const std::string& nfilename, std::vector<glm::vec3>& vert
         }
     }
 
-    center(vertices);
+    //center(vertices);
     model.close();
 }
 
@@ -383,23 +387,29 @@ BaseModel::BaseModel(const std::string &filename) {
     std::vector<glm::vec3> tempVertices;
     std::vector<glm::ivec3> tempTriangles;
 
+    std::cout << "Parsing " << filename << "..." << std::endl;
     parse(filename, tempVertices, tempTriangles);
 
     std::cout << filename << std::endl;
-    std::cout << tempVertices.size() << std::endl;
-    std::cout << tempTriangles.size()/3 << std::endl;
+    std::cout << "Vertices: " << tempVertices.size() << std::endl;
+    std::cout << "Triangles: " << tempTriangles.size()/3 << std::endl;
 
     int triStart = 0;
     int numTris = int(tempTriangles.size())/3;
 
+    std::cout << "Copying vertex data..." << std::endl;
     for (glm::vec3 tempVertice : tempVertices) {
         vertices.emplace_back(tempVertice);
     }
+
+    std::cout << "Copying triangle data..." << std::endl;
     for (int i = 0; i < numTris; ++i) {
         triangles.emplace_back(tempTriangles[i*3+0].x, tempTriangles[i*3+1].x, tempTriangles[i*3+2].x);
     }
 
-    createBVH(64, 5, triStart, numTris);
+    std::cout << "Starting BVH construction..." << std::endl;
+    createBVH(47, 5, triStart, numTris);
+    std::cout << "BVH construction complete!" << std::endl;
 }
 
 void BaseModel::createBVH(const int depth, const int numTestsPerAxis, int triStart, int numTris) {
@@ -416,16 +426,17 @@ void BaseModel::createBVH(const int depth, const int numTestsPerAxis, int triSta
         growToInclude(min, max, tMin, tMax);
     }
 
-    glm::vec4 bboxMin = glm::vec4(min, -triStart);
-    glm::vec4 bboxMax = glm::vec4(max, -numTris);
-
     int index = int(boundingBoxMin.size());
-    boundingBoxMin.emplace_back(bboxMin);
-    boundingBoxMax.emplace_back(bboxMax);
+    boundingBoxMin.emplace_back(min);
+    boundingBoxMax.emplace_back(max);
+    int indexA = -triStart;
+    int indexB = -numTris;
+    childA.emplace_back(indexA);
+    childB.emplace_back(indexA);
 
-    split(numTestsPerAxis, bboxMin, bboxMax, depth-1);
-    boundingBoxMin[index] = bboxMin;
-    boundingBoxMax[index] = bboxMax;
+    split(numTestsPerAxis, min, indexA, max, indexB, depth-1);
+    childA[index] = indexA;
+    childB[index] = indexB;
 }
 
 void BaseModel::precomputeTriangleData() {
@@ -446,13 +457,15 @@ void BaseModel::precomputeTriangleData() {
     }
 }
 
-float BaseModel::evaluateSplit(glm::vec4 min, glm::vec4 max, int axis, float pos) const {
-    auto minA = glm::vec4(1000000000.0f), maxA = glm::vec4(-1000000000.0f);
-    auto minB = glm::vec4(1000000000.0f), maxB = glm::vec4(-1000000000.0f);
-    maxA.w = 0; maxB.w = 0;
+float BaseModel::evaluateSplit(glm::vec3 min, int childA, glm::vec3 max, int childB, int axis, float pos) const {
+    auto minA = glm::vec3(1000000000.0f), maxA = glm::vec3(-1000000000.0f);
+    auto minB = glm::vec3(1000000000.0f), maxB = glm::vec3(-1000000000.0f);
 
-    int triStart = -int(min.w);
-    int numTri = -int(max.w);
+    int triStart = -childA;
+    int numTri = -childB;
+
+    int numA = 0;
+    int numB = 0;
 
     for (int i = triStart; i < numTri+triStart; ++i) {
         const glm::vec3& tMin = triangleMin[i];
@@ -462,17 +475,17 @@ float BaseModel::evaluateSplit(glm::vec4 min, glm::vec4 max, int axis, float pos
 
         if (center[axis] < pos) {
             growToInclude(minA, maxA, tMin, tMax);
-            maxA.w --;
+            numA++;
         } else {
             growToInclude(minB, maxB, tMin, tMax);
-            maxB.w --;
+            numB++;
         }
     }
 
-    return nodeCost(minA, maxA) + nodeCost(minB, maxB);
+    return nodeCost(minA, maxA, numA) + nodeCost(minB, maxB, numB);
 }
 
-void BaseModel::chooseSplit(const int numTestsPerAxis, glm::vec4 min, glm::vec4 max, int& bestAxis, float& bestPos, float& bestCost) const {
+void BaseModel::chooseSplit(const int numTestsPerAxis, glm::vec3 min, int childA, glm::vec3 max, int childB, int& bestAxis, float& bestPos, float& bestCost) const {
 
     for (int axis = 0; axis < 3; ++axis) {
         float bStart = min[axis];
@@ -482,7 +495,7 @@ void BaseModel::chooseSplit(const int numTestsPerAxis, glm::vec4 min, glm::vec4 
             float splitT = float(i+1) / float(numTestsPerAxis+1);
 
             float pos = bStart + (bEnd - bStart) * splitT;
-            float cost = evaluateSplit(min, max, axis, pos);
+            float cost = evaluateSplit(min, childA, max, childB, axis, pos);
 
             if (cost < bestCost) {
                 bestPos = pos;
@@ -494,11 +507,11 @@ void BaseModel::chooseSplit(const int numTestsPerAxis, glm::vec4 min, glm::vec4 
 
 }
 
-void BaseModel::split(int numTestsPerAxis, glm::vec4& bboxMin, glm::vec4& bboxMax, int depth) {
+void BaseModel::split(int numTestsPerAxis, glm::vec3 bboxMin, int& childA, glm::vec3 bboxMax, int& childB, int depth) {
     if (depth <= 0) {return;};
 
-    int triStart = -int(bboxMin.w);
-    int numTris = -int(bboxMax.w);
+    int triStart = -childA;
+    int numTris = -childB;
 
     if (numTris <= 1) {return;}
 
@@ -512,9 +525,9 @@ void BaseModel::split(int numTestsPerAxis, glm::vec4& bboxMin, glm::vec4& bboxMa
 
     int splitAxis;
     float splitPos = 0;
-    float bestCost = 1000000000000.0f;
-    chooseSplit(numTestsPerAxis, bboxMin, bboxMax, splitAxis, splitPos, bestCost);
-    if (bestCost >= nodeCost(bboxMin, bboxMax)) {return;}
+    float bestCost = std::numeric_limits<float>::max();
+    chooseSplit(numTestsPerAxis, bboxMin, childA, bboxMax, childB, splitAxis, splitPos, bestCost);
+    if (bestCost >= nodeCost(bboxMin, bboxMax, numTris)) {return;}
 
     //std::cout << depth << ' ' << splitAxix << ' ' << splitPos << std::endl;
 
@@ -546,27 +559,43 @@ void BaseModel::split(int numTestsPerAxis, glm::vec4& bboxMin, glm::vec4& bboxMa
     //std::cout << "  " << maxB.x << ' ' << maxB.y << ' ' << maxB.z << std::endl;
 
     if (numA > 0 and numB > 0) {
-        auto minAOut = glm::vec4(minA, -startA);
-        auto maxAOut = glm::vec4(maxA, -numA);
-        auto minBOut = glm::vec4(minB, -startB);
-        auto maxBOut = glm::vec4(maxB, -numB);
+        int childA_A = -startA, childB_A = -numA;
+        int childA_B = -startB, childB_B = -numB;
 
-        boundingBoxMin.emplace_back(0);
-        boundingBoxMax.emplace_back(0);
-        boundingBoxMin.emplace_back(0);
-        boundingBoxMax.emplace_back(0);
-        int indexA = int(boundingBoxMin.size())-2;
-        int indexB = int(boundingBoxMax.size())-1;
+        boundingBoxMin.push_back(minA);
+        boundingBoxMax.push_back(maxA);
+        int indexA = int(boundingBoxMin.size())-1;
+        boundingBoxMin.push_back(minB);
+        boundingBoxMax.push_back(maxB);
+        int indexB = indexA + 1;
 
-        bboxMin.w = float(indexA);
-        bboxMax.w = float(indexB);
+        this->childA.emplace_back(childA_A);
+        this->childB.emplace_back(childB_A);
+        this->childA.emplace_back(childA_B);
+        this->childB.emplace_back(childB_B);
 
-        split(numTestsPerAxis, minAOut, maxAOut, depth-1);
-        split(numTestsPerAxis, minBOut, maxBOut, depth-1);
+        childA = indexA;
+        childB = indexB;
 
-        boundingBoxMin[indexA] = minAOut;
-        boundingBoxMax[indexA] = maxAOut;
-        boundingBoxMin[indexB] = minBOut;
-        boundingBoxMax[indexB] = maxBOut;
+        split(numTestsPerAxis, minA, childA_A, maxA, childB_A, depth-1);
+        split(numTestsPerAxis, minB, childA_B, maxB, childB_B, depth-1);
+
+        if (childA_A > 0 && (childA_A == indexA || childB_A == indexA)) {
+            std::cerr << "Child A points back to parent indexA=" << indexA << std::endl;
+            std::cerr << "childA_A=" << childA_A << " childB_A=" << childB_A << std::endl;
+            return;
+        }
+
+        if (childA_B > 0 && (childA_B == indexB || childB_B == indexB)) {
+            std::cerr << "Child B points back to parent indexA=" << indexB << std::endl;
+            std::cerr << "childA_B=" << childA_B << " childB_B=" << childB_B << std::endl;
+            return;
+        }
+
+
+        this->childA[indexA] = childA_A;
+        this->childB[indexA] = childB_A;
+        this->childA[indexB] = childA_B;
+        this->childB[indexB] = childB_B;
     }
 }

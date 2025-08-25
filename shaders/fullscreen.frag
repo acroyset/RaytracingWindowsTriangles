@@ -25,7 +25,13 @@ layout(std430, binding = 5) buffer ssboBoundingBoxMin {
 layout(std430, binding = 6) buffer ssboBoundingBoxMax {
     vec4 boundingBoxMax[];
 };
-layout(std430, binding = 7) buffer ssboModels {
+layout(std430, binding = 7) buffer ssboChildA {
+    int vChildA[];
+};
+layout(std430, binding = 8) buffer ssboChildB {
+    int vChildB[];
+};
+layout(std430, binding = 9) buffer ssboModels {
     int models[];
 };
 
@@ -47,7 +53,7 @@ uniform vec3 skyColor;
 uniform vec3 sunDir;
 uniform vec3 sunColor;
 
-const int MAX_STACK_SIZE = 65;
+const int MAX_STACK_SIZE = 48;
 int stack[MAX_STACK_SIZE];
 
 float randomValue(inout uint state){
@@ -88,7 +94,7 @@ vec3 randPointSphereN(inout uint state){
 }
 
 bool rayTriangleIntersect(vec3 rayOrig, vec3 rayDir, vec3 v0, vec3 v1, vec3 v2, out float t, out float u, out float v){
-    const float EPSILON = 0.01;
+    const float EPSILON = 0.0000001;
     vec3 edge1 = v1 - v0;
     vec3 edge2 = v2 - v0;
 
@@ -113,7 +119,7 @@ bool rayTriangleIntersect(vec3 rayOrig, vec3 rayDir, vec3 v0, vec3 v1, vec3 v2, 
 
     t = dot(edge2, qvec) * invDet;
 
-    if (t < 0.1)
+    if (t < 0.05)
     return false;
 
     return true;
@@ -164,13 +170,15 @@ void traverseBVH(int nodeOffset, vec3 rayPos, vec3 rayDir, vec3 invRayDir, inout
 
     while (stackPtr > 0) {
         int nodeIndex = stack[--stackPtr];
-        vec4 bboxMin_childA = boundingBoxMin[nodeIndex];
-        vec4 bboxMax_childB = boundingBoxMax[nodeIndex];
+        vec3 bboxMin = boundingBoxMin[nodeIndex].xyz;
+        vec3 bboxMax = boundingBoxMax[nodeIndex].xyz;
+        int childA = vChildA[nodeIndex];
+        int childB = vChildB[nodeIndex];
 
-        if (bboxMin_childA.w <= 0) {
+        if (childA <= 0) {
             // Intersect ray with all triangles in the leaf node
-            int triStart = -int(bboxMin_childA.w);
-            int numTris = -int(bboxMax_childB.w);
+            int triStart = -childA;
+            int numTris = -childB;
             for (int j = triStart; j < triStart+numTris; j++){
                 float t = -1;
                 triTest++;
@@ -191,12 +199,10 @@ void traverseBVH(int nodeOffset, vec3 rayPos, vec3 rayDir, vec3 invRayDir, inout
         else {
             // Push children onto the stack
 
-            int childIndexA = int(bboxMin_childA.w);
-            int childIndexB = int(bboxMax_childB.w);
-            vec4 AbboxMin_childA = boundingBoxMin[childIndexA];
-            vec4 AbboxMax_childB = boundingBoxMax[childIndexA];
-            vec4 BbboxMin_childA = boundingBoxMin[childIndexB];
-            vec4 BbboxMax_childB = boundingBoxMax[childIndexB];
+            vec4 AbboxMin_childA = boundingBoxMin[childA];
+            vec4 AbboxMax_childB = boundingBoxMax[childA];
+            vec4 BbboxMin_childA = boundingBoxMin[childB];
+            vec4 BbboxMax_childB = boundingBoxMax[childB];
 
             aabbTest += 2;
             float disA = intersectAABB(rayPos, invRayDir, AbboxMin_childA.xyz, AbboxMax_childB.xyz);
@@ -205,8 +211,8 @@ void traverseBVH(int nodeOffset, vec3 rayPos, vec3 rayDir, vec3 invRayDir, inout
             bool isNearestA = disA <= disB;
             float disNear = isNearestA ? disA : disB;
             float disFar = isNearestA ? disB : disA;
-            int childIndexNear = isNearestA ? childIndexA : childIndexB;
-            int childIndexFar = isNearestA ? childIndexB : childIndexA;
+            int childIndexNear = isNearestA ? childA : childB;
+            int childIndexFar = isNearestA ? childB : childA;
 
             if (disFar < best_t) stack[stackPtr++] = childIndexFar;
             if (disNear < best_t) stack[stackPtr++] = childIndexNear;
@@ -216,7 +222,13 @@ void traverseBVH(int nodeOffset, vec3 rayPos, vec3 rayDir, vec3 invRayDir, inout
         }
     }
 }
-
+bool isnan( float val )
+{
+    return ( val < 0.0 || 0.0 < val || val == 0.0 ) ? false : true;
+    // important: some nVidias failed to cope with version below.
+    // Probably wrong optimization.
+    /*return ( val <= 0.0 || 0.0 <= val ) ? false : true;*/
+}
 vec3 trace(vec3 pos, vec3 dir, inout uint state){
 
     vec3 invDir = 1/dir;
@@ -255,6 +267,19 @@ vec3 trace(vec3 pos, vec3 dir, inout uint state){
             if (dot(normal, dir) >= 0){
                 normal *= -1;
             }
+
+            //TERRAIN COLORS
+
+            //float v = dot(normal, vec3(0, 1, 0));
+            //v = max(v, 0);
+            //v = 6*v*v*v*v*v-15*v*v*v*v+10*v*v*v;
+            //v = v*v*v;
+
+            //vec4 rock =  vec4(0.8,  0.7,  0.3,  0.0);
+            //vec4 grass = vec4(0.1,  0.3,  0.1,  0.1);
+            //vec4 snow =  vec4(0.9, 0.9, 0.9, 0.4);
+            //vec4 hColor = mix(grass, snow, smoothstep(1000.0, 1200.0, pos.y));
+            //vec4 c = mix(rock, hColor, v);
 
             color *= colors[material_i].xyz;
             if (emission[material_i] > 0.0) {

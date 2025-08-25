@@ -52,6 +52,7 @@ void Scene::addModel(BaseModel& model, glm::vec3 position, glm::vec3 scale, glm:
     int Voffset = int(vertices.size());
     int Toffset = int(triangles.size());
     int BBoffset = int(boundingBoxMin.size());
+    int Coffset = int(colors.size());
 
     models.emplace_back(BBoffset);
 
@@ -61,26 +62,31 @@ void Scene::addModel(BaseModel& model, glm::vec3 position, glm::vec3 scale, glm:
         vertices.emplace_back(vertex, 0);
     }
     for (glm::ivec3 triangle : model.triangles) {
-        triangle += Voffset;
+        triangle += glm::vec4(Voffset, Voffset, Voffset, Coffset);
         triangles.emplace_back(triangle, colors.size());
     }
     for (int i = 0; i < model.boundingBoxMin.size(); i++) {
-        glm::vec4 bboxMin = model.boundingBoxMin[i];
-        glm::vec4 bboxMax = model.boundingBoxMax[i];
-        bboxMin *= glm::vec4(scale,1);
-        bboxMax *= glm::vec4(scale,1);
-        int offsetMin = bboxMin.w <= 0 ? -Toffset : BBoffset;
-        int offsetMax = bboxMin.w <= 0 ? 0 : BBoffset;
-        bboxMin += glm::vec4(position,offsetMin);
-        bboxMax += glm::vec4(position,offsetMax);
-        boundingBoxMin.emplace_back(bboxMin);
-        boundingBoxMax.emplace_back(bboxMax);
+        glm::vec3 bboxMin = model.boundingBoxMin[i];
+        glm::vec3 bboxMax = model.boundingBoxMax[i];
+        int childA = model.childA[i];
+        int childB = model.childB[i];
+
+        bboxMin *= scale;
+        bboxMax *= scale;
+        int offsetA = childA <= 0 ? -Toffset : BBoffset;
+        int offsetB = childA <= 0 ? 0 : BBoffset;
+        bboxMin += position;
+        bboxMax += position;
+        boundingBoxMin.emplace_back(bboxMin, 0);
+        boundingBoxMax.emplace_back(bboxMax, 0);
+        this->childA.push_back(childA+offsetA);
+        this->childB.push_back(childB+offsetB);
     }
 
     std::cout << std::endl;
     std::cout << BBoffset << std::endl;
-    std::cout << boundingBoxMin[BBoffset].x << ' ' << boundingBoxMin[BBoffset].y << ' ' << boundingBoxMin[BBoffset].z << ' ' << boundingBoxMin[BBoffset].w << std::endl;
-    std::cout << boundingBoxMax[BBoffset].x << ' ' << boundingBoxMax[BBoffset].y << ' ' << boundingBoxMax[BBoffset].z << ' ' << boundingBoxMax[BBoffset].w << std::endl;
+    std::cout << boundingBoxMin[BBoffset].x << ' ' << boundingBoxMin[BBoffset].y << ' ' << boundingBoxMin[BBoffset].z << ' ' << childA[BBoffset] << std::endl;
+    std::cout << boundingBoxMax[BBoffset].x << ' ' << boundingBoxMax[BBoffset].y << ' ' << boundingBoxMax[BBoffset].z << ' ' << childB[BBoffset] << std::endl;
 
     colors.emplace_back(color, smoothness);
     this->emission.push_back(emission);
@@ -123,11 +129,23 @@ void Scene::set_ssbo() const {
     glBufferData(GL_SHADER_STORAGE_BUFFER, int(boundingBoxMax.size() * sizeof(glm::vec4)), boundingBoxMax.data(), GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, ssboBoundingBoxMax);
 
+    GLuint ssboChildA;
+    glGenBuffers(1, &ssboChildA);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboChildA);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, int(childA.size() * sizeof(int)), childA.data(), GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, ssboChildA);
+
+    GLuint ssboChildB;
+    glGenBuffers(1, &ssboChildB);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboChildB);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, int(childB.size() * sizeof(int)), childB.data(), GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, ssboChildB);
+
     GLuint ssboModels;
     glGenBuffers(1, &ssboModels);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboModels);
     glBufferData(GL_SHADER_STORAGE_BUFFER, int(models.size() * sizeof(int)), models.data(), GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, ssboModels);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 9, ssboModels);
 }
 
 int Scene::getNumBVHNodes() const {
@@ -223,24 +241,25 @@ void Scene::updateFrame(const GLuint shaderProgram, GLFWwindow& window, float dt
 }
 
 int Scene::numTriBelow(int index) {
-    const glm::vec4 bboxMin = boundingBoxMin[index];
-    const glm::vec4 bboxMax = boundingBoxMax[index];
-    if (int(bboxMax.w) > index and int(bboxMin.w) > index) {
-        return numTriBelow(int(bboxMin.w)) + numTriBelow(int(bboxMax.w));
+    int childA = this->childA[index];
+    int childB = this->childB[index];
+
+    if (childB > index and childA > index) {
+        return numTriBelow(childA) + numTriBelow(childB);
     }
-    return -int(bboxMax.w);
+    return -childB;
 }
 
 void Scene::get_BVH_stats(int index, int& leafNodes, int& depth, int& minDepth, int& maxDepth, int& triPerLeaf, int& minTriPerLeaf, int& maxTriPerLeaf, int current_depth) {
-    glm::vec4 bboxMin = boundingBoxMin[index];
-    glm::vec4 bboxMax = boundingBoxMax[index];
-    if (bboxMin.w > 0.0f) {
-        get_BVH_stats(int(bboxMin.w), leafNodes, depth, minDepth, maxDepth, triPerLeaf, minTriPerLeaf, maxTriPerLeaf, current_depth+1);
-        get_BVH_stats(int(bboxMax.w), leafNodes, depth, minDepth, maxDepth, triPerLeaf, minTriPerLeaf, maxTriPerLeaf, current_depth+1);
+    int childA = this->childA[index];
+    int childB = this->childB[index];
+    if (childA > 0) {
+        get_BVH_stats(childA, leafNodes, depth, minDepth, maxDepth, triPerLeaf, minTriPerLeaf, maxTriPerLeaf, current_depth+1);
+        get_BVH_stats(childA, leafNodes, depth, minDepth, maxDepth, triPerLeaf, minTriPerLeaf, maxTriPerLeaf, current_depth+1);
         return;
     }
-    int triStart = -int(bboxMin.w);
-    int numTris = -int(bboxMax.w);
+    int triStart = -childA;
+    int numTris = -childB;
     leafNodes++;
     depth += current_depth;
     triPerLeaf += numTris;
@@ -262,21 +281,23 @@ void Scene::displayBVH() {
 }
 
 void Scene::displayBVH(int index, std::string prefix) {
-    glm::vec4 bboxMin = boundingBoxMin[index];
-    glm::vec4 bboxMax = boundingBoxMax[index];
+    glm::vec3 bboxMin = boundingBoxMin[index];
+    glm::vec3 bboxMax = boundingBoxMax[index];
+    int childA = this->childA[index];
+    int childB = this->childB[index];
     int numTris = numTriBelow(index);
     //if (numTris < 100000) return;
     std::cout << prefix << "Index: " << index << "  -  Tris: " << numTris << std::endl;
-    std::cout << prefix << "Bounding Box Min: " << bboxMin.x << ", " << bboxMin.y << ", " << bboxMin.z << ", " << bboxMin.w << std::endl;
-    std::cout << prefix << "Bounding Box Max: " << bboxMax.x << ", " << bboxMax.y << ", " << bboxMax.z << ", " << bboxMax.w << std::endl;
-    if (bboxMax.w > index and bboxMin.w > index) {
+    std::cout << prefix << "Bounding Box Min: " << bboxMin.x << ", " << bboxMin.y << ", " << bboxMin.z << ", " << childA << std::endl;
+    std::cout << prefix << "Bounding Box Max: " << bboxMax.x << ", " << bboxMax.y << ", " << bboxMax.z << ", " << childB << std::endl;
+    if (childB > index and childA > index) {
         prefix += "  ";
-        displayBVH(int(bboxMin.w), prefix);
+        displayBVH(childA, prefix);
         std::cout << std::endl;
-        displayBVH(int(bboxMax.w), prefix);
+        displayBVH(childB, prefix);
         return;
     }
-    int triStart = -int(bboxMin.w);
+    int triStart = -childA;
     std::cout << prefix << "Triangles: " << numTris << std::endl;
     return;
     prefix += "   ";
@@ -298,5 +319,99 @@ void Scene::displayBVH(int index, std::string prefix) {
         std::cout << v1.x << " " << v1.y << " " << v1.z << "  -  ";
         std::cout << v2.x << " " << v2.y << " " << v2.z << "  -  ";
         std::cout << v3.x << " " << v3.y << " " << v3.z << std::endl;
+    }
+}
+
+void Scene::verifyBVH() {
+    for (int modelIndex = 0; modelIndex < models.size(); modelIndex++) {
+        verifyBVHNode(models[modelIndex], modelIndex);
+    }
+}
+
+void Scene::verifyBVHNode(int nodeIndex, int modelIndex) {
+    glm::vec3 bboxMin = boundingBoxMin[nodeIndex];
+    glm::vec3 bboxMax = boundingBoxMax[nodeIndex];
+    int childA = this->childA[nodeIndex];
+    int childB = this->childB[nodeIndex];
+
+    // If leaf node
+    if (childA <= 0) {
+        int triStart = -childA;
+        int numTris = -childB;
+
+        for (int i = triStart; i < triStart + numTris; i++) {
+            glm::ivec3 tri = triangles[i];
+            glm::vec3 v1 = vertices[tri.x];
+            glm::vec3 v2 = vertices[tri.y];
+            glm::vec3 v3 = vertices[tri.z];
+
+            // Check if all vertices are within bounding box
+            glm::vec3 triMin = glm::min(glm::min(v1, v2), v3);
+            glm::vec3 triMax = glm::max(glm::max(v1, v2), v3);
+
+            bool outside = triMin.x > bboxMax.x || triMax.x < bboxMin.x ||
+                          triMin.y > bboxMax.y || triMax.y < bboxMin.y ||
+                          triMin.z > bboxMax.z || triMax.z < bboxMin.z;
+            outside = true;
+            if (outside) {
+                std::cout << "Triangle " << i << " outside its bounding box!" << std::endl;
+                std::cout << "  Triangle bounds: (" << triMin.x << "," << triMin.y << "," << triMin.z
+                         << ") to (" << triMax.x << "," << triMax.y << "," << triMax.z << ")" << std::endl;
+                std::cout << "  BBox bounds: (" << bboxMin.x << "," << bboxMin.y << "," << bboxMin.z
+                         << ") to (" << bboxMax.x << "," << bboxMax.y << "," << bboxMax.z << ")" << std::endl;
+            }
+        }
+    } else {
+        verifyBVHNode(childA, modelIndex);
+        verifyBVHNode(childB, modelIndex);
+    }
+}
+
+void Scene::debugBVHStructure() {
+    for (int modelIndex = 0; modelIndex < models.size(); modelIndex++) {
+        std::cout << "\n=== MODEL " << modelIndex << " BVH STRUCTURE ===" << std::endl;
+        debugBVHNode(models[modelIndex], 0, "");
+    }
+}
+
+void Scene::debugBVHNode(int nodeIndex, int depth, std::string prefix) {
+    if (depth > 10) return; // Prevent infinite recursion
+
+    glm::vec3 bboxMin = boundingBoxMin[nodeIndex];
+    glm::vec3 bboxMax = boundingBoxMax[nodeIndex];
+    int childA = this->childA[nodeIndex];
+    int childB = this->childB[nodeIndex];
+
+    std::cout << prefix << "Node " << nodeIndex << " (depth " << depth << ")" << std::endl;
+    std::cout << prefix << "  Min: (" << bboxMin.x << ", " << bboxMin.y << ", " << bboxMin.z << ", " << childA << ")" << std::endl;
+    std::cout << prefix << "  Max: (" << bboxMax.x << ", " << bboxMax.y << ", " << bboxMax.z << ", " << childB << ")" << std::endl;
+
+    // Check if this is a leaf node
+    if (childA <= 0) {
+        int triStart = -childA;
+        int numTris = -childB;
+        std::cout << prefix << "  LEAF: " << numTris << " triangles starting at " << triStart << std::endl;
+
+        // Check for invalid triangle indices
+        for (int i = triStart; i < triStart + numTris; i++) {
+            if (i >= triangles.size()) {
+                std::cout << prefix << "  ERROR: Triangle index " << i << " >= triangles.size() (" << triangles.size() << ")" << std::endl;
+            }
+        }
+    } else {
+        // Internal node - traverse children
+        int leftChild = int(childA);
+        int rightChild = int(childB);
+
+        std::cout << prefix << "  INTERNAL: Left=" << leftChild << ", Right=" << rightChild << std::endl;
+
+        // Check for invalid child indices
+        if (leftChild >= boundingBoxMin.size() || rightChild >= boundingBoxMin.size()) {
+            std::cout << prefix << "  ERROR: Invalid child indices!" << std::endl;
+            return;
+        }
+
+        debugBVHNode(leftChild, depth + 1, prefix + "  ");
+        debugBVHNode(rightChild, depth + 1, prefix + "  ");
     }
 }

@@ -17,6 +17,8 @@ class Scene {
 
     std::vector<glm::vec4> boundingBoxMin;
     std::vector<glm::vec4> boundingBoxMax;
+    std::vector<int> childA;
+    std::vector<int> childB;
 
     std::vector<int> models;
 
@@ -68,6 +70,14 @@ class Scene {
     void displayBVH();
 
     void displayBVH(int index, std::string prefix);
+
+    void verifyBVH();
+
+    void verifyBVHNode(int nodeIndex, int modelIndex);
+
+    void debugBVHStructure();
+
+    void debugBVHNode(int nodeIndex, int depth, std::string prefix);
 };
 
 #endif //SCENE_H

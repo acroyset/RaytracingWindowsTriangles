@@ -163,14 +163,14 @@ int main() {
 
     Timer t;
 
-    //BaseModel dragon("dragon800K.txt");
+    BaseModel dragon("dragon800K.txt");
 
-    scene.addModel("terrain.txt", glm::vec3(0,0, 0), glm::vec3(10000, 500, 10000), glm::vec3(0.5, 0.5, 0.5), 0.0, 0);
-    //scene.addModel(dragon, glm::vec3(0,759.79, 0), glm::vec3(2500, 2500, 2500), glm::vec3(0.8, 0.6, 0.1), 0.6, 0);
-    //scene.addModel(dragon, glm::vec3(-170, -300, 0), glm::vec3(50, 50, 50), glm::vec3(0.1, 0.8, 0.1), 0.6, 0);
-    //scene.addModel(dragon, glm::vec3(-100, -285, 0), glm::vec3(75, 75, 75), glm::vec3(0.1, 0.1, 0.8), 0.6, 0);
-    //scene.addModel(dragon, glm::vec3(0, -265, 0), glm::vec3(100, 100, 100), glm::vec3(0.8, 0.1, 0.1), 0.6, 0);
-    //scene.addModel("sponza.txt", glm::vec3(0, 0, 0), glm::vec3(800, 800, 800), glm::vec3(0.9, 0.9, 0.9), 0, 0);
+
+    scene.addModel(dragon, glm::vec3(0,759.79, 0), glm::vec3(2500, 2500, 2500), glm::vec3(0.8, 0.6, 0.1), 0.6, 0);
+    scene.addModel(dragon, glm::vec3(-750, 550, 0), glm::vec3(2000, 2000, 2000), glm::vec3(0.1, 0.8, 0.1), 0.6, 0);
+    scene.addModel(dragon, glm::vec3(-1400, 450, 0), glm::vec3(1500, 1500, 1500), glm::vec3(0.1, 0.1, 0.8), 0.6, 0);
+    scene.addModel(dragon, glm::vec3(-1900, 350, 0), glm::vec3(1000, 1000, 1000), glm::vec3(0.8, 0.1, 0.1), 0.6, 0);
+    scene.addModel("sponza.txt", glm::vec3(0, 0, 0), glm::vec3(800, 800, 800), glm::vec3(0.9, 0.9, 0.9), 0, 0);
 
     float duration = t.reset();
 
@@ -183,8 +183,8 @@ int main() {
 
     if (true) {
         int leafNodes = 0, depth = 0, triPerLeaf = 0;
-        int minTriPerLeaf = 10000, maxTriPerLeaf = 0;
-        int minDepth = 10000, maxDepth = 0;
+        int minTriPerLeaf = 100000000, maxTriPerLeaf = 0;
+        int minDepth = 100000000, maxDepth = 0;
         scene.get_BVH_stats(0, leafNodes, depth, minDepth, maxDepth, triPerLeaf, minTriPerLeaf, maxTriPerLeaf, 1);
         std::cout << std::endl;
         std::cout << "Time (ms): " << duration*1000.0f << std::endl;
