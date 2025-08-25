@@ -81,26 +81,26 @@ build libglad.a: C_STATIC_LIBRARY_LINKER__glad_Debug CMakeFiles/glad.dir/externa
 
 build cmake_object_order_depends_target_RaytracingWindowsTriangles: phony || cmake_object_order_depends_target_glad cmake_object_order_depends_target_glfw
 
-build CMakeFiles/RaytracingWindowsTriangles.dir/main.cpp.obj: CXX_COMPILER__RaytracingWindowsTriangles_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/main.cpp || cmake_object_order_depends_target_RaytracingWindowsTriangles
-  DEP_FILE = CMakeFiles\RaytracingWindowsTriangles.dir\main.cpp.obj.d
+build CMakeFiles/RaytracingWindowsTriangles.dir/src/main.cpp.obj: CXX_COMPILER__RaytracingWindowsTriangles_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/src/main.cpp || cmake_object_order_depends_target_RaytracingWindowsTriangles
+  DEP_FILE = CMakeFiles\RaytracingWindowsTriangles.dir\src\main.cpp.obj.d
   FLAGS = -g -std=gnu++17 -fdiagnostics-color=always
   INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/glm" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glad/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include"
   OBJECT_DIR = CMakeFiles\RaytracingWindowsTriangles.dir
-  OBJECT_FILE_DIR = CMakeFiles\RaytracingWindowsTriangles.dir
+  OBJECT_FILE_DIR = CMakeFiles\RaytracingWindowsTriangles.dir\src
 
-build CMakeFiles/RaytracingWindowsTriangles.dir/Scene.cpp.obj: CXX_COMPILER__RaytracingWindowsTriangles_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/Scene.cpp || cmake_object_order_depends_target_RaytracingWindowsTriangles
-  DEP_FILE = CMakeFiles\RaytracingWindowsTriangles.dir\Scene.cpp.obj.d
+build CMakeFiles/RaytracingWindowsTriangles.dir/src/Scene.cpp.obj: CXX_COMPILER__RaytracingWindowsTriangles_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/src/Scene.cpp || cmake_object_order_depends_target_RaytracingWindowsTriangles
+  DEP_FILE = CMakeFiles\RaytracingWindowsTriangles.dir\src\Scene.cpp.obj.d
   FLAGS = -g -std=gnu++17 -fdiagnostics-color=always
   INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/glm" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glad/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include"
   OBJECT_DIR = CMakeFiles\RaytracingWindowsTriangles.dir
-  OBJECT_FILE_DIR = CMakeFiles\RaytracingWindowsTriangles.dir
+  OBJECT_FILE_DIR = CMakeFiles\RaytracingWindowsTriangles.dir\src
 
-build CMakeFiles/RaytracingWindowsTriangles.dir/BaseModel.cpp.obj: CXX_COMPILER__RaytracingWindowsTriangles_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/BaseModel.cpp || cmake_object_order_depends_target_RaytracingWindowsTriangles
-  DEP_FILE = CMakeFiles\RaytracingWindowsTriangles.dir\BaseModel.cpp.obj.d
+build CMakeFiles/RaytracingWindowsTriangles.dir/src/BaseModel.cpp.obj: CXX_COMPILER__RaytracingWindowsTriangles_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/src/BaseModel.cpp || cmake_object_order_depends_target_RaytracingWindowsTriangles
+  DEP_FILE = CMakeFiles\RaytracingWindowsTriangles.dir\src\BaseModel.cpp.obj.d
   FLAGS = -g -std=gnu++17 -fdiagnostics-color=always
   INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/glm" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glad/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include"
   OBJECT_DIR = CMakeFiles\RaytracingWindowsTriangles.dir
-  OBJECT_FILE_DIR = CMakeFiles\RaytracingWindowsTriangles.dir
+  OBJECT_FILE_DIR = CMakeFiles\RaytracingWindowsTriangles.dir\src
 
 
 # =============================================================================
@@ -110,7 +110,7 @@ build CMakeFiles/RaytracingWindowsTriangles.dir/BaseModel.cpp.obj: CXX_COMPILER_
 #############################################
 # Link the executable RaytracingWindowsTriangles.exe
 
-build RaytracingWindowsTriangles.exe: CXX_EXECUTABLE_LINKER__RaytracingWindowsTriangles_Debug CMakeFiles/RaytracingWindowsTriangles.dir/main.cpp.obj CMakeFiles/RaytracingWindowsTriangles.dir/Scene.cpp.obj CMakeFiles/RaytracingWindowsTriangles.dir/BaseModel.cpp.obj | external/glfw/src/libglfw3.a libglad.a || external/glfw/src/libglfw3.a libglad.a
+build RaytracingWindowsTriangles.exe: CXX_EXECUTABLE_LINKER__RaytracingWindowsTriangles_Debug CMakeFiles/RaytracingWindowsTriangles.dir/src/main.cpp.obj CMakeFiles/RaytracingWindowsTriangles.dir/src/Scene.cpp.obj CMakeFiles/RaytracingWindowsTriangles.dir/src/BaseModel.cpp.obj | external/glfw/src/libglfw3.a libglad.a || external/glfw/src/libglfw3.a libglad.a
   FLAGS = -g
   LINK_LIBRARIES = external/glfw/src/libglfw3.a  libglad.a  -lopengl32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\RaytracingWindowsTriangles.dir

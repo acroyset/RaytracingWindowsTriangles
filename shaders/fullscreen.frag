@@ -222,8 +222,7 @@ void traverseBVH(int nodeOffset, vec3 rayPos, vec3 rayDir, vec3 invRayDir, inout
         }
     }
 }
-bool isnan( float val )
-{
+bool isnan( float val ){
     return ( val < 0.0 || 0.0 < val || val == 0.0 ) ? false : true;
     // important: some nVidias failed to cope with version below.
     // Probably wrong optimization.

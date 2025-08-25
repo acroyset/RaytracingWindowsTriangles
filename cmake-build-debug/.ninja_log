@@ -1,6 +1,6 @@
 # ninja log v6
 40	857	7747653203137963	external/glfw/src/CMakeFiles/glfw.dir/null_joystick.c.obj	9b1ee15601aedef1
-2	234	7752911464440892	build.ninja	d2236c23c3dbfac9
+2	234	7777991473987482	build.ninja	d2236c23c3dbfac9
 83	980	7747653203568493	external/glfw/src/CMakeFiles/glfw.dir/win32_window.c.obj	826916fef0c447bd
 10	106	7752580346520797	CMakeFiles/glad.dir/external/glad/src/glad.c.obj	8020c65fd6a0b43a
 49	855	7747653203228497	external/glfw/src/CMakeFiles/glfw.dir/win32_module.c.obj	e2f914d74bea1263
@@ -19,21 +19,16 @@
 88	928	7747653203618489	external/glfw/src/CMakeFiles/glfw.dir/wgl_context.c.obj	1b4bc258dc86ed8d
 10	886	7747653202844518	external/glfw/src/CMakeFiles/glfw.dir/init.c.obj	69cbf533b7a5d82
 8	891	7747653202814522	external/glfw/src/CMakeFiles/glfw.dir/context.c.obj	58e5ba159f31b064
-662	804	7752113205710832	RaytracingWindows.exe	93010f0fa677864a
 71	926	7747653203448495	external/glfw/src/CMakeFiles/glfw.dir/win32_joystick.c.obj	7d3234ce5645e2c9
 15	890	7747653202884965	external/glfw/src/CMakeFiles/glfw.dir/monitor.c.obj	d97cfc43455b00fb
 22	919	7747653202955649	external/glfw/src/CMakeFiles/glfw.dir/window.c.obj	89812df8b5a22f8
 980	1027	7747653212539784	external/glfw/src/libglfw3.a	c78c3f3e1fb4ad01
 106	159	7752580347482533	libglad.a	2d646f9363acdb73
-16	490	7777951924285577	CMakeFiles/RaytracingWindowsTriangles.dir/main.cpp.obj	d05dc1fb34433e0f
-20	618	7777930439724895	CMakeFiles/RaytracingWindowsTriangles.dir/Scene.cpp.obj	d11e148c8b0e7279
-490	623	7777951929024230	RaytracingWindowsTriangles.exe	9a8b0986cc5b8106
-18	698	7777873968106222	CMakeFiles/RaytracingWindowsTriangles.dir/BaseModel.cpp.obj	a77948a837dee66e
-16	493	7777952250080799	CMakeFiles/RaytracingWindowsTriangles.dir/main.cpp.obj	d05dc1fb34433e0f
-493	628	7777952254852237	RaytracingWindowsTriangles.exe	9a8b0986cc5b8106
-17	496	7777953159911992	CMakeFiles/RaytracingWindowsTriangles.dir/main.cpp.obj	d05dc1fb34433e0f
-497	630	7777953164704462	RaytracingWindowsTriangles.exe	9a8b0986cc5b8106
-16	504	7777953904279941	CMakeFiles/RaytracingWindowsTriangles.dir/main.cpp.obj	d05dc1fb34433e0f
-505	639	7777953909156790	RaytracingWindowsTriangles.exe	9a8b0986cc5b8106
 14	499	7777954286267655	CMakeFiles/RaytracingWindowsTriangles.dir/main.cpp.obj	d05dc1fb34433e0f
+20	618	7777930439724895	CMakeFiles/RaytracingWindowsTriangles.dir/Scene.cpp.obj	d11e148c8b0e7279
 499	630	7777954291112630	RaytracingWindowsTriangles.exe	9a8b0986cc5b8106
+18	698	7777873968106222	CMakeFiles/RaytracingWindowsTriangles.dir/BaseModel.cpp.obj	a77948a837dee66e
+3	490	7777991650777580	CMakeFiles/RaytracingWindowsTriangles.dir/src/main.cpp.obj	fe997debdd63ed76
+6	571	7777991650808595	CMakeFiles/RaytracingWindowsTriangles.dir/src/Scene.cpp.obj	fc5e1b3af205bd02
+8	671	7777991650828606	CMakeFiles/RaytracingWindowsTriangles.dir/src/BaseModel.cpp.obj	b8e23928c43f7308
+671	871	7777991657465453	RaytracingWindowsTriangles.exe	a48a8134ce1e4605
