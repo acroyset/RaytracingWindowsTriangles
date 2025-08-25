@@ -34,22 +34,13 @@
   <component name="ChangeListManager">
     <list default="true" id="cd06d447-a7c8-42f4-a8e5-4bf88ac1888b" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BaseModel.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/BaseModel.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BaseModel.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/BaseModel.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bunny.txt" beforeDir="false" afterPath="$PROJECT_DIR$/models/bunny.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cube.txt" beforeDir="false" afterPath="$PROJECT_DIR$/models/cube.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dragon800K.txt" beforeDir="false" afterPath="$PROJECT_DIR$/models/dragon800K.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dragon80K.txt" beforeDir="false" afterPath="$PROJECT_DIR$/models/dragon80K.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dragon8K.txt" beforeDir="false" afterPath="$PROJECT_DIR$/models/dragon8K.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/knight.txt" beforeDir="false" afterPath="$PROJECT_DIR$/models/knight.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug/.ninja_deps" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/.ninja_deps" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug/.ninja_log" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/.ninja_log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug/RaytracingWindowsTriangles.exe" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/RaytracingWindowsTriangles.exe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug/Testing/Temporary/LastTest.log" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/Testing/Temporary/LastTest.log" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/shaders/fullscreen.frag" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/fullscreen.frag" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sphere.txt" beforeDir="false" afterPath="$PROJECT_DIR$/models/sphere.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sponza.txt" beforeDir="false" afterPath="$PROJECT_DIR$/models/sponza.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/suzanne.txt" beforeDir="false" afterPath="$PROJECT_DIR$/models/suzanne.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -270,11 +261,6 @@
     </key>
   </component>
   <component name="RunManager" selected="CMake Application.RaytracingWindowsTriangles">
-    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="RaytracingWindowsTriangles" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="RaytracingWindowsTriangles" TARGET_NAME="RaytracingWindowsTriangles" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="RaytracingWindowsTriangles" RUN_TARGET_NAME="RaytracingWindowsTriangles">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -332,6 +318,7 @@
       <workItem from="1756083240034" duration="418000" />
       <workItem from="1756083701088" duration="4517000" />
       <workItem from="1756088640160" duration="4981000" />
+      <workItem from="1756160635649" duration="3061000" />
     </task>
     <servers />
   </component>

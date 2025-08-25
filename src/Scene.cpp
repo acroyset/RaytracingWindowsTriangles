@@ -158,7 +158,7 @@ int Scene::getNumTris() const {
 
 void Scene::setUniforms(const GLuint shaderProgram) const {
     const auto end = Clock::now();
-    const glm::uint duration = static_cast<glm::uint>(std::chrono::duration_cast<std::chrono::microseconds>(end - start).count());
+    const glm::uint duration = static_cast<glm::uint>(std::chrono::duration_cast<std::chrono::microseconds>(end - start).count()) % (width*height);
 
     glUniform1i(glGetUniformLocation(shaderProgram, "numModels"), int(models.size()));
     glUniform3f(glGetUniformLocation(shaderProgram, "cameraPos"), cameraPos.x, cameraPos.y, cameraPos.z);

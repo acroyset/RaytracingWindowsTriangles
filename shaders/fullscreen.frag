@@ -56,6 +56,7 @@ uniform vec3 sunColor;
 const int MAX_STACK_SIZE = 48;
 int stack[MAX_STACK_SIZE];
 
+//random functions
 float randomValue(inout uint state){
     state = state * 747796405u + 2891336453u;
     uint result = ((state >> ((state >> 28) + 4u)) ^ state) * 277803737u;
@@ -93,6 +94,7 @@ vec3 randPointSphereN(inout uint state){
     return vec3(x, y, z);
 }
 
+//intersection functions
 bool rayTriangleIntersect(vec3 rayOrig, vec3 rayDir, vec3 v0, vec3 v1, vec3 v2, out float t, out float u, out float v){
     const float EPSILON = 0.0000001;
     vec3 edge1 = v1 - v0;
@@ -163,7 +165,6 @@ float intersectAABB(vec3 rayOrigin, vec3 rayInvDir, vec3 boxMin, vec3 boxMax) {
     bool didHit = tMax >= max(tMin, 0.0);
     return didHit? tMin : 1000000000;
 }
-
 void traverseBVH(int nodeOffset, vec3 rayPos, vec3 rayDir, vec3 invRayDir, inout float best_t, inout float best_u, inout float best_v, inout int triTest, inout int aabbTest, inout int best_tri_i) {
     int stackPtr = 0;
     stack[stackPtr++] = nodeOffset;  // start from root node  index=nodeOffset
@@ -222,107 +223,154 @@ void traverseBVH(int nodeOffset, vec3 rayPos, vec3 rayDir, vec3 invRayDir, inout
         }
     }
 }
-bool isnan( float val ){
-    return ( val < 0.0 || 0.0 < val || val == 0.0 ) ? false : true;
-    // important: some nVidias failed to cope with version below.
-    // Probably wrong optimization.
-    /*return ( val <= 0.0 || 0.0 <= val ) ? false : true;*/
+float findBestTri(vec3 pos, vec3 dir, vec3 invDir, out int best_tri_i, out int triTest, out int aabbTest, out float best_u, out float best_v, out float best_w){
+    best_tri_i = -1;
+    float best_t = 1000000000;
+    for (int i = 0; i < numModels; i++){
+        traverseBVH(models[i], pos, dir, invDir, best_t, best_u, best_v, triTest, aabbTest, best_tri_i);
+    }
+    best_w = 1-best_u-best_v;
+    return best_t;
 }
-vec3 trace(vec3 pos, vec3 dir, inout uint state){
 
+//color functions
+vec3 debugView(int triTest, int aabbTest){
+    int triThreshold = 50;
+    int aabbThreshold = 500;
+    vec3 color = vec3(float(triTest)/triThreshold, 0, float(aabbTest)/aabbThreshold);
+    if (triTest > triThreshold || aabbTest > aabbThreshold){
+        color = vec3(1);
+    }
+    return color;
+}
+vec3 getEnviormentLight(vec3 dir){
+    float sunStrength = pow(max(dot(dir, sunDir),0), 1024);
+    return skyColor + sunColor*sunStrength;
+}
+bool updateColor(inout vec3 color, int material_i){
+    //TERRAIN COLORS
+    //float v = dot(normal, vec3(0, 1, 0));
+    //v = max(v, 0);
+    //v = 6*v*v*v*v*v-15*v*v*v*v+10*v*v*v;
+    //v = v*v*v;
+
+    //vec4 rock =  vec4(0.8,  0.7,  0.3,  0.0);
+    //vec4 grass = vec4(0.1,  0.3,  0.1,  0.1);
+    //vec4 snow =  vec4(0.9, 0.9, 0.9, 0.4);
+    //vec4 hColor = mix(grass, snow, smoothstep(1000.0, 1200.0, pos.y));
+    //vec4 c = mix(rock, hColor, v);
+
+
+    color *= colors[material_i].xyz;
+    if (emission[material_i] > 0.0) {
+        color *= emission[material_i];
+        return true;
+    }
+    return false;
+}
+
+//calculate functions
+vec3 calculateNormal(ivec4 tri){
+    vec3 v1 = vertices[tri.x].xyz;
+    vec3 v2 = vertices[tri.y].xyz;
+    vec3 v3 = vertices[tri.z].xyz;
+    return normalize(cross(v2 - v1, v3 - v1));
+}
+vec3 calculateNewDirection(vec3 normal, vec3 dir, float smoothness, inout uint state){
+    vec3 random = randPointSphere(state)+normal;
+    random = normalize(random);
+    vec3 reflect = dir-normal*2*dot(dir, normal);
+    return normalize(mix(random, reflect, smoothness));
+}
+vec3 calculateInitialDir(int aaCycle, vec2 screenCoord){
+    float xi = float(aaCycle % aa);
+    float yi = float(aaCycle) / float(aa);
+
+    float ox = (xi + 0.5) / float(aa) - 0.5f; // Center of each subpixel grid cell
+    float oy = (yi + 0.5) / float(aa) - 0.5f;
+
+    ox /= resolution.x/2;
+    oy /= resolution.y/2;
+
+    vec2 coord = screenCoord + vec2(ox, oy);
+
+    vec3 dir = camForward + camRight * coord.x + camUp * coord.y;
+    dir = normalize(dir);
+
+    return dir;
+}
+
+//hit updaters
+bool hitTriangleUpdate(int triIndex, float t, inout vec3 pos, inout vec3 dir, inout vec3 invDir, inout vec3 color, inout uint state){
+    pos += dir * t;
+    ivec4 tri = triangles[triIndex];
+    int material_i = tri.w;
+
+    //calculate normal
+    vec3 normal = calculateNormal(tri);
+
+    //update color
+    if (updateColor(color, material_i)) return true;
+
+    //update direction
+    dir = calculateNewDirection(normal, dir, colors[material_i].w, state);
+    invDir = 1/dir;
+
+    return false;
+}
+bool gitFloorUpdate(inout vec3 pos, inout vec3 dir, inout vec3 invDir, inout vec3 color, inout uint state){
+    float t = ((-1000)-pos.y)/dir.y;
+    if (t > 0.01 && t < 10000000){
+        pos += dir*t;
+
+        vec3 normal = vec3(0, 1, 0);
+
+        color *= vec3(0.9,0.9,0.9);
+
+        dir = calculateNewDirection(normal, dir, 0, state);
+        invDir = 1/dir;
+    } else {
+        color *= getEnviormentLight(dir);
+        return true;
+    }
+    return false;
+}
+bool russianRoulet(inout vec3 color, inout uint state){
+    float p = min(max(color.r, max(color.g, color.b))*5, 1);
+    if (randomValue(state) >= p) {
+        return true;
+    }
+    color *= 1.0f / p;
+    return false;
+}
+
+vec3 trace(vec3 pos, vec3 dir, inout uint state){
     vec3 invDir = 1/dir;
     vec3 color = vec3(1);
 
     for (int i = 0; i < bounceLim; i++) {
 
-        float best_t = 1000000000;
-        int triTest, aabbTest;
-        int best_tri_i = -1;
+        //find closest triangle
+        int triTest, aabbTest, best_tri_i;
         float best_u, best_v, best_w;
-        for (int i = 0; i < numModels; i++){
-            traverseBVH(models[i], pos, dir, invDir, best_t, best_u, best_v, triTest, aabbTest, best_tri_i);
-        }
+        float t = findBestTri(pos, dir, invDir, best_tri_i, triTest, aabbTest, best_u, best_v, best_w);
 
+        //debug view
         if (false){
-            int triThreshold = 50;
-            int aabbThreshold = 500;
-            color = vec3(float(triTest)/triThreshold, 0, float(aabbTest)/aabbThreshold);
-            if (triTest > triThreshold || aabbTest > aabbThreshold){
-                color = vec3(1);
-                return color;
-            }
-            return color;
+            return debugView(triTest, aabbTest);
         }
-        best_w = 1-best_u-best_v;
 
-        if (best_tri_i != -1) {
-            pos += dir * best_t;
-            ivec4 tri = triangles[best_tri_i];
-            int material_i = tri.w;
-            vec3 v1 = vertices[tri.x].xyz;
-            vec3 v2 = vertices[tri.y].xyz;
-            vec3 v3 = vertices[tri.z].xyz;
-            vec3 normal = normalize(cross(v2 - v1, v3 - v1));
-            if (dot(normal, dir) >= 0){
-                normal *= -1;
-            }
-
-            //TERRAIN COLORS
-
-            //float v = dot(normal, vec3(0, 1, 0));
-            //v = max(v, 0);
-            //v = 6*v*v*v*v*v-15*v*v*v*v+10*v*v*v;
-            //v = v*v*v;
-
-            //vec4 rock =  vec4(0.8,  0.7,  0.3,  0.0);
-            //vec4 grass = vec4(0.1,  0.3,  0.1,  0.1);
-            //vec4 snow =  vec4(0.9, 0.9, 0.9, 0.4);
-            //vec4 hColor = mix(grass, snow, smoothstep(1000.0, 1200.0, pos.y));
-            //vec4 c = mix(rock, hColor, v);
-
-            color *= colors[material_i].xyz;
-            if (emission[material_i] > 0.0) {
-                color *= emission[material_i];
-                break;
-            }
-
-            vec3 random = randPointSphere(state)+normal;
-            random = normalize(random);
-            vec3 reflect = dir-normal*2*dot(dir, normal);
-            dir = normalize(mix(random, reflect, colors[material_i].w));
-            invDir = 1/dir;
-        }
-        else if (dir.y < 0){
-            float t = ((-1000)-pos.y)/dir.y;
-            if (t > 0.01 && t < 10000000){
-                pos += dir*t;
-
-                vec3 normal = vec3(0, 1, 0);
-
-                color *= vec3(0.9,0.9,0.9);
-
-                vec3 random = normalize(randPointSphere(state)+normal);
-                vec3 reflect = dir-normal*2*dot(dir, normal);
-                dir = normalize(mix(random, reflect, 0));
-                invDir = 1/dir;
-            } else {
-                float sunStrength = pow(max(dot(dir, sunDir),0), 1024);
-                color *= skyColor + sunColor*sunStrength;
-                break;
-            }
-        }
+        if (best_tri_i != -1) {if (hitTriangleUpdate(best_tri_i, t, pos, dir, invDir, color, state)) break;} //hit tri
+        else if (dir.y < 0) {if (gitFloorUpdate(pos, dir, invDir, color, state)) break;} //hit floor
         else {
-            float sunStrength = pow(max(dot(dir, sunDir),0), 1024);
-            color *= skyColor + sunColor*sunStrength;
+            color *= getEnviormentLight(dir);
             break;
-        }
+        } //hit sky
 
-        float p = min(max(color.r, max(color.g, color.b))*5, 1);
-        if (randomValue(state) >= p) {
-            return vec3(0);
-        }
-        color *= 1.0f / p;
+        //russian roulet (low light rays get deleted)
+        if (russianRoulet(color, state)) return vec3(0);
 
+        //max bounce lim clears color
         if (i == bounceLim-1){
             return vec3(0);
         }
@@ -332,8 +380,9 @@ vec3 trace(vec3 pos, vec3 dir, inout uint state){
 }
 
 void main() {
+    //setup
     float aspectRatio = 16./9.;
-    vec2 sceenCoord = vec2((2*fragCoord.x-1) * aspectRatio, 2*fragCoord.y-1);
+    vec2 screenCoord = vec2((2*fragCoord.x-1) * aspectRatio, 2*fragCoord.y-1); // centered at 0,0
 
     uvec2 pixel = uvec2(fragCoord.x * resolution.x, fragCoord.y * resolution.y * aspectRatio);
     int pixels = int(resolution.x*resolution.y);
@@ -341,37 +390,26 @@ void main() {
 
     vec3 totalColor = vec3(0,0,0);
 
+    //sample loop
     int aaCycle = frameCount%(aa*aa);
     for (int s = 0; s < samples; s++) {
-        float xi = float(aaCycle % aa);
-        float yi = float(aaCycle) / float(aa);
-
-        float ox = (xi + 0.5) / float(aa) - 0.5f; // Center of each subpixel grid cell
-        float oy = (yi + 0.5) / float(aa) - 0.5f;
-
-        ox /= resolution.x/2;
-        oy /= resolution.y/2;
-
-        vec2 coord = sceenCoord + vec2(ox, oy);
-
         vec3 pos = cameraPos;
-        vec3 dir = camForward + camRight * coord.x + camUp * coord.y;
-        dir = normalize(dir);
+        vec3 dir = calculateInitialDir(aaCycle, screenCoord);
 
         totalColor += trace(pos, dir, state);
         aaCycle++;
         if (aaCycle >= aa*aa) aaCycle = 0;
     }
-
+    //gamma correction
     totalColor /= samples;
     totalColor = sqrt(totalColor);
 
-    // Read previous accumulated color
+    //read previous accumulated color
     vec3 prev = texture(uPrevFrame, fragCoord).rgb;
 
-    // Exponential moving average accumulation
-    float frame = float(frameCount);
-    vec3 accum = mix(prev, totalColor, 1.0 / (frame + 1.0));
+    //exponential moving average accumulation
+    vec3 accum = mix(prev, totalColor, 1.0 / (float(frameCount) + 1.0));
 
+    //retrn result
     FragColor = vec4(accum, 1.0);
 }
