@@ -42,13 +42,14 @@ Scene::Scene(const int width, const int height, const int samples, const int aa,
     lock = false;
 }
 
-void Scene::addModel(const std::string& filename, const glm::vec3 position, const glm::vec3 scale, const glm::vec3 color, const float smoothness, const float emission) {
+void Scene::addModel(const std::string& filename, const glm::vec3 position, const glm::vec3 scale, const glm::vec3 color, const float smoothness, const glm::vec3 specularColor, const float specularProb, const float emission) {
     BaseModel model(filename);
 
-    addModel(model, position, scale, color, smoothness, emission);
+    addModel(model, position, scale, color, smoothness, specularColor, specularProb, emission);
 }
 
-void Scene::addModel(BaseModel& model, glm::vec3 position, glm::vec3 scale, glm::vec3 color, float smoothness, float emission) {
+void Scene::addModel(BaseModel& model, glm::vec3 position, glm::vec3 scale, glm::vec3 color, float smoothness, glm::vec3 specularColor, float specularProb, float emission) {
+    if (specularColor == glm::vec3(-1)) specularColor = color;
     int Voffset = int(vertices.size());
     int Toffset = int(triangles.size());
     int BBoffset = int(boundingBoxMin.size());
@@ -89,6 +90,7 @@ void Scene::addModel(BaseModel& model, glm::vec3 position, glm::vec3 scale, glm:
     std::cout << boundingBoxMax[BBoffset].x << ' ' << boundingBoxMax[BBoffset].y << ' ' << boundingBoxMax[BBoffset].z << ' ' << childB[BBoffset] << std::endl;
 
     colors.emplace_back(color, smoothness);
+    specularColors.emplace_back(specularColor, specularProb);
     this->emission.push_back(emission);
 }
 
@@ -110,6 +112,12 @@ void Scene::set_ssbo() const {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboColors);
     glBufferData(GL_SHADER_STORAGE_BUFFER, int(colors.size() * sizeof(glm::vec4)), colors.data(), GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssboColors);
+
+    GLuint ssboSpecularColors;
+    glGenBuffers(1, &ssboSpecularColors);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboSpecularColors);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, int(specularColors.size() * sizeof(glm::vec4)), specularColors.data(), GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssboSpecularColors);
 
     GLuint ssboEmission;
     glGenBuffers(1, &ssboEmission);

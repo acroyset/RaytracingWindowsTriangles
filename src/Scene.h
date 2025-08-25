@@ -13,6 +13,7 @@ class Scene {
     std::vector<glm::vec4> vertices;
     std::vector<glm::ivec4> triangles;
     std::vector<glm::vec4> colors;
+    std::vector<glm::vec4> specularColors;
     std::vector<float> emission;
 
     std::vector<glm::vec4> boundingBoxMin;
@@ -47,9 +48,9 @@ class Scene {
 
     static void parse(const std::string& nfilename, glm::vec3 position, glm::vec3 scale, std::vector<glm::vec3>& vertices, std::vector<glm::ivec3>& triangles);
 
-    void addModel(const std::string &filename, glm::vec3 position, glm::vec3 scale, glm::vec3 color, float smoothness, float emission);
+    void addModel(const std::string &filename, glm::vec3 position, glm::vec3 scale, glm::vec3 color, float smoothness, glm::vec3 specularColor = glm::vec3(-1), float specularProb = 1, float emission = 0);
 
-    void addModel(BaseModel& model, glm::vec3 position, glm::vec3 scale, glm::vec3 color, float smoothness, float emission);
+    void addModel(BaseModel& model, glm::vec3 position, glm::vec3 scale, glm::vec3 color, float smoothness, glm::vec3 specularColor = glm::vec3(-1), float specularProb = 1, float emission = 0);
 
     void set_ssbo() const;
 

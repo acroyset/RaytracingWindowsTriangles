@@ -13,8 +13,8 @@ layout(std430, binding = 1) buffer ssboTriangles {
 layout(std430, binding = 2) buffer ssboColors {
     vec4 colors[];
 };
-layout(std430, binding = 3) buffer ssboNormals {
-    vec4 normals[];
+layout(std430, binding = 3) buffer ssboSpecularColors {
+    vec4 specularColors[];
 };
 layout(std430, binding = 4) buffer ssboEmission {
     float emission[];
@@ -247,7 +247,7 @@ vec3 getEnviormentLight(vec3 dir){
     float sunStrength = pow(max(dot(dir, sunDir),0), 1024);
     return skyColor + sunColor*sunStrength;
 }
-bool updateColor(inout vec3 color, int material_i){
+bool updateColor(inout vec3 color, int material_i, bool isSpecular){
     //TERRAIN COLORS
     //float v = dot(normal, vec3(0, 1, 0));
     //v = max(v, 0);
@@ -260,8 +260,9 @@ bool updateColor(inout vec3 color, int material_i){
     //vec4 hColor = mix(grass, snow, smoothstep(1000.0, 1200.0, pos.y));
     //vec4 c = mix(rock, hColor, v);
 
+    vec3 selectedColor = isSpecular ? specularColors[material_i].xyz : colors[material_i].xyz;
 
-    color *= colors[material_i].xyz;
+    color *= selectedColor;
     if (emission[material_i] > 0.0) {
         color *= emission[material_i];
         return true;
@@ -309,11 +310,14 @@ bool hitTriangleUpdate(int triIndex, float t, inout vec3 pos, inout vec3 dir, in
     //calculate normal
     vec3 normal = calculateNormal(tri);
 
+    bool isSpecular = randomValue(state) <= specularColors[material_i].w;
+
     //update color
-    if (updateColor(color, material_i)) return true;
+    if (updateColor(color, material_i, isSpecular)) return true;
 
     //update direction
-    dir = calculateNewDirection(normal, dir, colors[material_i].w, state);
+    float smoothness = isSpecular ? colors[material_i].w : 0;
+    dir = calculateNewDirection(normal, dir, smoothness, state);
     invDir = 1/dir;
 
     return false;
