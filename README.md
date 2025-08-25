@@ -1,11 +1,13 @@
 Raytracing
 
-- BVH
-- 3.5M Triangles 30Fps
+- full BVH
+- 26M Triangles 90Fps
 - openGL
 
 <img width="2560" height="1440" alt="Base Profile Screenshot 2025 07 25 - 18 48 17 01" src="https://github.com/user-attachments/assets/27dd7cc8-0da3-4275-bf8b-428c7ca3c0c4" />
 <img width="2560" height="1440" alt="Base Profile Screenshot 2025 07 25 - 19 13 57 95" src="https://github.com/user-attachments/assets/3ac3f259-c193-438b-8f7b-7a77fbb2d656" />
+<img width="2560" height="1440" alt="Base Profile Screenshot 2025 08 24 - 20 13 51 90" src="https://github.com/user-attachments/assets/ddf42e84-4ad7-427a-aaca-57db73c25626" />
+<img width="2560" height="1440" alt="Base Profile Screenshot 2025 07 26 - 20 42 38 87" src="https://github.com/user-attachments/assets/44e7d337-e166-4283-b095-181cd4c8e0ea" />
 <img width="2560" height="1440" alt="Base Profile Screenshot 2025 07 25 - 22 14 30 44" src="https://github.com/user-attachments/assets/ffa16e7c-0d21-4110-9a50-fdfedd463595" />
 <img width="1920" height="1080" alt="frame001" src="https://github.com/user-attachments/assets/5c3f2789-18c3-4fec-98d4-9bdce37b0137" />
 <img width="2560" height="1440" alt="Base Profile Screenshot 2025 07 13 - 19 20 45 90" src="https://github.com/user-attachments/assets/54992cd8-41ff-4ec1-9600-619ebd7876da" />
