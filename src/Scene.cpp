@@ -42,13 +42,13 @@ Scene::Scene(const int width, const int height, const int samples, const int aa,
     lock = false;
 }
 
-void Scene::addModel(const std::string& filename, const glm::vec3 position, const glm::vec3 scale, const glm::vec3 color, const float smoothness, const glm::vec3 specularColor, const float specularProb, const float emission) {
+void Scene::addModel(const std::string& filename, const glm::vec3 position, const glm::vec3 scale, const glm::vec3 color, const float smoothness, const glm::vec3 specularColor, const float specularProb, const float transparency, const float ior, const float emission) {
     BaseModel model(filename);
 
-    addModel(model, position, scale, color, smoothness, specularColor, specularProb, emission);
+    addModel(model, position, scale, color, smoothness, specularColor, specularProb, transparency, ior, emission);
 }
 
-void Scene::addModel(BaseModel& model, glm::vec3 position, glm::vec3 scale, glm::vec3 color, float smoothness, glm::vec3 specularColor, float specularProb, float emission) {
+void Scene::addModel(BaseModel& model, glm::vec3 position, glm::vec3 scale, glm::vec3 color, float smoothness, glm::vec3 specularColor, const float specularProb, const float transparency, const float ior, float emission) {
     if (specularColor == glm::vec3(-1)) specularColor = color;
     int Voffset = int(vertices.size());
     int Toffset = int(triangles.size());
@@ -91,7 +91,7 @@ void Scene::addModel(BaseModel& model, glm::vec3 position, glm::vec3 scale, glm:
 
     colors.emplace_back(color, smoothness);
     specularColors.emplace_back(specularColor, specularProb);
-    this->emission.push_back(emission);
+    glassLightSettings.emplace_back(transparency, ior, emission, 0);
 }
 
 void Scene::set_ssbo() const {
@@ -119,11 +119,11 @@ void Scene::set_ssbo() const {
     glBufferData(GL_SHADER_STORAGE_BUFFER, int(specularColors.size() * sizeof(glm::vec4)), specularColors.data(), GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssboSpecularColors);
 
-    GLuint ssboEmission;
-    glGenBuffers(1, &ssboEmission);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboEmission);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, int(emission.size() * sizeof(float)), emission.data(), GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, ssboEmission);
+    GLuint ssboGlassLightSettings;
+    glGenBuffers(1, &ssboGlassLightSettings);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboGlassLightSettings);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, int(glassLightSettings.size() * sizeof(glm::vec4)), glassLightSettings.data(), GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, ssboGlassLightSettings);
 
     GLuint ssboBoundingBoxMin;
     glGenBuffers(1, &ssboBoundingBoxMin);

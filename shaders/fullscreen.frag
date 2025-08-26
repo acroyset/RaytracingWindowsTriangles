@@ -16,8 +16,8 @@ layout(std430, binding = 2) buffer ssboColors {
 layout(std430, binding = 3) buffer ssboSpecularColors {
     vec4 specularColors[];
 };
-layout(std430, binding = 4) buffer ssboEmission {
-    float emission[];
+layout(std430, binding = 4) buffer ssboGlassLightSettings {
+    vec4 glassLightSettings[];
 };
 layout(std430, binding = 5) buffer ssboBoundingBoxMin {
     vec4 boundingBoxMin[];
@@ -55,6 +55,8 @@ uniform vec3 sunColor;
 
 const int MAX_STACK_SIZE = 48;
 int stack[MAX_STACK_SIZE];
+float iorStack[16];
+int iorSize = 1;
 
 //random functions
 float randomValue(inout uint state){
@@ -92,6 +94,13 @@ vec3 randPointSphereN(inout uint state){
     float y = randomValueNormalDistribution(state);
     float z = randomValueNormalDistribution(state);
     return vec3(x, y, z);
+}
+
+float schlick(float cos_theta, float n1, float n2) {
+    if (abs(n1 - n2) < 0.001) return 0.0f;
+
+    float r0 = pow((n1 - n2) / (n1 + n2), 2.0f);
+    return r0 + (1.0f - r0) * pow(1.0f - cos_theta, 5.0f);
 }
 
 //intersection functions
@@ -263,8 +272,8 @@ bool updateColor(inout vec3 color, int material_i, bool isSpecular){
     vec3 selectedColor = isSpecular ? specularColors[material_i].xyz : colors[material_i].xyz;
 
     color *= selectedColor;
-    if (emission[material_i] > 0.0) {
-        color *= emission[material_i];
+    if (glassLightSettings[material_i].z > 0.0) {
+        color *= glassLightSettings[material_i].z;
         return true;
     }
     return false;
@@ -277,12 +286,82 @@ vec3 calculateNormal(ivec4 tri){
     vec3 v3 = vertices[tri.z].xyz;
     return normalize(cross(v2 - v1, v3 - v1));
 }
-vec3 calculateNewDirection(vec3 normal, vec3 dir, float smoothness, inout uint state){
-    vec3 random = randPointSphere(state)+normal;
-    random = normalize(random);
-    vec3 reflect = dir-normal*2*dot(dir, normal);
+
+vec3 calculateRandDir(vec3 normal, inout uint state){
+    return normalize(randPointSphere(state)+normal);
+}
+vec3 calculateReflectDir(vec3 normal, vec3 dir){
+    return dir-normal*2*dot(dir, normal);
+}
+
+vec3 calculateOpaqueDir(vec3 normal, vec3 dir, float smoothness, inout uint state) {
+    vec3 random = calculateRandDir(normal, state);
+    vec3 reflect = calculateReflectDir(normal, dir);
     return normalize(mix(random, reflect, smoothness));
 }
+vec3 calculateRefractionDir(vec3 normal, vec3 dir, float smoothness, float ior, float specularProb, inout uint state, inout vec3 color){
+    bool entering;
+    float m1;
+    float m2;
+    vec3 n = normal;
+
+    if (iorSize >= 2 && dot(dir, normal) > 0.0f) {
+        entering = false;
+        m1 = ior;
+        m2 = iorStack[iorSize-2];
+        n = -normal;
+    } else {
+        entering = true;
+        m1 = iorStack[iorSize-1];
+        m2 = ior;
+    }
+
+    float eta = m1 / m2;
+    float cos_theta_i = -dot(dir, n);
+
+    // Check for Fresnel reflection first
+    float reflect_prob = schlick(cos_theta_i, m1, m2);
+    if (randomValue(state) < reflect_prob) {
+        return calculateOpaqueDir(normal, dir, smoothness, state);
+    }
+
+    // Calculate discriminant for TIR check
+    float discriminant = 1.0f - eta * eta * (1.0f - cos_theta_i * cos_theta_i);
+
+    // Check for Total Internal Reflection
+    if (discriminant < 0.0f) {
+        // TIR - reflect instead
+        return calculateOpaqueDir(normal, dir, smoothness, state);
+    }
+
+    //color = vec3(0, 1, 0); // Green for successful refraction
+
+    // Calculate refracted direction using Snell's law
+    float cos_theta_t = sqrt(discriminant);
+    vec3 refracted = eta * dir + (eta * cos_theta_i - cos_theta_t) * n;
+
+    // Update IOR stack
+    if (entering) {
+        iorStack[iorSize++] = ior;
+    } else {
+        iorSize--;
+    }
+
+    // Mix with random direction based on specularProb
+    vec3 random = calculateRandDir(normal, state);
+    refracted = mix(random, refracted, specularProb);
+
+    return normalize(refracted);
+}
+
+vec3 calculateNewDirection(vec3 normal, vec3 dir, float smoothness, float specularProb, float transparency, float ior, inout uint state, inout vec3 color){
+    if (randomValue(state) <= transparency){
+        return calculateRefractionDir(normal, dir, smoothness, ior, specularProb, state, color);
+    }
+    return calculateOpaqueDir(normal, dir, smoothness, state);
+}
+
+
 vec3 calculateInitialDir(int aaCycle, vec2 screenCoord){
     float xi = float(aaCycle % aa);
     float yi = float(aaCycle) / float(aa);
@@ -310,19 +389,22 @@ bool hitTriangleUpdate(int triIndex, float t, inout vec3 pos, inout vec3 dir, in
     //calculate normal
     vec3 normal = calculateNormal(tri);
 
-    bool isSpecular = randomValue(state) <= specularColors[material_i].w;
+    float specularProb = specularColors[material_i].w;
+    bool isSpecular = randomValue(state) <= specularProb;
 
     //update color
     if (updateColor(color, material_i, isSpecular)) return true;
 
     //update direction
     float smoothness = isSpecular ? colors[material_i].w : 0;
-    dir = calculateNewDirection(normal, dir, smoothness, state);
+    float transparancy = glassLightSettings[material_i].x;
+    float ior = glassLightSettings[material_i].y;
+    dir = calculateNewDirection(normal, dir, smoothness, specularProb, transparancy, ior, state, color);
     invDir = 1/dir;
 
     return false;
 }
-bool gitFloorUpdate(inout vec3 pos, inout vec3 dir, inout vec3 invDir, inout vec3 color, inout uint state){
+bool hitFloorUpdate(inout vec3 pos, inout vec3 dir, inout vec3 invDir, inout vec3 color, inout uint state){
     float t = ((-1000)-pos.y)/dir.y;
     if (t > 0.01 && t < 10000000){
         pos += dir*t;
@@ -331,7 +413,7 @@ bool gitFloorUpdate(inout vec3 pos, inout vec3 dir, inout vec3 invDir, inout vec
 
         color *= vec3(0.9,0.9,0.9);
 
-        dir = calculateNewDirection(normal, dir, 0, state);
+        dir = calculateNewDirection(normal, dir, 0, 0, 0, 1, state, color);
         invDir = 1/dir;
     } else {
         color *= getEnviormentLight(dir);
@@ -349,6 +431,8 @@ bool russianRoulet(inout vec3 color, inout uint state){
 }
 
 vec3 trace(vec3 pos, vec3 dir, inout uint state){
+    iorStack[0] = 1;
+    iorSize = 1;
     vec3 invDir = 1/dir;
     vec3 color = vec3(1);
 
@@ -365,7 +449,7 @@ vec3 trace(vec3 pos, vec3 dir, inout uint state){
         }
 
         if (best_tri_i != -1) {if (hitTriangleUpdate(best_tri_i, t, pos, dir, invDir, color, state)) break;} //hit tri
-        else if (dir.y < 0) {if (gitFloorUpdate(pos, dir, invDir, color, state)) break;} //hit floor
+        else if (dir.y < 0) {if (hitFloorUpdate(pos, dir, invDir, color, state)) break;} //hit floor
         else {
             color *= getEnviormentLight(dir);
             break;

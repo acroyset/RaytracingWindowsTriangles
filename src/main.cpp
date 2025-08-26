@@ -163,11 +163,11 @@ int main() {
 
     Timer t;
 
-    BaseModel dragon("models/dragon800K.txt");
+    BaseModel dragon("models/dragon800k.txt");
 
 
-    scene.addModel(dragon, glm::vec3(0,759.79, 0), glm::vec3(2500, 2500, 2500), glm::vec3(0.8, 0.6, 0.1), 0.8, glm::vec3(0.9, 0.9, 0.9), 0.1);
-    //scene.addModel(dragon, glm::vec3(-750, 550, 0), glm::vec3(200, 200, 200), glm::vec3(0.1, 0.8, 0.1), 1);
+    scene.addModel(dragon, glm::vec3(0,759.79, 0), glm::vec3(2500, 2500, 2500), glm::vec3(0.8, 0.6, 0.1), 1, glm::vec3(0.9, 0.9, 0.9), 0.1);
+    scene.addModel(dragon, glm::vec3(-750, 550, 0), glm::vec3(2000, 2000, 2000), glm::vec3(0.1, 0.8, 0.1), 1, glm::vec3(0.9,0.9,0.9), 0.1);
     //scene.addModel(dragon, glm::vec3(-1400, 450, 0), glm::vec3(150, 150, 150), glm::vec3(0.1, 0.1, 0.8), 1);
     //scene.addModel(dragon, glm::vec3(-1900, 350, 0), glm::vec3(100, 100, 100), glm::vec3(0.8, 0.1, 0.1), 1);
     //scene.addModel("models/sponza.txt", glm::vec3(0, 0, 0), glm::vec3(800, 800, 800), glm::vec3(0.9, 0.9, 0.9), 0, 0);
@@ -181,6 +181,7 @@ int main() {
     createPingPongBuffers(width, height);
     int ping = 0; int pong = 1;
 
+    // display bvh stats
     if (true) {
         int leafNodes = 0, depth = 0, triPerLeaf = 0;
         int minTriPerLeaf = 100000000, maxTriPerLeaf = 0;
@@ -201,22 +202,30 @@ int main() {
         std::cout << "  -  Mean: " << float(triPerLeaf)/float(leafNodes) << std::endl;
     }
 
+    // render loop
     Timer deltaTimer;
     while (!shouldClose()) {
+        // delta time
         const auto dt = float(deltaTimer.reset());
+
+        //bind to ping buffer
         glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[ping]);
         glViewport(0, 0, width, height);
         glClear(GL_COLOR_BUFFER_BIT);
         glUseProgram(shaderProgram);
 
+        // update camera / uniforms
         scene.updateFrame(shaderProgram, *window, dt);
 
+
+        // set uniforms for display shader
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, pingpongTex[pong]);
         glUniform1i(glGetUniformLocation(shaderProgram, "uPrevFrame"), 0);
 
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
+        // bind to screen
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClear(GL_COLOR_BUFFER_BIT);
         glUseProgram(displayShader); // just draws the texture
