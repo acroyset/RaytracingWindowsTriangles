@@ -174,6 +174,10 @@ void Scene::set_ssbo() const {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboNormals);
     glBufferData(GL_SHADER_STORAGE_BUFFER, int(normals.size() * sizeof(glm::ivec4)), normals.data(), GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 11, ssboNormals);
+
+    for (auto i : triangles) {
+        std::cout << i.x << ", " << i.y << ", " << i.z << ", " << i.w << std::endl;
+    }
 }
 
 int Scene::getNumBVHNodes() const {

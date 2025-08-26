@@ -286,13 +286,19 @@ bool updateColor(inout vec3 color, int material_i, bool isSpecular){
 }
 
 //calculate functions
-vec3 calculateNormal(int triIndex, float u, float v, float w){
+vec3 calculateNormal(int triIndex, float u, float v, float w) {
     ivec4 normal = normals[triIndex];
+
     vec3 normA = normalsList[normal.x].xyz;
     vec3 normB = normalsList[normal.y].xyz;
     vec3 normC = normalsList[normal.z].xyz;
-    return normalize(normA);//normalize(normA * w + normB * u + normC * v);
 
+    vec3 interpolatedNormal = normA * w + normB * u + normC * v;
+
+    // Normalize the result
+    return normalize(interpolatedNormal);
+
+    // Fallback to face normal if vertex normals are not available
     ivec4 tri = triangles[triIndex];
     vec3 v1 = vertices[tri.x].xyz;
     vec3 v2 = vertices[tri.y].xyz;
@@ -347,10 +353,12 @@ vec3 calculateRefractionDir(vec3 normal, vec3 dir, float smoothness, float ior, 
     }
 
     float eta = m1 / m2;
-    float cos_theta_i = -dot(dir, n);
+    float cos_theta_i = clamp(-dot(dir, n), 0.0f, 1.0f);
 
-    // Check for Fresnel reflection first
-    float reflect_prob = schlick(cos_theta_i, m1, m2);
+    // Schlick
+    float r0 = (m1 - m2) / (m1 + m2);
+    r0 *= r0;
+    float reflect_prob = r0 + (1.0 - r0) * pow(1.0 - cos_theta_i, 5.0);
     if (randomValue(state) < reflect_prob) {
         return calculateOpaqueDir(normal, dir, smoothness, state);
     }
@@ -361,7 +369,7 @@ vec3 calculateRefractionDir(vec3 normal, vec3 dir, float smoothness, float ior, 
     // Check for Total Internal Reflection
     if (discriminant < 0.0f) {
         // TIR - reflect instead
-        return calculateOpaqueDir(normal, dir, smoothness, state);
+        return calculateOpaqueDir(n, dir, smoothness, state);
     }
 
     //color = vec3(0, 1, 0); // Green for successful refraction
@@ -398,8 +406,6 @@ bool hitTriangleUpdate(int triIndex, float t, float u, float v, float w, inout v
 
     //calculate normal
     vec3 normal = calculateNormal(triIndex, u ,v, w);
-    color = normal*0.5+0.5;
-    return true;
 
     float specularProb = specularColors[material_i].w;
     bool isSpecular = randomValue(state) <= specularProb;

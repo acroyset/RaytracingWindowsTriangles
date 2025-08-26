@@ -298,7 +298,7 @@ void BaseModel::parse(const std::string& nfilename, std::vector<glm::vec3>& vert
                 vertices.emplace_back(x, y, z);
             }
             else if (*ptr == 'v' && *(ptr + 1) == 'n' && *(ptr + 2) == ' ') {
-                ptr += 3; // Skip "v "
+                ptr += 3; // Skip "vn "
 
                 // Fast float parsing
                 float x, y, z;
@@ -370,6 +370,8 @@ void BaseModel::parse(const std::string& nfilename, std::vector<glm::vec3>& vert
 
     // Handle any remaining leftover
     if (!leftover.empty()) {
+        std::cerr << "leftover" << std::endl;
+        std::cerr << leftover << std::endl;
         // Process final incomplete line if needed
         // (similar parsing logic as above)
     }
@@ -378,7 +380,7 @@ void BaseModel::parse(const std::string& nfilename, std::vector<glm::vec3>& vert
     for (glm::ivec3& i : triangles) {
         if (i.x < 0) i.x += int(vertices.size()) + 1;
         if (i.y < 0) i.y += int(vertices.size()) + 1;
-        if (i.z < 0) i.z += int(vertices.size()) + 1;
+        if (i.z < 0) i.z += int(normalsList.size()) + 1;
         i.x--;
         i.y--;
         i.z--;

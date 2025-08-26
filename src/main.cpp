@@ -163,11 +163,11 @@ int main() {
 
     Timer t;
 
-    BaseModel dragon("models/dragon800k.txt");
+    //BaseModel dragon("models/dragon800K.txt");
 
 
-    scene.addModel(dragon, glm::vec3(0,759.79, 0), glm::vec3(2500, 2500, 2500), glm::vec3(0.8, 0.6, 0.1), 1, glm::vec3(0.9, 0.9, 0.9), 0.1);
-    scene.addModel(dragon, glm::vec3(-750, 550, 0), glm::vec3(2000, 2000, 2000), glm::vec3(0.1, 0.8, 0.1), 1, glm::vec3(0.9,0.9,0.9), 0.1);
+    //scene.addModel(dragon, glm::vec3(0,759.79, 0), glm::vec3(2500, 2500, 2500), glm::vec3(0.8, 0.6, 0.1), 1, glm::vec3(0.9, 0.9, 0.9), 0.1);
+    scene.addModel("models/cube.txt", glm::vec3(-1000, 550, 0), glm::vec3(200, 200, 200), glm::vec3(0.1, 0.8, 0.1), 0.95, glm::vec3(0.9,0.9,0.9), 1, 1, .3);
     //scene.addModel(dragon, glm::vec3(-1400, 450, 0), glm::vec3(150, 150, 150), glm::vec3(0.1, 0.1, 0.8), 1);
     //scene.addModel(dragon, glm::vec3(-1900, 350, 0), glm::vec3(100, 100, 100), glm::vec3(0.8, 0.1, 0.1), 1);
     //scene.addModel("models/sponza.txt", glm::vec3(0, 0, 0), glm::vec3(800, 800, 800), glm::vec3(0.9, 0.9, 0.9), 0, 0);
