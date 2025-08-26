@@ -34,6 +34,12 @@ layout(std430, binding = 8) buffer ssboChildB {
 layout(std430, binding = 9) buffer ssboModels {
     int models[];
 };
+layout(std430, binding = 10) buffer ssboNormalsList {
+    vec4 normalsList[];
+};
+layout(std430, binding = 11) buffer ssboNormals {
+    ivec4 normals[];
+};
 
 uniform int numModels;
 uniform vec3 cameraPos;
@@ -280,11 +286,35 @@ bool updateColor(inout vec3 color, int material_i, bool isSpecular){
 }
 
 //calculate functions
-vec3 calculateNormal(ivec4 tri){
+vec3 calculateNormal(int triIndex, float u, float v, float w){
+    ivec4 normal = normals[triIndex];
+    vec3 normA = normalsList[normal.x].xyz;
+    vec3 normB = normalsList[normal.y].xyz;
+    vec3 normC = normalsList[normal.z].xyz;
+    return normalize(normA);//normalize(normA * w + normB * u + normC * v);
+
+    ivec4 tri = triangles[triIndex];
     vec3 v1 = vertices[tri.x].xyz;
     vec3 v2 = vertices[tri.y].xyz;
     vec3 v3 = vertices[tri.z].xyz;
     return normalize(cross(v2 - v1, v3 - v1));
+}
+vec3 calculateInitialDir(int aaCycle, vec2 screenCoord){
+    float xi = float(aaCycle % aa);
+    float yi = float(aaCycle) / float(aa);
+
+    float ox = (xi + 0.5) / float(aa) - 0.5f; // Center of each subpixel grid cell
+    float oy = (yi + 0.5) / float(aa) - 0.5f;
+
+    ox /= resolution.x/2;
+    oy /= resolution.y/2;
+
+    vec2 coord = screenCoord + vec2(ox, oy);
+
+    vec3 dir = camForward + camRight * coord.x + camUp * coord.y;
+    dir = normalize(dir);
+
+    return dir;
 }
 
 vec3 calculateRandDir(vec3 normal, inout uint state){
@@ -361,33 +391,15 @@ vec3 calculateNewDirection(vec3 normal, vec3 dir, float smoothness, float specul
     return calculateOpaqueDir(normal, dir, smoothness, state);
 }
 
-
-vec3 calculateInitialDir(int aaCycle, vec2 screenCoord){
-    float xi = float(aaCycle % aa);
-    float yi = float(aaCycle) / float(aa);
-
-    float ox = (xi + 0.5) / float(aa) - 0.5f; // Center of each subpixel grid cell
-    float oy = (yi + 0.5) / float(aa) - 0.5f;
-
-    ox /= resolution.x/2;
-    oy /= resolution.y/2;
-
-    vec2 coord = screenCoord + vec2(ox, oy);
-
-    vec3 dir = camForward + camRight * coord.x + camUp * coord.y;
-    dir = normalize(dir);
-
-    return dir;
-}
-
 //hit updaters
-bool hitTriangleUpdate(int triIndex, float t, inout vec3 pos, inout vec3 dir, inout vec3 invDir, inout vec3 color, inout uint state){
+bool hitTriangleUpdate(int triIndex, float t, float u, float v, float w, inout vec3 pos, inout vec3 dir, inout vec3 invDir, inout vec3 color, inout uint state){
     pos += dir * t;
-    ivec4 tri = triangles[triIndex];
-    int material_i = tri.w;
+    int material_i = triangles[triIndex].w;
 
     //calculate normal
-    vec3 normal = calculateNormal(tri);
+    vec3 normal = calculateNormal(triIndex, u ,v, w);
+    color = normal*0.5+0.5;
+    return true;
 
     float specularProb = specularColors[material_i].w;
     bool isSpecular = randomValue(state) <= specularProb;
@@ -448,7 +460,7 @@ vec3 trace(vec3 pos, vec3 dir, inout uint state){
             return debugView(triTest, aabbTest);
         }
 
-        if (best_tri_i != -1) {if (hitTriangleUpdate(best_tri_i, t, pos, dir, invDir, color, state)) break;} //hit tri
+        if (best_tri_i != -1) {if (hitTriangleUpdate(best_tri_i, t, best_u, best_v, best_w, pos, dir, invDir, color, state)) break;} //hit tri
         else if (dir.y < 0) {if (hitFloorUpdate(pos, dir, invDir, color, state)) break;} //hit floor
         else {
             color *= getEnviormentLight(dir);

@@ -16,6 +16,8 @@ class BaseModel {
 
     std::vector<glm::vec3> vertices;
     std::vector<glm::ivec3> triangles;
+    std::vector<glm::ivec3> normals;
+    std::vector<glm::vec3> normalsList;
 
     std::vector<glm::vec3> boundingBoxMin;
     std::vector<glm::vec3> boundingBoxMax;
@@ -27,13 +29,13 @@ class BaseModel {
 
     BaseModel();
 
-    static void parse(const std::string& nfilename, std::vector<glm::vec3>& vertices, std::vector<glm::ivec3>& triangles);
+    static void parse(const std::string& nfilename, std::vector<glm::vec3>& vertices, std::vector<glm::ivec3>& triangles, std::vector<glm::vec3>& normalsList);
 
     explicit BaseModel(const std::string& filename);
 
     void precomputeTriangleData();
 
-    [[nodiscard]] float evaluateSplit(glm::vec3 min, int childA, glm::vec3 max, int childB, int axis, float pos) const;
+    [[nodiscard]] float evaluateSplit(int childA, int childB, int axis, float pos) const;
 
     void chooseSplit(int numTestsPerAxis, glm::vec3 min, int childA, glm::vec3 max, int childB, int& bestAxis, float& bestPos, float& bestCost) const;
 

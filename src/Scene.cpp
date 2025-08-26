@@ -54,6 +54,7 @@ void Scene::addModel(BaseModel& model, glm::vec3 position, glm::vec3 scale, glm:
     int Toffset = int(triangles.size());
     int BBoffset = int(boundingBoxMin.size());
     int Coffset = int(colors.size());
+    int Noffset = int(normalsList.size());
 
     models.emplace_back(BBoffset);
 
@@ -82,6 +83,13 @@ void Scene::addModel(BaseModel& model, glm::vec3 position, glm::vec3 scale, glm:
         boundingBoxMax.emplace_back(bboxMax, 0);
         this->childA.push_back(childA+offsetA);
         this->childB.push_back(childB+offsetB);
+    }
+    for (auto & i : model.normalsList) {
+        normalsList.emplace_back(i, 0);
+    }
+    for (glm::ivec3 normal : model.normals) {
+        normal += glm::ivec3(Noffset, Noffset, Noffset);
+        normals.emplace_back(normal, 0);
     }
 
     std::cout << std::endl;
@@ -154,6 +162,18 @@ void Scene::set_ssbo() const {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboModels);
     glBufferData(GL_SHADER_STORAGE_BUFFER, int(models.size() * sizeof(int)), models.data(), GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 9, ssboModels);
+
+    GLuint ssboNormalsList;
+    glGenBuffers(1, &ssboNormalsList);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboNormalsList);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, int(normalsList.size() * sizeof(glm::vec4)), normalsList.data(), GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, ssboNormalsList);
+
+    GLuint ssboNormals;
+    glGenBuffers(1, &ssboNormals);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboNormals);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, int(normals.size() * sizeof(glm::ivec4)), normals.data(), GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 11, ssboNormals);
 }
 
 int Scene::getNumBVHNodes() const {

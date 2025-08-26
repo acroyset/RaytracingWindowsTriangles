@@ -3,10 +3,6 @@
 //
 
 #include "BaseModel.h"
-#include "BaseModel.h"
-#include "BaseModel.h"
-#include "BaseModel.h"
-#include "BaseModel.h"
 #include <fstream>
 #include <iostream>
 #include <atomic>
@@ -227,7 +223,7 @@ inline int fast_strtoi(const char* str, char** endptr) {
 
 BaseModel::BaseModel() = default;
 
-void BaseModel::parse(const std::string& nfilename, std::vector<glm::vec3>& vertices, std::vector<glm::ivec3>& triangles) {
+void BaseModel::parse(const std::string& nfilename, std::vector<glm::vec3>& vertices, std::vector<glm::ivec3>& triangles, std::vector<glm::vec3>& normalsList) {
     const std::string filename = "" + nfilename;
     std::ifstream model(filename, std::ios::in | std::ios::binary);
 
@@ -246,6 +242,7 @@ void BaseModel::parse(const std::string& nfilename, std::vector<glm::vec3>& vert
     size_t estimatedTriangles = fileSize / 80;
     vertices.reserve(estimatedVertices);
     triangles.reserve(estimatedTriangles * 3);
+    normalsList.reserve(estimatedVertices);
 
     // Process in chunks to avoid massive memory allocation
     constexpr size_t CHUNK_SIZE = 64 * 1024 * 1024; // 64MB chunks
@@ -299,6 +296,19 @@ void BaseModel::parse(const std::string& nfilename, std::vector<glm::vec3>& vert
                 z = fast_strtof(ptr, &ptr);
 
                 vertices.emplace_back(x, y, z);
+            }
+            else if (*ptr == 'v' && *(ptr + 1) == 'n' && *(ptr + 2) == ' ') {
+                ptr += 3; // Skip "v "
+
+                // Fast float parsing
+                float x, y, z;
+                x = fast_strtof(ptr, &ptr);
+                while (*ptr == ' ' || *ptr == '\t') ptr++; // Skip whitespace
+                y = fast_strtof(ptr, &ptr);
+                while (*ptr == ' ' || *ptr == '\t') ptr++; // Skip whitespace
+                z = fast_strtof(ptr, &ptr);
+
+                normalsList.emplace_back(x, y, z);
             }
             else if (*ptr == 'f' && *(ptr + 1) == ' ') {
                 ptr += 2; // Skip "f "
@@ -386,9 +396,10 @@ BaseModel::BaseModel(const std::string &filename) {
     this->filename = filename;
     std::vector<glm::vec3> tempVertices;
     std::vector<glm::ivec3> tempTriangles;
+    std::vector<glm::vec3> tempNormals;
 
     std::cout << "Parsing " << filename << "..." << std::endl;
-    parse(filename, tempVertices, tempTriangles);
+    parse(filename, tempVertices, tempTriangles, tempNormals);
 
     std::cout << filename << std::endl;
     std::cout << "Vertices: " << tempVertices.size() << std::endl;
@@ -402,9 +413,15 @@ BaseModel::BaseModel(const std::string &filename) {
         vertices.emplace_back(tempVertice);
     }
 
+    std::cout << "Copying normal data..." << std::endl;
+    for (glm::vec3 tempNormal : tempNormals) {
+        normalsList.emplace_back(tempNormal);
+    }
+
     std::cout << "Copying triangle data..." << std::endl;
     for (int i = 0; i < numTris; ++i) {
         triangles.emplace_back(tempTriangles[i*3+0].x, tempTriangles[i*3+1].x, tempTriangles[i*3+2].x);
+        normals.emplace_back(tempTriangles[i*3+0].z, tempTriangles[i*3+1].z, tempTriangles[i*3+2].z);
     }
 
     std::cout << "Starting BVH construction..." << std::endl;
@@ -457,7 +474,7 @@ void BaseModel::precomputeTriangleData() {
     }
 }
 
-float BaseModel::evaluateSplit(glm::vec3 min, int childA, glm::vec3 max, int childB, int axis, float pos) const {
+float BaseModel::evaluateSplit(const int childA, const int childB, const int axis, const float pos) const {
     auto minA = glm::vec3(1000000000.0f), maxA = glm::vec3(-1000000000.0f);
     auto minB = glm::vec3(1000000000.0f), maxB = glm::vec3(-1000000000.0f);
 
@@ -485,7 +502,7 @@ float BaseModel::evaluateSplit(glm::vec3 min, int childA, glm::vec3 max, int chi
     return nodeCost(minA, maxA, numA) + nodeCost(minB, maxB, numB);
 }
 
-void BaseModel::chooseSplit(const int numTestsPerAxis, glm::vec3 min, int childA, glm::vec3 max, int childB, int& bestAxis, float& bestPos, float& bestCost) const {
+void BaseModel::chooseSplit(const int numTestsPerAxis, glm::vec3 min, const int childA, glm::vec3 max, const int childB, int& bestAxis, float& bestPos, float& bestCost) const {
 
     for (int axis = 0; axis < 3; ++axis) {
         float bStart = min[axis];
@@ -495,7 +512,7 @@ void BaseModel::chooseSplit(const int numTestsPerAxis, glm::vec3 min, int childA
             float splitT = float(i+1) / float(numTestsPerAxis+1);
 
             float pos = bStart + (bEnd - bStart) * splitT;
-            float cost = evaluateSplit(min, childA, max, childB, axis, pos);
+            float cost = evaluateSplit(childA, childB, axis, pos);
 
             if (cost < bestCost) {
                 bestPos = pos;
@@ -543,6 +560,7 @@ void BaseModel::split(int numTestsPerAxis, glm::vec3 bboxMin, int& childA, glm::
             startB ++;
             int swap = startA + numA - 1;
             std::swap(triangles[i], triangles[swap]);
+            std::swap(normals[i], normals[swap]);
             std::swap(triangleCenters[i], triangleCenters[swap]);
             std::swap(triangleMin[i], triangleMin[swap]);
             std::swap(triangleMax[i], triangleMax[swap]);

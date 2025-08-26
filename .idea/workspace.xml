@@ -39,9 +39,10 @@
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/RaytracingWindowsTriangles.exe" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/RaytracingWindowsTriangles.exe" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/Testing/Temporary/LastTest.log" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/Testing/Temporary/LastTest.log" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/shaders/fullscreen.frag" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/fullscreen.frag" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/BaseModel.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/BaseModel.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/BaseModel.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/BaseModel.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -267,11 +268,6 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="glad" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="RaytracingWindowsTriangles" TARGET_NAME="glad" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -324,7 +320,8 @@
       <workItem from="1756083240034" duration="418000" />
       <workItem from="1756083701088" duration="4517000" />
       <workItem from="1756088640160" duration="4981000" />
-      <workItem from="1756160635649" duration="8362000" />
+      <workItem from="1756160635649" duration="9956000" />
+      <workItem from="1756178043021" duration="1248000" />
     </task>
     <servers />
   </component>

@@ -12,6 +12,8 @@
 class Scene {
     std::vector<glm::vec4> vertices;
     std::vector<glm::ivec4> triangles;
+    std::vector<glm::ivec4> normals;
+    std::vector<glm::vec4> normalsList;
     std::vector<glm::vec4> colors;
     std::vector<glm::vec4> specularColors;
     std::vector<glm::vec4> glassLightSettings;
