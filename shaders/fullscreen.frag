@@ -289,14 +289,20 @@ bool updateColor(inout vec3 color, int material_i, bool isSpecular){
 vec3 calculateNormal(int triIndex, float u, float v, float w) {
     ivec4 normal = normals[triIndex];
 
-    vec3 normA = normalsList[normal.x].xyz;
-    vec3 normB = normalsList[normal.y].xyz;
-    vec3 normC = normalsList[normal.z].xyz;
+    if (
+        normal.x != -1 &&
+        normal.y != -1 &&
+        normal.z != -1)
+    {
+        vec3 normA = normalsList[normal.x].xyz;
+        vec3 normB = normalsList[normal.y].xyz;
+        vec3 normC = normalsList[normal.z].xyz;
 
-    vec3 interpolatedNormal = normA * w + normB * u + normC * v;
+        vec3 interpolatedNormal = normA * w + normB * u + normC * v;
 
-    // Normalize the result
-    return normalize(interpolatedNormal);
+        // Normalize the result
+        return normalize(interpolatedNormal);
+    }
 
     // Fallback to face normal if vertex normals are not available
     ivec4 tri = triangles[triIndex];
@@ -337,42 +343,48 @@ vec3 calculateOpaqueDir(vec3 normal, vec3 dir, float smoothness, inout uint stat
 }
 vec3 calculateRefractionDir(vec3 normal, vec3 dir, float smoothness, float ior, float specularProb, inout uint state, inout vec3 color){
     bool entering;
-    float m1;
-    float m2;
+    float m1, m2;
     vec3 n = normal;
 
-    if (iorSize >= 2 && dot(dir, normal) > 0.0f) {
+    // Determine if we're entering or exiting the material
+    if (dot(dir, normal) > 0.0f) {
+        // Ray and normal point in same direction = EXITING
         entering = false;
-        m1 = ior;
-        m2 = iorStack[iorSize-2];
-        n = -normal;
+        m1 = iorStack[iorSize-1];    // Current medium (where ray is coming from)
+        m2 = (iorSize >= 2) ? iorStack[iorSize-2] : 1.0;  // Previous medium (where ray is going)
+        n = -normal; // Flip normal for refraction math
     } else {
+        // Ray and normal point opposite directions = ENTERING
         entering = true;
-        m1 = iorStack[iorSize-1];
-        m2 = ior;
+        m1 = (iorSize >= 1) ? iorStack[iorSize-1] : 1.0;  // Current medium (air/previous)
+        m2 = ior;                    // New medium we're entering
+        n = normal;  // Keep normal as-is
     }
 
     float eta = m1 / m2;
     float cos_theta_i = clamp(-dot(dir, n), 0.0f, 1.0f);
 
-    // Schlick
+    // Fresnel reflectance using Schlick's approximation
     float r0 = (m1 - m2) / (m1 + m2);
     r0 *= r0;
     float reflect_prob = r0 + (1.0 - r0) * pow(1.0 - cos_theta_i, 5.0);
+
+    // Randomly choose reflection vs refraction based on Fresnel
     if (randomValue(state) < reflect_prob) {
+        // Use original normal for reflection, not the potentially flipped one
         return calculateOpaqueDir(normal, dir, smoothness, state);
     }
 
-    // Calculate discriminant for TIR check
+    // Calculate discriminant for Total Internal Reflection check
     float discriminant = 1.0f - eta * eta * (1.0f - cos_theta_i * cos_theta_i);
+
+
 
     // Check for Total Internal Reflection
     if (discriminant < 0.0f) {
-        // TIR - reflect instead
-        return calculateOpaqueDir(n, dir, smoothness, state);
+        float angle_degrees = acos(cos_theta_i) * 180.0 / 3.14159;
+        return calculateOpaqueDir(normal, dir, smoothness, state);
     }
-
-    //color = vec3(0, 1, 0); // Green for successful refraction
 
     // Calculate refracted direction using Snell's law
     float cos_theta_t = sqrt(discriminant);
@@ -385,9 +397,11 @@ vec3 calculateRefractionDir(vec3 normal, vec3 dir, float smoothness, float ior, 
         iorSize--;
     }
 
-    // Mix with random direction based on specularProb
-    vec3 random = calculateRandDir(normal, state);
-    refracted = mix(random, refracted, specularProb);
+    // For roughness: mix with random direction
+    // Use the normal on the refracted side for the random direction
+    vec3 refract_normal = entering ? normal : -normal;
+    vec3 random = calculateRandDir(refract_normal, state);
+    refracted = mix(random, normalize(refracted), specularProb);
 
     return normalize(refracted);
 }
@@ -423,7 +437,8 @@ bool hitTriangleUpdate(int triIndex, float t, float u, float v, float w, inout v
     return false;
 }
 bool hitFloorUpdate(inout vec3 pos, inout vec3 dir, inout vec3 invDir, inout vec3 color, inout uint state){
-    float t = ((-1000)-pos.y)/dir.y;
+    float floorHeight = -1000;
+    float t = ((floorHeight)-pos.y)/dir.y;
     if (t > 0.01 && t < 10000000){
         pos += dir*t;
 
@@ -492,7 +507,7 @@ void main() {
 
     uvec2 pixel = uvec2(fragCoord.x * resolution.x, fragCoord.y * resolution.y * aspectRatio);
     int pixels = int(resolution.x*resolution.y);
-    uint state = pixel.x + pixel.y * uint(resolution.x) + uint(time);
+    uint state = pixel.x + pixel.y * uint(resolution.x) + uint(time) + uint(frameCount);
 
     vec3 totalColor = vec3(0,0,0);
 

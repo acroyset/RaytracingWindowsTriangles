@@ -38,12 +38,11 @@
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/.ninja_log" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/.ninja_log" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/RaytracingWindowsTriangles.exe" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/RaytracingWindowsTriangles.exe" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/Testing/Temporary/LastTest.log" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/Testing/Temporary/LastTest.log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/cube.txt" beforeDir="false" afterPath="$PROJECT_DIR$/models/cube.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/dragon80K.txt" beforeDir="false" afterPath="$PROJECT_DIR$/models/dragon80K.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/dragon8K.txt" beforeDir="false" afterPath="$PROJECT_DIR$/models/dragon8K.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/sphere.txt" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/shaders/fullscreen.frag" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/fullscreen.frag" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/BaseModel.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/BaseModel.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -324,6 +323,8 @@
       <workItem from="1756088640160" duration="4981000" />
       <workItem from="1756160635649" duration="9956000" />
       <workItem from="1756178043021" duration="3507000" />
+      <workItem from="1756250829996" duration="51000" />
+      <workItem from="1756250888819" duration="3263000" />
     </task>
     <servers />
   </component>

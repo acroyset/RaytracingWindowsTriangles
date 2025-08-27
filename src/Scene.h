@@ -40,7 +40,7 @@ class Scene {
     int width, height;
 
     glm::vec3 skyColor = glm::vec3(0.5,0.7,0.9);
-    glm::vec3 sunDir = glm::normalize(glm::vec3(-0.1, 1, 0.1));
+    glm::vec3 sunDir = glm::normalize(glm::vec3(-0.1, 0.2, 0.4));
     float sunStrength = 200;
     glm::vec3 sunColor = glm::vec3(1, .7, .3);
 

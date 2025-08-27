@@ -390,7 +390,7 @@ void BaseModel::parse(const std::string& nfilename, std::vector<glm::vec3>& vert
         }
     }
 
-    //center(vertices);
+    center(vertices);
     model.close();
 }
 
