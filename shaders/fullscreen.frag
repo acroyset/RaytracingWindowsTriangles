@@ -507,7 +507,7 @@ void main() {
 
     uvec2 pixel = uvec2(fragCoord.x * resolution.x, fragCoord.y * resolution.y * aspectRatio);
     int pixels = int(resolution.x*resolution.y);
-    uint state = pixel.x + pixel.y * uint(resolution.x) + uint(time) + uint(frameCount);
+    uint state = pixel.x + pixel.y * uint(resolution.x) + uint((frameCount*int(resolution.x)*time)%4000000000);
 
     vec3 totalColor = vec3(0,0,0);
 
