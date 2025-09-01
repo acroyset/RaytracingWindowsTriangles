@@ -7,8 +7,11 @@
 #include <iostream>
 #include <atomic>
 #include <condition_variable>
+#include <cstring>
 #include <thread>
 #include <mutex>
+#include <sstream>
+#include <unordered_map>
 
 class ThreadPool {
     std::vector<std::thread> workers;
@@ -220,10 +223,85 @@ inline float fast_strtof(const char* str, char** endptr) {
 inline int fast_strtoi(const char* str, char** endptr) {
     return std::strtol(str, endptr, 10);
 }
+std::string dirOf(const std::string& path) {
+    size_t p = path.find_last_of("/\\");
+    return (p == std::string::npos) ? std::string() : path.substr(0, p+1);
+}
+void loadMTL(
+    const std::string& mtlPath,
+    std::unordered_map<std::string, int>& nameToIndex,
+    std::vector<glm::vec4>& colors,
+    std::vector<glm::vec4>& specularColors,
+    std::vector<glm::vec4>& glassLightSettings
+    ) {
+    std::ifstream f(mtlPath);
+    if (!f) { std::cerr << "WARN: could not open MTL: " << mtlPath << "\n"; return; }
+
+    std::string line, curName;
+    glm::vec3 Kd, Ks, Ke;
+    float smoothness, specularProb, transparency, ior, emission;
+
+    auto flushMaterial = [&](){
+        if (curName.empty()) return;
+        if (nameToIndex.find(curName) == nameToIndex.end()) {
+            int idx = int(colors.size());
+            nameToIndex[curName] = idx;
+            auto luminance = [](glm::vec3 c) {
+                return 0.2126f*c.r + 0.7152f*c.g + 0.0722f*c.b;
+            };
+
+            float Ld = luminance(Kd);
+            float Ls = luminance(Ks);
+
+            specularProb = (Ld + Ls > 0.0f) ? (Ls / (Ld + Ls)) : 0.0f;
+
+            emission = glm::length(Ke);
+            colors.emplace_back(emission == 0 ? Kd : Ke, smoothness);
+            specularColors.emplace_back(Ks, specularProb);
+            glassLightSettings.emplace_back(transparency, ior, emission, 0);
+        }
+    };
+
+    while (std::getline(f, line)) {
+        if (line.empty() || line[0]=='#') continue;
+        std::istringstream iss(line);
+        std::string key; iss >> key;
+        if (key == "newmtl") {
+            flushMaterial();
+            iss >> curName;
+        } else if (key == "Kd") {
+            iss >> Kd.r >> Kd.g >> Kd.b;
+        } else if (key == "Ks") {
+            iss >> Ks.r >> Ks.g >> Ks.b;
+        } else if (key == "Ke") {
+            iss >> Ke.r >> Ke.g >> Ke.b;
+        } else if (key == "Ns") {
+            float ns;
+            iss >> ns;
+            float roughness = sqrtf(2.0f / (ns + 2.0f));
+            smoothness = 1.0f - roughness;
+        } else if (key == "Ni") {
+            iss >> ior;
+        } else if (key == "d") {
+            iss >> transparency;
+            transparency = 1.0f - transparency;
+        }
+    }
+    flushMaterial();
+}
 
 BaseModel::BaseModel() = default;
 
-void BaseModel::parse(const std::string& nfilename, std::vector<glm::vec3>& vertices, std::vector<glm::ivec3>& triangles, std::vector<glm::vec3>& normalsList) {
+void BaseModel::parse(
+    const std::string& nfilename,
+    std::vector<glm::vec3>& vertices,
+    std::vector<glm::ivec3>& triangles,
+    std::vector<glm::vec3>& normalsList,
+    std::vector<int>& tempTriMatIndex,
+    std::vector<glm::vec4>& colors,
+    std::vector<glm::vec4>& specularColors,
+    std::vector<glm::vec4>& glassLightSettings
+    ) {
     const std::string filename = "" + nfilename;
     std::ifstream model(filename, std::ios::in | std::ios::binary);
 
@@ -231,6 +309,11 @@ void BaseModel::parse(const std::string& nfilename, std::vector<glm::vec3>& vert
         std::cerr << "Failed to open file: " << filename << std::endl;
         return;
     }
+
+    std::unordered_map<std::string,int> materialNameToIndex;
+    int currentMaterial = 0;                 // -1 = no material; we’ll map it to a default color later if needed
+    bool mtlLoaded = false;
+    std::string baseDir = dirOf(filename);
 
     // Get file size for reservations
     model.seekg(0, std::ios::end);
@@ -248,8 +331,6 @@ void BaseModel::parse(const std::string& nfilename, std::vector<glm::vec3>& vert
     constexpr size_t CHUNK_SIZE = 64 * 1024 * 1024; // 64MB chunks
     std::vector<char> buffer(CHUNK_SIZE + 1);
     std::string leftover; // Handle lines split across chunks
-
-    int quads = 0;
 
     while (model) {
         model.read(buffer.data(), CHUNK_SIZE);
@@ -347,17 +428,58 @@ void BaseModel::parse(const std::string& nfilename, std::vector<glm::vec3>& vert
 
                 // Convert to triangles (triangle fan)
                 if (vertexCount >= 3) {
+                    // base triangle
                     triangles.emplace_back(faceVertices[0]);
                     triangles.emplace_back(faceVertices[1]);
                     triangles.emplace_back(faceVertices[2]);
+                    // record material for this emitted tri
+                    tempTriMatIndex.push_back(currentMaterial >= 0 ? currentMaterial : 0);
 
-                    // Handle quads and n-gons
+                    // handle quads/n-gons
                     for (int i = 3; i < vertexCount; i++) {
-                        quads++;
                         triangles.emplace_back(faceVertices[0]);
                         triangles.emplace_back(faceVertices[i-1]);
                         triangles.emplace_back(faceVertices[i]);
+                        tempTriMatIndex.push_back(currentMaterial >= 0 ? currentMaterial : 0);
                     }
+                }
+            }
+            else if (*ptr=='m' && (ptr+6) < end && std::memcmp(ptr, "mtllib", 6)==0) {
+                // advance to end of token and one space
+                while (ptr<end && *ptr!=' ') ptr++;
+                while (ptr<end && (*ptr==' ' || *ptr=='\t')) ptr++;
+
+                // read the filename until EOL
+                char* start = ptr;
+                while (ptr<end && *ptr!='\n' && *ptr!='\r') ptr++;
+                std::string mtlName(start, ptr);
+
+                if (!mtlLoaded) {
+                    std::string full = baseDir + mtlName;
+                    loadMTL(full, materialNameToIndex, colors, specularColors, glassLightSettings);
+                    mtlLoaded = true;
+                }
+            }
+            else if (*ptr=='u' && (ptr+6) < end && std::memcmp(ptr, "usemtl", 6)==0) {
+                // move to name
+                while (ptr<end && *ptr!=' ') ptr++;
+                while (ptr<end && (*ptr==' ' || *ptr=='\t')) ptr++;
+
+                // read material name until EOL
+                char* start = ptr;
+                while (ptr<end && *ptr!='\n' && *ptr!='\r') ptr++;
+                std::string matName(start, ptr);
+
+                auto it = materialNameToIndex.find(matName);
+                if (it != materialNameToIndex.end()) currentMaterial = it->second;
+                else {
+                    // unseen name: push a default color and remember it
+                    int idx = int(colors.size());
+                    materialNameToIndex[matName] = idx;
+                    colors.emplace_back(1.0f, 1.0f, 1.0f, 0.0f);
+                    specularColors.emplace_back(0.0f);
+                    glassLightSettings.emplace_back(0, 1, 0, 0);
+                    currentMaterial = idx;
                 }
             }
 
@@ -399,9 +521,13 @@ BaseModel::BaseModel(const std::string &filename) {
     std::vector<glm::vec3> tempVertices;
     std::vector<glm::ivec3> tempTriangles;
     std::vector<glm::vec3> tempNormals;
+    std::vector<glm::vec4> tempColors;
+    std::vector<glm::vec4> tempSpecularColors;
+    std::vector<glm::vec4> tempGlassLightSettings;
+    std::vector<int> tempTriMatIndex;
 
     std::cout << "Parsing " << filename << "..." << std::endl;
-    parse(filename, tempVertices, tempTriangles, tempNormals);
+    parse(filename, tempVertices, tempTriangles, tempNormals, tempTriMatIndex, tempColors, tempSpecularColors, tempGlassLightSettings);
 
     std::cout << filename << std::endl;
     std::cout << "Vertices: " << tempVertices.size() << std::endl;
@@ -422,8 +548,20 @@ BaseModel::BaseModel(const std::string &filename) {
 
     std::cout << "Copying triangle data..." << std::endl;
     for (int i = 0; i < numTris; ++i) {
-        triangles.emplace_back(tempTriangles[i*3+0].x, tempTriangles[i*3+1].x, tempTriangles[i*3+2].x);
+        triangles.emplace_back(tempTriangles[i*3+0].x, tempTriangles[i*3+1].x, tempTriangles[i*3+2].x, tempTriMatIndex[i]);
         normals.emplace_back(tempTriangles[i*3+0].z, tempTriangles[i*3+1].z, tempTriangles[i*3+2].z);
+    }
+
+    for (glm::vec4 tempColor : tempColors) {
+        colors.emplace_back(tempColor);
+    }
+
+    for (glm::vec4 tempSpecularColor : tempSpecularColors) {
+        specularColors.emplace_back(tempSpecularColor);
+    }
+
+    for (glm::vec4 tempGlassLightSetting : tempGlassLightSettings) {
+        glassLightSettings.emplace_back(tempGlassLightSetting);
     }
 
     std::cout << "Starting BVH construction..." << std::endl;

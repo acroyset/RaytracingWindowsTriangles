@@ -259,10 +259,11 @@ vec3 debugView(int triTest, int aabbTest){
     return color;
 }
 vec3 getEnviormentLight(vec3 dir){
+    return vec3(0.14, 0.74, 0.76);
     float sunStrength = pow(max(dot(dir, sunDir),0), 1024);
     return skyColor + sunColor*sunStrength;
 }
-bool updateColor(inout vec3 color, int material_i, bool isSpecular){
+bool updateColor(inout vec3 color, int material_i, bool isSpecular, bool diffuseOnly){
     //TERRAIN COLORS
     //float v = dot(normal, vec3(0, 1, 0));
     //v = max(v, 0);
@@ -275,7 +276,7 @@ bool updateColor(inout vec3 color, int material_i, bool isSpecular){
     //vec4 hColor = mix(grass, snow, smoothstep(1000.0, 1200.0, pos.y));
     //vec4 c = mix(rock, hColor, v);
 
-    vec3 selectedColor = isSpecular ? specularColors[material_i].xyz : colors[material_i].xyz;
+    vec3 selectedColor = (isSpecular && !diffuseOnly) ? specularColors[material_i].xyz : colors[material_i].xyz;
 
     color *= selectedColor;
     if (glassLightSettings[material_i].z > 0.0) {
@@ -323,7 +324,14 @@ vec3 calculateInitialDir(int aaCycle, vec2 screenCoord){
 
     vec2 coord = screenCoord + vec2(ox, oy);
 
-    vec3 dir = camForward + camRight * coord.x + camUp * coord.y;
+    float fovDegX = 60;
+    float fovRadX = fovDegX/180. * 3.1415926;
+    coord *= tan(fovRadX*0.5);
+
+    vec3 dir = camForward
+        + camRight * coord.x
+        + camUp * coord.y;
+
     dir = normalize(dir);
 
     return dir;
@@ -420,15 +428,19 @@ bool hitTriangleUpdate(int triIndex, float t, float u, float v, float w, inout v
 
     //calculate normal
     vec3 normal = calculateNormal(triIndex, u ,v, w);
+    if (dot(normal, dir) > 0) normal *= -1;
+    //color = normal*0.5 +0.5;
+    //return true;
 
     float specularProb = specularColors[material_i].w;
+    bool diffuseOnly = specularProb == -1;
     bool isSpecular = randomValue(state) <= specularProb;
 
     //update color
-    if (updateColor(color, material_i, isSpecular)) return true;
+    if (updateColor(color, material_i, isSpecular, diffuseOnly)) return true;
 
     //update direction
-    float smoothness = isSpecular ? colors[material_i].w : 0;
+    float smoothness = (isSpecular || diffuseOnly) ? colors[material_i].w : 0;
     float transparancy = glassLightSettings[material_i].x;
     float ior = glassLightSettings[material_i].y;
     dir = calculateNewDirection(normal, dir, smoothness, specularProb, transparancy, ior, state, color);

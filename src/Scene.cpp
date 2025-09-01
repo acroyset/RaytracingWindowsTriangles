@@ -48,8 +48,19 @@ void Scene::addModel(const std::string& filename, const glm::vec3 position, cons
     addModel(model, position, scale, color, smoothness, specularColor, specularProb, transparency, ior, emission);
 }
 
-void Scene::addModel(BaseModel& model, glm::vec3 position, glm::vec3 scale, glm::vec3 color, float smoothness, glm::vec3 specularColor, const float specularProb, const float transparency, const float ior, float emission) {
-    if (specularColor == glm::vec3(-1)) specularColor = color;
+void Scene::addModel(
+    BaseModel& model,
+    glm::vec3 position,
+    glm::vec3 scale,
+    glm::vec3 color,
+    float smoothness,
+    glm::vec3 specularColor,
+    float specularProb,
+    const float transparency,
+    const float ior,
+    float emission)
+{
+    if (specularColor == glm::vec3(-1)) specularProb = -1;
     int Voffset = int(vertices.size());
     int Toffset = int(triangles.size());
     int BBoffset = int(boundingBoxMin.size());
@@ -63,9 +74,9 @@ void Scene::addModel(BaseModel& model, glm::vec3 position, glm::vec3 scale, glm:
         vertex += position;
         vertices.emplace_back(vertex, 0);
     }
-    for (glm::ivec3 triangle : model.triangles) {
+    for (glm::ivec4 triangle : model.triangles) {
         triangle += glm::vec4(Voffset, Voffset, Voffset, Coffset);
-        triangles.emplace_back(triangle, colors.size());
+        triangles.emplace_back(triangle);
     }
     for (int i = 0; i < model.boundingBoxMin.size(); i++) {
         glm::vec3 bboxMin = model.boundingBoxMin[i];
@@ -92,14 +103,33 @@ void Scene::addModel(BaseModel& model, glm::vec3 position, glm::vec3 scale, glm:
         normals.emplace_back(normal, 0);
     }
 
-    std::cout << std::endl;
-    std::cout << BBoffset << std::endl;
-    std::cout << boundingBoxMin[BBoffset].x << ' ' << boundingBoxMin[BBoffset].y << ' ' << boundingBoxMin[BBoffset].z << ' ' << childA[BBoffset] << std::endl;
-    std::cout << boundingBoxMax[BBoffset].x << ' ' << boundingBoxMax[BBoffset].y << ' ' << boundingBoxMax[BBoffset].z << ' ' << childB[BBoffset] << std::endl;
+    if (model.colors.empty()) {
+        colors.emplace_back(color, smoothness);
+        specularColors.emplace_back(specularColor, specularProb);
+        glassLightSettings.emplace_back(transparency, ior, emission, 0);
+    } else {
+        for (glm::vec4 tempColor : model.colors) {
+            colors.emplace_back(tempColor);
+        }
+        for (glm::vec4 tempSpecularColor : model.specularColors) {
+            specularColors.emplace_back(tempSpecularColor);
+        }
+        for (glm::vec4 tempGlassLightSetting : model.glassLightSettings) {
+            glassLightSettings.emplace_back(tempGlassLightSetting);
+        }
+    }
 
-    colors.emplace_back(color, smoothness);
-    specularColors.emplace_back(specularColor, specularProb);
-    glassLightSettings.emplace_back(transparency, ior, emission, 0);
+    for (int i = 0; i < colors.size(); i++) {
+        std::cout << colors[i].x << ", " << colors[i].y << ", " << colors[i].z << ", " << colors[i].w << std::endl;
+        std::cout << specularColors[i].x << ", " << specularColors[i].y << ", " << specularColors[i].z << ", " << specularColors[i].w << std::endl;
+        std::cout << glassLightSettings[i].x << ", " << glassLightSettings[i].y << ", " << glassLightSettings[i].z << ", " << glassLightSettings[i].w << std::endl;
+        std::cout << std::endl;
+    }
+
+    //std::cout << std::endl;
+    //std::cout << BBoffset << std::endl;
+    //std::cout << boundingBoxMin[BBoffset].x << ' ' << boundingBoxMin[BBoffset].y << ' ' << boundingBoxMin[BBoffset].z << ' ' << childA[BBoffset] << std::endl;
+    //std::cout << boundingBoxMax[BBoffset].x << ' ' << boundingBoxMax[BBoffset].y << ' ' << boundingBoxMax[BBoffset].z << ' ' << childB[BBoffset] << std::endl;
 }
 
 void Scene::set_ssbo() const {
@@ -186,7 +216,7 @@ int Scene::getNumTris() const {
 
 void Scene::setUniforms(const GLuint shaderProgram) const {
     const auto end = Clock::now();
-    const glm::uint duration = static_cast<glm::uint>(std::chrono::duration_cast<std::chrono::microseconds>(end - start).count()) % (width*height);
+    const glm::uint duration = static_cast<glm::uint>(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()) % (width*height);
 
     glUniform1i(glGetUniformLocation(shaderProgram, "numModels"), int(models.size()));
     glUniform3f(glGetUniformLocation(shaderProgram, "cameraPos"), cameraPos.x, cameraPos.y, cameraPos.z);
@@ -283,7 +313,7 @@ void Scene::get_BVH_stats(int index, int& leafNodes, int& depth, int& minDepth, 
     int childB = this->childB[index];
     if (childA > 0) {
         get_BVH_stats(childA, leafNodes, depth, minDepth, maxDepth, triPerLeaf, minTriPerLeaf, maxTriPerLeaf, current_depth+1);
-        get_BVH_stats(childA, leafNodes, depth, minDepth, maxDepth, triPerLeaf, minTriPerLeaf, maxTriPerLeaf, current_depth+1);
+        get_BVH_stats(childB, leafNodes, depth, minDepth, maxDepth, triPerLeaf, minTriPerLeaf, maxTriPerLeaf, current_depth+1);
         return;
     }
     int triStart = -childA;

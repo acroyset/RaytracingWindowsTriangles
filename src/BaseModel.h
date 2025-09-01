@@ -15,9 +15,12 @@ class BaseModel {
     std::string filename;
 
     std::vector<glm::vec3> vertices;
-    std::vector<glm::ivec3> triangles;
+    std::vector<glm::ivec4> triangles;
     std::vector<glm::ivec3> normals;
     std::vector<glm::vec3> normalsList;
+    std::vector<glm::vec4> colors;
+    std::vector<glm::vec4> specularColors;
+    std::vector<glm::vec4> glassLightSettings;
 
     std::vector<glm::vec3> boundingBoxMin;
     std::vector<glm::vec3> boundingBoxMax;
@@ -29,7 +32,16 @@ class BaseModel {
 
     BaseModel();
 
-    static void parse(const std::string& nfilename, std::vector<glm::vec3>& vertices, std::vector<glm::ivec3>& triangles, std::vector<glm::vec3>& normalsList);
+    static void parse(
+        const std::string& nfilename,
+        std::vector<glm::vec3>& vertices,
+        std::vector<glm::ivec3>& triangles,
+        std::vector<glm::vec3>& normalsList,
+        std::vector<int>& tempTriMatIndex,
+        std::vector<glm::vec4>& colors,
+        std::vector<glm::vec4>& specularColors,
+        std::vector<glm::vec4>& glassLightSettings
+    );
 
     explicit BaseModel(const std::string& filename);
 

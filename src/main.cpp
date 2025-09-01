@@ -159,20 +159,16 @@ int main() {
 
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
-    Scene scene(width, height, 1,3, 16);
+    Scene scene(width, height, 1,3, 32);
 
     Timer t;
 
-    BaseModel dragon("models/dragon800K.txt");
+    scene.addModel("models/bugatti/bugatti.obj", glm::vec3(0, 1000, 0), glm::vec3(5000), glm::vec3(0.9), 0.3);
 
-    scene.addModel("models/quad.txt", glm::vec3(0,4999, 0), glm::vec3(1000), glm::vec3(0.95), 0, glm::vec3(0), 0, 0, 1, 20);
-    scene.addModel("models/cubeInternal.txt", glm::vec3(0,2000, 0), glm::vec3(3000), glm::vec3(0.95), 0);
-    scene.addModel(dragon, glm::vec3(0,762.30, 0), glm::vec3(2500), glm::vec3(0.01), 0.99, glm::vec3(0.95), 0.15);
-    //scene.addModel("models/Sphere.txt", glm::vec3(-5000, -800, 0), glm::vec3(200), glm::vec3(1), 1, glm::vec3(0.9), 1, 1, 1.3);
-    //scene.addModel("models/Sphere.txt", glm::vec3(-5000, -800, 0), glm::vec3(195), glm::vec3(1), 1, glm::vec3(1), 1, 1, 1);
-    //scene.addModel(dragon, glm::vec3(-1400, 450, 0), glm::vec3(150, 150, 150), glm::vec3(0.1, 0.1, 0.8), 1);
-    //scene.addModel(dragon, glm::vec3(-1900, 350, 0), glm::vec3(100, 100, 100), glm::vec3(0.8, 0.1, 0.1), 1);
-    //scene.addModel("models/sponza.txt", glm::vec3(0, 0, 0), glm::vec3(800, 800, 800), glm::vec3(0.9, 0.9, 0.9), 0, 0);
+    //scene.addModel("models/quad.txt", glm::vec3(0,4999, 0), glm::vec3(1000), glm::vec3(0.95), 0, glm::vec3(0), 0, 0, 1, 20);
+    //scene.addModel("models/cubeInternal.txt", glm::vec3(0,2000, 0), glm::vec3(3000), glm::vec3(0.95), 0);
+    //scene.addModel(dragon, glm::vec3(0,762.30, 0), glm::vec3(2500), glm::vec3(0.01), 0.99, glm::vec3(0.95), 0.15);
+
 
     float duration = t.reset();
 
