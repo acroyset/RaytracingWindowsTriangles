@@ -46,7 +46,7 @@ uniform vec3 cameraPos;
 uniform vec3 camForward;
 uniform vec3 camUp;
 uniform vec3 camRight;
-uniform vec2 resolution;
+uniform uvec2 resolution;
 uniform int frameCount;
 uniform int numNodes;
 uniform int samples;
@@ -568,7 +568,7 @@ void main() {
 
     uvec2 pixel = uvec2(fragCoord.x * resolution.x, fragCoord.y * resolution.y * aspectRatio);
     int pixels = int(resolution.x*resolution.y);
-    uint state = pixel.x + pixel.y * uint(resolution.x) + uint((frameCount*int(resolution.x)*time)%4000000000);
+    uint state = pixel.x + pixel.y * uint(resolution.x) + uint(frameCount*time) + uint(frameCount);
 
     vec3 totalColor = vec3(0,0,0);
 

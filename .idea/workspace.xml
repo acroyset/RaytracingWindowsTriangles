@@ -33,31 +33,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cd06d447-a7c8-42f4-a8e5-4bf88ac1888b" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/models/cube/cube.mtl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/sky.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/.cmake/api/v1/reply/cache-v2-f7a30d8e80576442db0b.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/.cmake/api/v1/reply/index-2025-08-25T04-25-47-0505.json" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/.ninja_deps" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/.ninja_deps" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/.ninja_log" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/.ninja_log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeCache.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeCache.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/clion-Debug-log.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/clion-Debug-log.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/rules.ninja" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/rules.ninja" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/RaytracingWindowsTriangles.dir/src/Scene.cpp.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/RaytracingWindowsTriangles.dir/src/Scene.cpp.obj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/RaytracingWindowsTriangles.dir/src/main.cpp.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/RaytracingWindowsTriangles.dir/src/main.cpp.obj" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/RaytracingWindowsTriangles.exe" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/RaytracingWindowsTriangles.exe" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/Testing/Temporary/LastTest.log" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/Testing/Temporary/LastTest.log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/Sphere.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/bugatti/bugatti.mtl" beforeDir="false" afterPath="$PROJECT_DIR$/models/bugatti/bugatti.mtl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/bunny.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/cube.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/cubeInternal.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/dragon800K.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/dragon80K.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/dragon8K.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/knight.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/quad.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/room.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/sponza.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/suzanne.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/dragon80K.obj" beforeDir="false" afterPath="$PROJECT_DIR$/models/dragon80K.obj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/dragon8K.obj" beforeDir="false" afterPath="$PROJECT_DIR$/models/dragon8K.obj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shaders/display.frag" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/display.frag" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/shaders/fullscreen.frag" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/fullscreen.frag" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.h" afterDir="false" />
@@ -362,7 +347,7 @@
       <workItem from="1756689385225" duration="4069000" />
       <workItem from="1756693934659" duration="6913000" />
       <workItem from="1756775763108" duration="4000" />
-      <workItem from="1756776067338" duration="7357000" />
+      <workItem from="1756776067338" duration="11961000" />
     </task>
     <servers />
   </component>

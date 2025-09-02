@@ -216,7 +216,7 @@ void Scene::setUniforms(const GLuint shaderProgram) const {
     glUniform3f(glGetUniformLocation(shaderProgram, "camForward"), camForward.x, camForward.y, camForward.z);
     glUniform3f(glGetUniformLocation(shaderProgram, "camUp"), camUp.x, camUp.y, camUp.z);
     glUniform3f(glGetUniformLocation(shaderProgram, "camRight"), camRight.x, camRight.y, camRight.z);
-    glUniform2f(glGetUniformLocation(shaderProgram, "resolution"), static_cast<float>(width), static_cast<float>(height));
+    glUniform2ui(glGetUniformLocation(shaderProgram, "resolution"), width, height);
     glUniform1i(glGetUniformLocation(shaderProgram, "frameCount"), frameCount);
     glUniform1i(glGetUniformLocation(shaderProgram, "numNodes"), getNumBVHNodes());
     glUniform1i(glGetUniformLocation(shaderProgram, "samples"), samples);

@@ -1,6 +1,5 @@
 # Blender 3.4.1
 # www.blender.org
-mtllib dragon_low.mtl
 o dragon
 v 0.207195 -0.263764 0.214438
 v 0.206990 -0.264675 0.211045

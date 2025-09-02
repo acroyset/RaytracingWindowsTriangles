@@ -25,10 +25,6 @@ class Scene {
 
     std::vector<int> models;
 
-    int samples;
-    int aa;
-    int bounceLim;
-
     glm::vec3 cameraPos{};
     glm::vec3 camForward{};
     glm::vec3 camUp{};
@@ -36,15 +32,19 @@ class Scene {
 
     bool lock;
 
-    int frameCount;
-    int width, height;
-
     glm::vec3 skyColor = glm::vec3(0.5,0.7,0.9);
     glm::vec3 sunDir = glm::normalize(glm::vec3(0.28, 0.33, 0.2));
     float sunStrength = 100;
     glm::vec3 sunColor = glm::vec3(1, .7, .3);
 
     public:
+
+    int frameCount;
+    int width, height;
+    int samples;
+    int aa;
+    int bounceLim;
+
     Scene();
     Scene(int width, int height, int samples, int aa, int bounceLim);
 

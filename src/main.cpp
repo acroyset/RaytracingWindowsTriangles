@@ -305,6 +305,8 @@ int main() {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, pingpongTex[ping]);
         glUniform1i(glGetUniformLocation(displayShader, "screenTex"), 0);
+        glUniform2ui(glGetUniformLocation(displayShader, "resolution"), width, height);
+        glUniform1i(glGetUniformLocation(displayShader, "frameCount"), scene.frameCount*scene.samples);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
         // Swap ping-pong buffers

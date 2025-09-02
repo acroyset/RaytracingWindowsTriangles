@@ -1,6 +1,5 @@
 # Blender 4.1.0
 # www.blender.org
-mtllib dragon_tiny.mtl
 o dragon
 v 0.207652 -0.262406 0.214081
 v 0.205190 -0.271141 0.209512
