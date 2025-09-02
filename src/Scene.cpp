@@ -119,17 +119,10 @@ void Scene::addModel(
         }
     }
 
-    for (int i = 0; i < colors.size(); i++) {
-        std::cout << colors[i].x << ", " << colors[i].y << ", " << colors[i].z << ", " << colors[i].w << std::endl;
-        std::cout << specularColors[i].x << ", " << specularColors[i].y << ", " << specularColors[i].z << ", " << specularColors[i].w << std::endl;
-        std::cout << glassLightSettings[i].x << ", " << glassLightSettings[i].y << ", " << glassLightSettings[i].z << ", " << glassLightSettings[i].w << std::endl;
-        std::cout << std::endl;
-    }
-
-    //std::cout << std::endl;
-    //std::cout << BBoffset << std::endl;
-    //std::cout << boundingBoxMin[BBoffset].x << ' ' << boundingBoxMin[BBoffset].y << ' ' << boundingBoxMin[BBoffset].z << ' ' << childA[BBoffset] << std::endl;
-    //std::cout << boundingBoxMax[BBoffset].x << ' ' << boundingBoxMax[BBoffset].y << ' ' << boundingBoxMax[BBoffset].z << ' ' << childB[BBoffset] << std::endl;
+    std::cout << std::endl;
+    std::cout << BBoffset << std::endl;
+    std::cout << boundingBoxMin[BBoffset].x << ' ' << boundingBoxMin[BBoffset].y << ' ' << boundingBoxMin[BBoffset].z << ' ' << childA[BBoffset] << std::endl;
+    std::cout << boundingBoxMax[BBoffset].x << ' ' << boundingBoxMax[BBoffset].y << ' ' << boundingBoxMax[BBoffset].z << ' ' << childB[BBoffset] << std::endl;
 }
 
 void Scene::set_ssbo() const {
@@ -309,6 +302,7 @@ int Scene::numTriBelow(int index) {
 }
 
 void Scene::get_BVH_stats(int index, int& leafNodes, int& depth, int& minDepth, int& maxDepth, int& triPerLeaf, int& minTriPerLeaf, int& maxTriPerLeaf, int current_depth) {
+    if (models.empty()) return;
     int childA = this->childA[index];
     int childB = this->childB[index];
     if (childA > 0) {

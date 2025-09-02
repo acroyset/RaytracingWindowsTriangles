@@ -59,6 +59,11 @@ uniform vec3 skyColor;
 uniform vec3 sunDir;
 uniform vec3 sunColor;
 
+uniform sampler2D uEnvLatLong; // bind your 2D sky texture here
+uniform float uEnvYaw;         // rotation around Y axis if you want to spin the sky
+
+const float PI = 3.14159265359;
+
 const int MAX_STACK_SIZE = 48;
 int stack[MAX_STACK_SIZE];
 float iorStack[16];
@@ -102,11 +107,43 @@ vec3 randPointSphereN(inout uint state){
     return vec3(x, y, z);
 }
 
+//helpers
 float schlick(float cos_theta, float n1, float n2) {
     if (abs(n1 - n2) < 0.001) return 0.0f;
 
     float r0 = pow((n1 - n2) / (n1 + n2), 2.0f);
     return r0 + (1.0f - r0) * pow(1.0f - cos_theta, 5.0f);
+}
+mat3 rotY(float a){
+    float c = cos(a), s = sin(a);
+    return mat3( vec3( c,0,-s),
+    vec3(0,1,0),
+    vec3( s,0, c) );
+}
+vec2 dirToLatLongUV(vec3 d){
+    d = normalize(d);
+
+    // Choose ONE of the two blocks below depending on your camera "forward".
+    // Start with Block A; if the horizon/sun is mirrored or pinched, switch to B.
+
+    // --- Block A: camera looks along -Z (common in OpenGL) ---
+    float phi = atan(d.z, d.x);          // [-pi, pi], azimuth around Y
+    float u   = phi * (1.0/(2.0*PI)) + 0.5;
+    float v   = acos(clamp(d.y, -1.0, 1.0)) / PI;
+
+    // --- Block B: camera looks along +Z (some engines) ---
+    // float phi = atan(-d.z, d.x);
+    // float u   = phi * (1.0/(2.0*PI)) + 0.5;
+    // float v   = acos(clamp(d.y, -1.0, 1.0)) / PI;
+
+    return vec2(fract(u), clamp(v, 0.0, 1.0));
+}
+vec2 seamSafeUV(vec2 uv){
+    uv.x = uv.x - floor(uv.x); // wrap to [0,1)
+    vec2 texel = 1.0 / vec2(textureSize(uEnvLatLong, 0));
+    uv.x = clamp(uv.x, texel.x*0.5, 1.0 - texel.x*0.5);
+    uv.y = clamp(uv.y, texel.y*0.5, 1.0 - texel.y*0.5);
+    return uv;
 }
 
 //intersection functions
@@ -249,6 +286,11 @@ float findBestTri(vec3 pos, vec3 dir, vec3 invDir, out int best_tri_i, out int t
 }
 
 //color functions
+vec3 tonemapACES(vec3 x) {
+    // Simple ACES fit
+    float a = 2.51, b = 0.03, c = 2.43, d = 0.59, e = 0.14;
+    return clamp((x*(a*x+b)) / (x*(c*x+d)+e), 0.0, 1.0);
+}
 vec3 debugView(int triTest, int aabbTest){
     int triThreshold = 50;
     int aabbThreshold = 500;
@@ -258,10 +300,17 @@ vec3 debugView(int triTest, int aabbTest){
     }
     return color;
 }
+vec3 sampleSky(vec3 dir) {
+    dir = rotY(uEnvYaw) * normalize(dir);
+    vec2 uv = dirToLatLongUV(dir);
+    uv = seamSafeUV(uv);
+    return 1.3*texture(uEnvLatLong, uv).rgb;       // or texLinearMip(uv, 0.0)
+}
 vec3 getEnviormentLight(vec3 dir){
-    return vec3(0.14, 0.74, 0.76);
-    float sunStrength = pow(max(dot(dir, sunDir),0), 1024);
-    return skyColor + sunColor*sunStrength;
+    //return vec3(0.14, 0.74, 0.76);
+    vec3 skyColorImg = sampleSky(dir);
+    float sunStrength = pow(max(dot(dir, sunDir),0), 2048);
+    return skyColorImg + sunColor*sunStrength;
 }
 bool updateColor(inout vec3 color, int material_i, bool isSpecular, bool diffuseOnly){
     //TERRAIN COLORS
