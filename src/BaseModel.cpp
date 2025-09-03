@@ -565,7 +565,7 @@ BaseModel::BaseModel(const std::string &filename) {
     }
 
     std::cout << "Starting BVH construction..." << std::endl;
-    createBVH(47, 5, triStart, numTris);
+    createBVH(47, 9, triStart, numTris);
     std::cout << "BVH construction complete!" << std::endl;
 }
 

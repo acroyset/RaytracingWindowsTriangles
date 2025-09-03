@@ -38,6 +38,10 @@ uniform vec3  sunColor;
 uniform sampler2D uEnvLatLong;
 uniform float     uEnvYaw;
 
+uniform bool debugView;
+uniform int triTh;
+uniform int aabbTh;
+
 const float PI = 3.14159265359;
 
 const int MAX_STACK_SIZE = 48;
@@ -400,8 +404,7 @@ vec3 trace(vec3 pos, vec3 dir, inout uint state){
         float bu, bv, bw;
         float tW = findBestTri_world(pos, dir, tri_i, model_i, triTest, aabbTest, bu, bv, bw);
 
-        if (false){ // debug
-            int triTh=75, aabbTh=400;
+        if (debugView){ // debug
             vec3 dbg = vec3(float(triTest)/float(triTh), 0.0, float(aabbTest)/float(aabbTh));
             if (triTest>triTh) dbg=vec3(1); else if (aabbTest>aabbTh) dbg=vec3(0,1,0);
             return dbg;

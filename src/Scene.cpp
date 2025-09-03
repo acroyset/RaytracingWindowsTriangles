@@ -51,6 +51,14 @@ inline bool DragFloat3(const char* label, glm::vec3& v,
 inline bool ColorEdit3(const char* label, glm::vec3& v) {
     return ImGui::ColorEdit3(label, glm::value_ptr(v));
 }
+inline bool ColorEdit3(const char* label, glm::vec4& v) {
+    auto v3 = glm::vec3(v.x, v.y, v.z);
+    const bool out = ImGui::ColorEdit3(label, glm::value_ptr(v3));
+    v.x = v3.x;
+    v.y = v3.y;
+    v.z = v3.z;
+    return out;
+}
 
 Scene::Scene() {
     samples = 1;
@@ -91,8 +99,7 @@ void Scene::addModel(
     float specularProb,
     const float transparency,
     const float ior,
-    float emission)
-{
+    float emission) {
     if (specularColor == glm::vec3(-1)) specularProb = -1;
     int Voffset = int(vertices.size());
     int Toffset = int(triangles.size());
@@ -161,6 +168,9 @@ void Scene::addModel(
     std::string stem = (slash == std::string::npos) ? model.filename : model.filename.substr(slash + 1);
     modelLabels.emplace_back(stem);
 
+    int Ccount = int(colors.size()) - Coffset;      // how many entries were added for this model
+    modelsColors.emplace_back(Coffset, Coffset + Ccount);
+
 }
 
 void Scene::set_ssbo() {
@@ -176,22 +186,19 @@ void Scene::set_ssbo() {
     glBufferData(GL_SHADER_STORAGE_BUFFER, int(triangles.size() * sizeof(glm::ivec4)), triangles.data(), GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssboTriangles);
 
-    GLuint ssboColors;
     glGenBuffers(1, &ssboColors);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboColors);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, int(colors.size() * sizeof(glm::vec4)), colors.data(), GL_STATIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, int(colors.size() * sizeof(glm::vec4)), colors.data(), GL_DYNAMIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssboColors);
 
-    GLuint ssboSpecularColors;
     glGenBuffers(1, &ssboSpecularColors);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboSpecularColors);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, int(specularColors.size() * sizeof(glm::vec4)), specularColors.data(), GL_STATIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, int(specularColors.size() * sizeof(glm::vec4)), specularColors.data(), GL_DYNAMIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssboSpecularColors);
 
-    GLuint ssboGlassLightSettings;
     glGenBuffers(1, &ssboGlassLightSettings);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboGlassLightSettings);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, int(glassLightSettings.size() * sizeof(glm::vec4)), glassLightSettings.data(), GL_STATIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, int(glassLightSettings.size() * sizeof(glm::vec4)), glassLightSettings.data(), GL_DYNAMIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, ssboGlassLightSettings);
 
     GLuint ssboBoundingBoxMin;
@@ -238,10 +245,7 @@ void Scene::set_ssbo() {
 
     glGenBuffers(1, &ssboModelTransformations);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboModelTransformations);
-    glBufferData(GL_SHADER_STORAGE_BUFFER,
-                 int(modelTransforms.size() * sizeof(glm::mat4)),
-                 modelTransforms.data(),
-                 GL_DYNAMIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, int(modelTransforms.size() * sizeof(glm::mat4)),modelTransforms.data(),GL_DYNAMIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 12, ssboModelTransformations);
 }
 
@@ -272,6 +276,9 @@ void Scene::setUniforms(const GLuint shaderProgram) const {
     glUniform3f(glGetUniformLocation(shaderProgram, "skyColor"), skyColor.x, skyColor.y, skyColor.z);
     glUniform3f(glGetUniformLocation(shaderProgram, "sunDir"), sunDir.x, sunDir.y, sunDir.z);
     glUniform3f(glGetUniformLocation(shaderProgram, "sunColor"), sunStrength*sunColor.x, sunStrength*sunColor.y, sunStrength*sunColor.z);
+    glUniform1i(glGetUniformLocation(shaderProgram, "debugView"), debugView ? 1 : 0);
+    glUniform1i(glGetUniformLocation(shaderProgram, "triTh"), triTh);
+    glUniform1i(glGetUniformLocation(shaderProgram, "aabbTh"), aabbTh);
 }
 
 bool Scene::updateCamera(GLFWwindow& window, float speed, float sensitivity, float dt) {
@@ -363,6 +370,12 @@ void Scene::updateFrame(const GLuint shaderProgram, GLFWwindow& window, float dt
         changed |= ImGui::SliderInt("Antialiasing", &aa, 1, 5);
         changed |= ImGui::SliderInt("Bounces", &bounceLim, 1, 16);
 
+        changed |= ImGui::Checkbox("Debug View" , &debugView);
+        if (debugView) {
+            changed |= ImGui::SliderInt("Triangle Threshhold", &triTh, 0, 1000);
+            changed |= ImGui::SliderInt("AABB Threshhold", &aabbTh, 0, 1000);
+        }
+
         if (ImGui::Button("Reset accumulation") || changed) {
             ui_resetAccum = true;
         }
@@ -390,6 +403,9 @@ void Scene::updateFrame(const GLuint shaderProgram, GLFWwindow& window, float dt
 
             if (selectedModel >= 0) {
                 bool changedPRS = false;
+                bool changedC = false;
+                bool changedSC = false;
+                bool changedGLS = false;
 
                 // Local aliases
                 glm::vec3& P = modelPos[selectedModel];
@@ -399,8 +415,24 @@ void Scene::updateFrame(const GLuint shaderProgram, GLFWwindow& window, float dt
                 // Rotation UI in degrees (convert to/from radians for nicer UX)
                 glm::vec3 rotDeg = glm::degrees(R);
                 changedPRS |= DragFloat3("Position", P, 3.0f);                     // world units
-                changedPRS |= DragFloat3("Scale",    S, 1.0f, 0.0f, 0.0f);
+                changedPRS |= DragFloat3("Scale",    S, 1.0f, 0.0f, 1e36);
                 changedPRS |= DragFloat3("Rotation (deg)", rotDeg, 0.2f);
+
+                for (int i = modelsColors[selectedModel][0]; i < modelsColors[selectedModel][1]; i++) {
+                    glm::vec4& C = colors[i];
+                    glm::vec4& SC = specularColors[i];
+                    glm::vec4& GLS = glassLightSettings[i];
+                    changedC |= ColorEdit3("Color", C);
+                    changedC |= ImGui::SliderFloat("Smoothness", &C.w, 0.0f, 1.0f);
+                    changedSC |= ColorEdit3("Specular Color", SC);
+                    changedSC |= ImGui::SliderFloat("Specualar Probability", &SC.w, 0.0f, 1.0f);
+                    changedGLS |= ImGui::SliderFloat("Transparency", &GLS.x, 0.0f, 1.0f);
+                    changedGLS |= ImGui::SliderFloat("Index of Refraction", &GLS.y, 0.0f, 3.0f);
+                    changedGLS |= ImGui::SliderFloat("Emission Strength", &GLS.z, 0.0f, 10.0f);
+                    colors[i] = C;
+                    specularColors[i] = SC;
+                    glassLightSettings[i] = GLS;
+                }
 
                 if (changedPRS) {
                     R = glm::radians(rotDeg);
@@ -415,6 +447,33 @@ void Scene::updateFrame(const GLuint shaderProgram, GLFWwindow& window, float dt
                                     &modelTransforms[selectedModel]);
 
                     frameCount = 0; // nuke accumulation so the new transform converges cleanly
+                }
+                // All materials for this model share the same contiguous range:
+                const int start = modelsColors[selectedModel][0];   // inclusive
+                const int end   = modelsColors[selectedModel][1];   // exclusive
+                const GLsizeiptr count = (GLsizeiptr)(end - start);
+                const GLsizeiptr byteOff = (GLsizeiptr)start * sizeof(glm::vec4);
+                const GLsizeiptr byteSize = count * sizeof(glm::vec4);
+
+                if (changedC) {
+                    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboColors);
+                    glBufferSubData(GL_SHADER_STORAGE_BUFFER, byteOff, byteSize, colors.data() + start);
+                    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssboColors);
+                    frameCount = 0;
+                }
+
+                if (changedSC) {
+                    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboSpecularColors);
+                    glBufferSubData(GL_SHADER_STORAGE_BUFFER, byteOff, byteSize, specularColors.data() + start);
+                    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssboSpecularColors);
+                    frameCount = 0;
+                }
+
+                if (changedGLS) {
+                    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboGlassLightSettings);
+                    glBufferSubData(GL_SHADER_STORAGE_BUFFER, byteOff, byteSize, glassLightSettings.data() + start);
+                    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, ssboGlassLightSettings);
+                    frameCount = 0;
                 }
             }
         }

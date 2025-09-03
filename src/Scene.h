@@ -32,6 +32,7 @@ class Scene {
     std::vector<int> childB;
 
     std::vector<int> models;
+    std::vector<glm::ivec2> modelsColors;
 
     glm::vec3 cameraPos{};
     glm::vec3 camForward{};
@@ -45,9 +46,16 @@ class Scene {
     float sunStrength = 100;
     glm::vec3 sunColor = glm::vec3(1, .7, .3);
 
-    public:
-
+    GLuint ssboColors;
+    GLuint ssboSpecularColors;
+    GLuint ssboGlassLightSettings;
     GLuint ssboModelTransformations = 0;
+
+    bool debugView = false;
+    int triTh = 75;
+    int aabbTh = 400;
+
+    public:
 
     int frameCount;
     int width, height;
