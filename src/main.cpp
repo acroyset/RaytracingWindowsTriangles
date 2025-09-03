@@ -7,6 +7,10 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "Scene.h"
+#include "imgui.h"
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
+
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <filesystem>
@@ -109,6 +113,18 @@ bool setup() {
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
+    // --- ImGui init ---
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    // io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // optional docking
+    ImGui::StyleColorsDark();
+
+    // Match your GL profile (you requested 4.3 core)
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 430");
+
+
     return true;
 }
 bool shouldClose() {
@@ -119,6 +135,11 @@ void shutdown() {
     glDeleteVertexArrays(1, &vao);
     glfwDestroyWindow(window);
     glfwTerminate();
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
 }
 static void setDefault2DParams() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -288,8 +309,11 @@ int main() {
         glUniform1f(glGetUniformLocation(shaderProgram, "uEnvYaw"), 0.0f);
 
         // update camera / uniforms
-        scene.updateFrame(shaderProgram, *window, dt);
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
 
+        scene.updateFrame(shaderProgram, *window, dt);
 
         // set uniforms for display shader
         glActiveTexture(GL_TEXTURE0);
@@ -305,12 +329,16 @@ int main() {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, pingpongTex[ping]);
         glUniform1i(glGetUniformLocation(displayShader, "screenTex"), 0);
-        glUniform2ui(glGetUniformLocation(displayShader, "resolution"), width, height);
-        glUniform1i(glGetUniformLocation(displayShader, "frameCount"), scene.frameCount*scene.samples);
+        glUniform1f(glGetUniformLocation(displayShader, "uExposure"), 1.0f);
+
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
         // Swap ping-pong buffers
         std::swap(ping, pong);
+
+        // >>> ImGui render on top <<<
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);
         glfwPollEvents();

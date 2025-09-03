@@ -12,12 +12,45 @@ add_library(glad "external/glad/src/glad.c")
 target_include_directories(glad PUBLIC "external/glad/include")
 include_directories(glm)
 
-# Executable
-add_executable(RaytracingWindowsTriangles src/main.cpp
+# --- Executable (CREATE THE TARGET FIRST) ---
+add_executable(RaytracingWindowsTriangles
+        src/main.cpp
         src/Scene.cpp
         src/BaseModel.cpp
-        src/BaseModel.h)
-target_link_libraries(RaytracingWindowsTriangles glfw glad OpenGL::GL)
-target_include_directories(RaytracingWindowsTriangles PRIVATE external/glad/include)
+        src/BaseModel.h
+)
+target_include_directories(RaytracingWindowsTriangles PRIVATE
+        external/glad/include
+        external/glfw/include
+        glm
+)
+target_link_libraries(RaytracingWindowsTriangles PRIVATE glfw glad OpenGL::GL)
 
+# --- ImGui (FetchContent) ---
+include(FetchContent)
+FetchContent_Declare(
+        imgui
+        GIT_REPOSITORY https://github.com/ocornut/imgui.git
+        GIT_TAG v1.91.0
+)
+FetchContent_MakeAvailable(imgui)
 
+add_library(imgui_glfw_opengl3
+        ${imgui_SOURCE_DIR}/imgui.cpp
+        ${imgui_SOURCE_DIR}/imgui_draw.cpp
+        ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+        ${imgui_SOURCE_DIR}/imgui_tables.cpp
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+)
+target_include_directories(imgui_glfw_opengl3 PUBLIC
+        ${imgui_SOURCE_DIR}
+        ${imgui_SOURCE_DIR}/backends
+        external/glad/include
+        external/glfw/include
+)
+target_compile_definitions(imgui_glfw_opengl3 PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLAD)
+target_link_libraries(imgui_glfw_opengl3 PUBLIC glfw glad)
+
+# Link ImGui to your app (now that the app target exists)
+target_link_libraries(RaytracingWindowsTriangles PRIVATE imgui_glfw_opengl3)

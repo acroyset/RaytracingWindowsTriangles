@@ -1,4 +1,7 @@
 // Scene.cpp
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #define GLAD_GL_IMPLEMENTATION
 #include <glad/glad.h>
@@ -7,6 +10,8 @@
 #include <fstream>
 #include <GLFW/glfw3.h>
 #include <chrono>
+#include <imgui.h>
+
 #include "BaseModel.h"
 
 using Clock = std::chrono::high_resolution_clock;
@@ -17,6 +22,34 @@ void setBasisVectors(const glm::vec3& forward, glm::vec3& up, glm::vec3& right) 
     constexpr glm::vec3 world_up(0, 1, 0);
     right = glm::normalize(glm::cross(forward, world_up));
     up = glm::normalize(glm::cross(right, forward));
+}
+
+glm::mat4 composeTransform(const glm::vec3& position,
+                           const glm::vec3& rotation, // Euler angles in radians
+                           const glm::vec3& scale) {
+    glm::mat4 I(1.0f);
+
+    // Scale
+    glm::mat4 S = glm::scale(I, scale);
+
+    // Rotation (order: Z * Y * X)
+    glm::mat4 Rx = glm::rotate(I, rotation.x, glm::vec3(1, 0, 0));
+    glm::mat4 Ry = glm::rotate(I, rotation.y, glm::vec3(0, 1, 0));
+    glm::mat4 Rz = glm::rotate(I, rotation.z, glm::vec3(0, 0, 1));
+    glm::mat4 R = Rz * Ry * Rx;
+
+    // Translation
+    glm::mat4 T = glm::translate(I, position);
+
+    // Final TRS matrix
+    return T * R * S;
+}
+inline bool DragFloat3(const char* label, glm::vec3& v,
+                       float speed = 0.01f, float min = 0.0f, float max = 0.0f) {
+    return ImGui::DragFloat3(label, glm::value_ptr(v), speed, min, max);
+}
+inline bool ColorEdit3(const char* label, glm::vec3& v) {
+    return ImGui::ColorEdit3(label, glm::value_ptr(v));
 }
 
 Scene::Scene() {
@@ -70,8 +103,6 @@ void Scene::addModel(
     models.emplace_back(BBoffset);
 
     for (glm::vec3 vertex : model.vertices) {
-        vertex *= scale;
-        vertex += position;
         vertices.emplace_back(vertex, 0);
     }
     for (glm::ivec4 triangle : model.triangles) {
@@ -84,12 +115,8 @@ void Scene::addModel(
         int childA = model.childA[i];
         int childB = model.childB[i];
 
-        bboxMin *= scale;
-        bboxMax *= scale;
         int offsetA = childA <= 0 ? -Toffset : BBoffset;
         int offsetB = childA <= 0 ? 0 : BBoffset;
-        bboxMin += position;
-        bboxMax += position;
         boundingBoxMin.emplace_back(bboxMin, 0);
         boundingBoxMax.emplace_back(bboxMax, 0);
         this->childA.push_back(childA+offsetA);
@@ -119,13 +146,24 @@ void Scene::addModel(
         }
     }
 
-    std::cout << std::endl;
-    std::cout << BBoffset << std::endl;
-    std::cout << boundingBoxMin[BBoffset].x << ' ' << boundingBoxMin[BBoffset].y << ' ' << boundingBoxMin[BBoffset].z << ' ' << childA[BBoffset] << std::endl;
-    std::cout << boundingBoxMax[BBoffset].x << ' ' << boundingBoxMax[BBoffset].y << ' ' << boundingBoxMax[BBoffset].z << ' ' << childB[BBoffset] << std::endl;
+    modelTransforms.emplace_back(composeTransform(
+        position,
+        glm::vec3(0, 0, 0),
+        scale
+        ));
+
+    modelPos.emplace_back(position);
+    modelRot.emplace_back(0.0f, 0.0f, 0.0f);
+    modelScale.emplace_back(scale);
+
+    // a friendly label (filename stem or anything you want)
+    size_t slash = model.filename.find_last_of("/\\");
+    std::string stem = (slash == std::string::npos) ? model.filename : model.filename.substr(slash + 1);
+    modelLabels.emplace_back(stem);
+
 }
 
-void Scene::set_ssbo() const {
+void Scene::set_ssbo() {
     GLuint ssboVertices;
     glGenBuffers(1, &ssboVertices);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboVertices);
@@ -197,6 +235,14 @@ void Scene::set_ssbo() const {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboNormals);
     glBufferData(GL_SHADER_STORAGE_BUFFER, int(normals.size() * sizeof(glm::ivec4)), normals.data(), GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 11, ssboNormals);
+
+    glGenBuffers(1, &ssboModelTransformations);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboModelTransformations);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,
+                 int(modelTransforms.size() * sizeof(glm::mat4)),
+                 modelTransforms.data(),
+                 GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 12, ssboModelTransformations);
 }
 
 int Scene::getNumBVHNodes() const {
@@ -288,7 +334,98 @@ void Scene::updateFrame(const GLuint shaderProgram, GLFWwindow& window, float dt
 
     frameCount++;
 
+    bool ui_resetAccum = false;
+
     if (moved) frameCount = 0;
+
+    // --- Controls window ---
+    {
+        bool changed = false;
+
+        ImGui::Begin("Controls");
+        ImGui::Text("Renderer");
+        ImGui::Separator();
+
+        bool check = lock;
+        ImGui::Checkbox("Lock", &lock);
+        if (check && !lock) {
+            glm::vec2 center = glm::vec2(float(width)/2, float(height)/2);
+            glfwSetCursorPos(&window, center.x, center.y);
+        }
+
+        changed |= ColorEdit3("Sun Color", sunColor);
+        changed |= DragFloat3("Sun Direction", sunDir);
+        sunDir = glm::normalize(sunDir);
+
+        changed |= ImGui::SliderFloat("Sun Strength", &sunStrength, 0, 300);
+
+        changed |= ImGui::SliderInt("Samples", &samples, 1, 25);
+        changed |= ImGui::SliderInt("Antialiasing", &aa, 1, 5);
+        changed |= ImGui::SliderInt("Bounces", &bounceLim, 1, 16);
+
+        if (ImGui::Button("Reset accumulation") || changed) {
+            ui_resetAccum = true;
+        }
+
+        ImGui::Separator();
+        ImGui::Text("Models");
+
+        const bool hasModels = !modelLabels.empty();
+        if (!hasModels) {
+            ImGui::TextDisabled("(no models)");
+        } else {
+            // Current label
+            const char* preview = (selectedModel >= 0) ? modelLabels[selectedModel].c_str() : "(select)";
+            if (ImGui::BeginCombo("Model", preview)) {
+                for (int i = 0; i < (int)modelLabels.size(); ++i) {
+                    bool sel = (selectedModel == i);
+                    if (ImGui::Selectable(modelLabels[i].c_str(), sel)) {
+                        selectedModel = i;
+                        frameCount = 0; // reset accumulation on selection change
+                    }
+                    if (sel) ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
+            }
+
+            if (selectedModel >= 0) {
+                bool changedPRS = false;
+
+                // Local aliases
+                glm::vec3& P = modelPos[selectedModel];
+                glm::vec3& R = modelRot[selectedModel];   // radians
+                glm::vec3& S = modelScale[selectedModel];
+
+                // Rotation UI in degrees (convert to/from radians for nicer UX)
+                glm::vec3 rotDeg = glm::degrees(R);
+                changedPRS |= DragFloat3("Position", P, 3.0f);                     // world units
+                changedPRS |= DragFloat3("Scale",    S, 1.0f, 0.0f, 0.0f);
+                changedPRS |= DragFloat3("Rotation (deg)", rotDeg, 0.2f);
+
+                if (changedPRS) {
+                    R = glm::radians(rotDeg);
+
+                    // Rebuild the matrix and overwrite just this model's slice in the SSBO
+                    modelTransforms[selectedModel] = composeTransform(P, R, S);
+
+                    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboModelTransformations);
+                    const GLsizeiptr offset = (GLsizeiptr)selectedModel * sizeof(glm::mat4);
+                    glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset,
+                                    sizeof(glm::mat4),
+                                    &modelTransforms[selectedModel]);
+
+                    frameCount = 0; // nuke accumulation so the new transform converges cleanly
+                }
+            }
+        }
+
+        ImGui::Text("Frame: %d", frameCount * samples);
+        ImGui::End();
+    }
+
+    if (ui_resetAccum) {
+        frameCount = 0;
+    }
 }
 
 int Scene::numTriBelow(int index) {

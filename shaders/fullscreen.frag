@@ -1,597 +1,450 @@
 #version 430 core
-
 out vec4 FragColor;
 
-in vec2 fragCoord; // From vertex shader, in range [0,1]
+in vec2 fragCoord; // [0,1]
 
-layout(std430, binding = 0) buffer ssboVertices {
-    vec4 vertices[];
-};
-layout(std430, binding = 1) buffer ssboTriangles {
-    ivec4 triangles[];
-};
-layout(std430, binding = 2) buffer ssboColors {
-    vec4 colors[];
-};
-layout(std430, binding = 3) buffer ssboSpecularColors {
-    vec4 specularColors[];
-};
-layout(std430, binding = 4) buffer ssboGlassLightSettings {
-    vec4 glassLightSettings[];
-};
-layout(std430, binding = 5) buffer ssboBoundingBoxMin {
-    vec4 boundingBoxMin[];
-};
-layout(std430, binding = 6) buffer ssboBoundingBoxMax {
-    vec4 boundingBoxMax[];
-};
-layout(std430, binding = 7) buffer ssboChildA {
-    int vChildA[];
-};
-layout(std430, binding = 8) buffer ssboChildB {
-    int vChildB[];
-};
-layout(std430, binding = 9) buffer ssboModels {
-    int models[];
-};
-layout(std430, binding = 10) buffer ssboNormalsList {
-    vec4 normalsList[];
-};
-layout(std430, binding = 11) buffer ssboNormals {
-    ivec4 normals[];
-};
+layout(std430, binding = 0) buffer ssboVertices { vec4 vertices[]; };
+layout(std430, binding = 1) buffer ssboTriangles { ivec4 triangles[]; };
+layout(std430, binding = 2) buffer ssboColors { vec4 colors[]; };
+layout(std430, binding = 3) buffer ssboSpecularColors { vec4 specularColors[]; };
+layout(std430, binding = 4) buffer ssboGlassLightSettings { vec4 glassLightSettings[]; };
+layout(std430, binding = 5) buffer ssboBoundingBoxMin { vec4 boundingBoxMin[]; };
+layout(std430, binding = 6) buffer ssboBoundingBoxMax { vec4 boundingBoxMax[]; };
+layout(std430, binding = 7) buffer ssboChildA { int vChildA[]; };
+layout(std430, binding = 8) buffer ssboChildB { int vChildB[]; };
+layout(std430, binding = 9) buffer ssboModels { int models[]; };
+layout(std430, binding = 10) buffer ssboNormalsList { vec4 normalsList[]; };
+layout(std430, binding = 11) buffer ssboNormals { ivec4 normals[]; };
+layout(std430, binding = 12) buffer ssboModelTransformations { mat4 modelTransformations[]; };
 
-uniform int numModels;
-uniform vec3 cameraPos;
-uniform vec3 camForward;
-uniform vec3 camUp;
-uniform vec3 camRight;
+uniform int   numModels;
+uniform vec3  cameraPos;
+uniform vec3  camForward;
+uniform vec3  camUp;
+uniform vec3  camRight;
 uniform uvec2 resolution;
-uniform int frameCount;
-uniform int numNodes;
-uniform int samples;
-uniform int aa;
-uniform int bounceLim;
-uniform sampler2D uPrevFrame;   // Previous accumulated result
-uniform uint time;
+uniform int   frameCount;
+uniform int   numNodes;
+uniform int   samples;
+uniform int   aa;
+uniform int   bounceLim;
+uniform sampler2D uPrevFrame;
+uniform uint  time;
 
-uniform vec3 skyColor;
-uniform vec3 sunDir;
-uniform vec3 sunColor;
+uniform vec3  skyColor;
+uniform vec3  sunDir;
+uniform vec3  sunColor;
 
-uniform sampler2D uEnvLatLong; // bind your 2D sky texture here
-uniform float uEnvYaw;         // rotation around Y axis if you want to spin the sky
+uniform sampler2D uEnvLatLong;
+uniform float     uEnvYaw;
 
 const float PI = 3.14159265359;
 
 const int MAX_STACK_SIZE = 48;
-int stack[MAX_STACK_SIZE];
+int   stack_[MAX_STACK_SIZE];
 float iorStack[16];
-int iorSize = 1;
+int   iorSize = 1;
 
-//random functions
+/* ========================= RNG ========================= */
 float randomValue(inout uint state){
     state = state * 747796405u + 2891336453u;
     uint result = ((state >> ((state >> 28) + 4u)) ^ state) * 277803737u;
     result = (result >> 22) ^ result;
-    return float(result) * (1/4294967295.0);
-}
-uint randomValueU(inout uint state){
-    state = state * 747796405u + 2891336453u;
-    uint result = ((state >> ((state >> 28) + 4u)) ^ state) * 277803737u;
-    result = (result >> 22) ^ result;
-    return result;
+    return float(result) * (1.0/4294967295.0);
 }
 float randomValueNormalDistribution(inout uint state){
-    float theta = 2 * 3.1415926 * randomValue(state);
-    float rho = sqrt(-3 * log(randomValue(state)));
+    float theta = 2.0*PI * randomValue(state);
+    float rho   = sqrt(-3.0 * log(max(1e-7, randomValue(state))));
     return rho * cos(theta);
 }
 vec3 randPointSphere(inout uint state){
-    vec3 pos;
-    for (int i = 0; i < 10; i++){
-        pos.x = 2*randomValue(state)-1;
-        pos.y = 2*randomValue(state)-1;
-        pos.z = 2*randomValue(state)-1;
-        float mag = dot(pos,pos);
-        if (mag < 1 && mag != 0){
-            return pos / sqrt(mag);
-        }
+    for (int i=0;i<10;i++){
+        vec3 p = vec3(2.0*randomValue(state)-1.0,
+        2.0*randomValue(state)-1.0,
+        2.0*randomValue(state)-1.0);
+        float m = dot(p,p);
+        if (m < 1.0 && m > 0.0) return p * inversesqrt(m);
     }
     return vec3(1,0,0);
 }
-vec3 randPointSphereN(inout uint state){
-    float x = randomValueNormalDistribution(state);
-    float y = randomValueNormalDistribution(state);
-    float z = randomValueNormalDistribution(state);
-    return vec3(x, y, z);
-}
 
-//helpers
+/* ========================= Helpers ========================= */
 float schlick(float cos_theta, float n1, float n2) {
-    if (abs(n1 - n2) < 0.001) return 0.0f;
-
-    float r0 = pow((n1 - n2) / (n1 + n2), 2.0f);
-    return r0 + (1.0f - r0) * pow(1.0f - cos_theta, 5.0f);
+    if (abs(n1-n2) < 1e-3) return 0.0;
+    float r0 = (n1-n2)/(n1+n2); r0 *= r0;
+    return r0 + (1.0-r0)*pow(1.0-cos_theta, 5.0);
 }
 mat3 rotY(float a){
     float c = cos(a), s = sin(a);
-    return mat3( vec3( c,0,-s),
-    vec3(0,1,0),
-    vec3( s,0, c) );
+    return mat3(vec3(c,0,-s), vec3(0,1,0), vec3(s,0,c));
 }
 vec2 dirToLatLongUV(vec3 d){
     d = normalize(d);
-
-    // Choose ONE of the two blocks below depending on your camera "forward".
-    // Start with Block A; if the horizon/sun is mirrored or pinched, switch to B.
-
-    // --- Block A: camera looks along -Z (common in OpenGL) ---
-    float phi = atan(d.z, d.x);          // [-pi, pi], azimuth around Y
+    float phi = atan(d.z, d.x);
     float u   = phi * (1.0/(2.0*PI)) + 0.5;
-    float v   = acos(clamp(d.y, -1.0, 1.0)) / PI;
-
-    // --- Block B: camera looks along +Z (some engines) ---
-    // float phi = atan(-d.z, d.x);
-    // float u   = phi * (1.0/(2.0*PI)) + 0.5;
-    // float v   = acos(clamp(d.y, -1.0, 1.0)) / PI;
-
-    return vec2(fract(u), clamp(v, 0.0, 1.0));
+    float v   = acos(clamp(d.y,-1.0,1.0)) / PI;
+    return vec2(fract(u), clamp(v,0.0,1.0));
 }
 vec2 seamSafeUV(vec2 uv){
-    uv.x = uv.x - floor(uv.x); // wrap to [0,1)
-    vec2 texel = 1.0 / vec2(textureSize(uEnvLatLong, 0));
-    uv.x = clamp(uv.x, texel.x*0.5, 1.0 - texel.x*0.5);
-    uv.y = clamp(uv.y, texel.y*0.5, 1.0 - texel.y*0.5);
+    uv.x -= floor(uv.x);
+    vec2 texel = 1.0/vec2(textureSize(uEnvLatLong,0));
+    uv = clamp(uv, texel*0.5, 1.0-texel*0.5);
     return uv;
 }
 
-//intersection functions
-bool rayTriangleIntersect(vec3 rayOrig, vec3 rayDir, vec3 v0, vec3 v1, vec3 v2, out float t, out float u, out float v){
-    const float EPSILON = 0.0000001;
-    vec3 edge1 = v1 - v0;
-    vec3 edge2 = v2 - v0;
-
-    vec3 pvec = cross(rayDir, edge2);
-    float det = dot(edge1, pvec);
-
-    if (abs(det) < EPSILON)
-    return false; // Ray parallel to triangle
-
-    float invDet = 1.0 / det;
-    vec3 tvec = rayOrig - v0;
-
-    u = dot(tvec, pvec) * invDet;
-    if (u < 0.0 || u > 1.0)
-    return false;
-
-    vec3 qvec = cross(tvec, edge1);
-
-    v = dot(rayDir, qvec) * invDet;
-    if (v < 0.0 || (u + v) > 1.0)
-    return false;
-
-    t = dot(edge2, qvec) * invDet;
-
-    if (t < 0.05)
-    return false;
-
-    return true;
+/* ========================= Intersections ========================= */
+bool rayTriangleIntersect(vec3 ro, vec3 rd, vec3 v0, vec3 v1, vec3 v2, out float t, out float u, out float v){
+    const float EPS = 1e-10;
+    vec3 e1 = v1 - v0;
+    vec3 e2 = v2 - v0;
+    vec3 p  = cross(rd, e2);
+    float det = dot(e1, p);
+    if (abs(det) < EPS) return false;
+    float invDet = 1.0/det;
+    vec3 tv = ro - v0;
+    u = dot(tv, p) * invDet; if (u < 0.0 || u > 1.0) return false;
+    vec3 q = cross(tv, e1);
+    v = dot(rd, q) * invDet; if (v < 0.0 || (u+v) > 1.0) return false;
+    t = dot(e2, q) * invDet;
+    return t > 0.0005;
 }
-float sphereRayCollision(vec3 rayPos, vec3 rayDir, vec3 spherePos, float sphereRadius){
-    float epsilon = 0.1;
-    vec3 ray_pos = rayPos - spherePos;
-    float d = dot(ray_pos, rayDir);
+float intersectAABB(vec3 ro, vec3 invrd, vec3 bmin, vec3 bmax){
+    vec3 t0 = (bmin - ro) * invrd;
+    vec3 t1 = (bmax - ro) * invrd;
+    vec3 tn = min(t0,t1);
+    vec3 tf = max(t0,t1);
+    float tmin = max(max(tn.x, tn.y), tn.z);
+    float tmax = min(min(tf.x, tf.y), tf.z);
+    return (tmax >= max(tmin,0.0)) ? tmin : 1e30;
+}
 
-    float discriminant = d*d - dot(ray_pos, ray_pos) + sphereRadius*sphereRadius;
-
-    if (discriminant == 0){
-        float t = -d;
-        if (t > epsilon){
-            return t;
-        }
+/* ======= NORMALS (LOCAL -> WORLD) ======= */
+vec3 calculateNormalLocal(int triIndex, float u, float v, float w){
+    ivec4 nidx = normals[triIndex];
+    if (nidx.x != -1 && nidx.y != -1 && nidx.z != -1){
+        vec3 na = normalsList[nidx.x].xyz;
+        vec3 nb = normalsList[nidx.y].xyz;
+        vec3 nc = normalsList[nidx.z].xyz;
+        return normalize(na*w + nb*u + nc*v);
     }
-    if (discriminant > 0){
-        float sq = sqrt(discriminant);
-        float t = -d - sq;
-        if (t > epsilon){
-            return t;
-        }
-        t = -d + sq;
-        if (t > epsilon){
-            return t;
-        }
-    }
-    return -1;
+    ivec4 tri = triangles[triIndex];
+    vec3 v0 = vertices[tri.x].xyz;
+    vec3 v1 = vertices[tri.y].xyz;
+    vec3 v2 = vertices[tri.z].xyz;
+    return normalize(cross(v1-v0, v2-v0));
 }
-float intersectAABB(vec3 rayOrigin, vec3 rayInvDir, vec3 boxMin, vec3 boxMax) {
-    vec3 t0 = (boxMin - rayOrigin) * rayInvDir;
-    vec3 t1 = (boxMax - rayOrigin) * rayInvDir;
-
-    vec3 tNear = min(t0, t1);
-    vec3 tFar  = max(t0, t1);
-
-    float tMin = max(max(tNear.x, tNear.y), tNear.z);
-    float tMax = min(min(tFar.x,  tFar.y),  tFar.z);
-
-    bool didHit = tMax >= max(tMin, 0.0);
-    return didHit? tMin : 1000000000;
-}
-void traverseBVH(int nodeOffset, vec3 rayPos, vec3 rayDir, vec3 invRayDir, inout float best_t, inout float best_u, inout float best_v, inout int triTest, inout int aabbTest, inout int best_tri_i) {
-    int stackPtr = 0;
-    stack[stackPtr++] = nodeOffset;  // start from root node  index=nodeOffset
-
-    while (stackPtr > 0) {
-        int nodeIndex = stack[--stackPtr];
-        vec3 bboxMin = boundingBoxMin[nodeIndex].xyz;
-        vec3 bboxMax = boundingBoxMax[nodeIndex].xyz;
-        int childA = vChildA[nodeIndex];
-        int childB = vChildB[nodeIndex];
-
-        if (childA <= 0) {
-            // Intersect ray with all triangles in the leaf node
-            int triStart = -childA;
-            int numTris = -childB;
-            for (int j = triStart; j < triStart+numTris; j++){
-                float t = -1;
-                triTest++;
-                ivec4 tri = triangles[j];
-                vec4 v1 = vertices[tri.x];
-                vec4 v2 = vertices[tri.y];
-                vec4 v3 = vertices[tri.z];
-                float u, v;
-                if (!rayTriangleIntersect(rayPos, rayDir, v1.xyz, v2.xyz, v3.xyz, t, u, v)) continue;
-                if (t < best_t) {
-                    best_t = t;
-                    best_tri_i = j;
-                    best_u = u;
-                    best_v = v;
-                }
-            }
-        }
-        else {
-            // Push children onto the stack
-
-            vec4 AbboxMin_childA = boundingBoxMin[childA];
-            vec4 AbboxMax_childB = boundingBoxMax[childA];
-            vec4 BbboxMin_childA = boundingBoxMin[childB];
-            vec4 BbboxMax_childB = boundingBoxMax[childB];
-
-            aabbTest += 2;
-            float disA = intersectAABB(rayPos, invRayDir, AbboxMin_childA.xyz, AbboxMax_childB.xyz);
-            float disB = intersectAABB(rayPos, invRayDir, BbboxMin_childA.xyz, BbboxMax_childB.xyz);
-
-            bool isNearestA = disA <= disB;
-            float disNear = isNearestA ? disA : disB;
-            float disFar = isNearestA ? disB : disA;
-            int childIndexNear = isNearestA ? childA : childB;
-            int childIndexFar = isNearestA ? childB : childA;
-
-            if (disFar < best_t) stack[stackPtr++] = childIndexFar;
-            if (disNear < best_t) stack[stackPtr++] = childIndexNear;
-
-            // Prevent overflow (optional: clamp or discard)
-            if (stackPtr > MAX_STACK_SIZE) break;
-        }
-    }
-}
-float findBestTri(vec3 pos, vec3 dir, vec3 invDir, out int best_tri_i, out int triTest, out int aabbTest, out float best_u, out float best_v, out float best_w){
-    best_tri_i = -1;
-    float best_t = 1000000000;
-    for (int i = 0; i < numModels; i++){
-        traverseBVH(models[i], pos, dir, invDir, best_t, best_u, best_v, triTest, aabbTest, best_tri_i);
-    }
-    best_w = 1-best_u-best_v;
-    return best_t;
+vec3 toWorldNormal(vec3 nLocal, mat4 M){
+    mat3 N = transpose(inverse(mat3(M)));
+    return normalize(N * nLocal);
 }
 
-//color functions
-vec3 tonemapACES(vec3 x) {
-    // Simple ACES fit
-    float a = 2.51, b = 0.03, c = 2.43, d = 0.59, e = 0.14;
-    return clamp((x*(a*x+b)) / (x*(c*x+d)+e), 0.0, 1.0);
-}
-vec3 debugView(int triTest, int aabbTest){
-    int triThreshold = 50;
-    int aabbThreshold = 500;
-    vec3 color = vec3(float(triTest)/triThreshold, 0, float(aabbTest)/aabbThreshold);
-    if (triTest > triThreshold || aabbTest > aabbThreshold){
-        color = vec3(1);
-    }
-    return color;
-}
-vec3 sampleSky(vec3 dir) {
+/* ========================= Environment ========================= */
+vec3 sampleSky(vec3 dir){
     dir = rotY(uEnvYaw) * normalize(dir);
-    vec2 uv = dirToLatLongUV(dir);
-    uv = seamSafeUV(uv);
-    return 1.3*texture(uEnvLatLong, uv).rgb;       // or texLinearMip(uv, 0.0)
+    vec2 uv = seamSafeUV(dirToLatLongUV(dir));
+    return 1.3 * texture(uEnvLatLong, uv).rgb;
 }
 vec3 getEnviormentLight(vec3 dir){
-    //return vec3(0.14, 0.74, 0.76);
-    vec3 skyColorImg = sampleSky(dir);
-    float sunStrength = pow(max(dot(dir, sunDir),0), 2048);
-    return skyColorImg + sunColor*sunStrength;
-}
-bool updateColor(inout vec3 color, int material_i, bool isSpecular, bool diffuseOnly){
-    //TERRAIN COLORS
-    //float v = dot(normal, vec3(0, 1, 0));
-    //v = max(v, 0);
-    //v = 6*v*v*v*v*v-15*v*v*v*v+10*v*v*v;
-    //v = v*v*v;
-
-    //vec4 rock =  vec4(0.8,  0.7,  0.3,  0.0);
-    //vec4 grass = vec4(0.1,  0.3,  0.1,  0.1);
-    //vec4 snow =  vec4(0.9, 0.9, 0.9, 0.4);
-    //vec4 hColor = mix(grass, snow, smoothstep(1000.0, 1200.0, pos.y));
-    //vec4 c = mix(rock, hColor, v);
-
-    vec3 selectedColor = (isSpecular && !diffuseOnly) ? specularColors[material_i].xyz : colors[material_i].xyz;
-
-    color *= selectedColor;
-    if (glassLightSettings[material_i].z > 0.0) {
-        color *= glassLightSettings[material_i].z;
-        return true;
-    }
-    return false;
+    vec3 sky = sampleSky(dir);
+    float s  = pow(max(dot(normalize(dir), normalize(sunDir)), 0.0), 2048.0);
+    return sky + sunColor * s;
 }
 
-//calculate functions
-vec3 calculateNormal(int triIndex, float u, float v, float w) {
-    ivec4 normal = normals[triIndex];
-
-    if (
-        normal.x != -1 &&
-        normal.y != -1 &&
-        normal.z != -1)
-    {
-        vec3 normA = normalsList[normal.x].xyz;
-        vec3 normB = normalsList[normal.y].xyz;
-        vec3 normC = normalsList[normal.z].xyz;
-
-        vec3 interpolatedNormal = normA * w + normB * u + normC * v;
-
-        // Normalize the result
-        return normalize(interpolatedNormal);
-    }
-
-    // Fallback to face normal if vertex normals are not available
-    ivec4 tri = triangles[triIndex];
-    vec3 v1 = vertices[tri.x].xyz;
-    vec3 v2 = vertices[tri.y].xyz;
-    vec3 v3 = vertices[tri.z].xyz;
-    return normalize(cross(v2 - v1, v3 - v1));
-}
-vec3 calculateInitialDir(int aaCycle, vec2 screenCoord){
-    float xi = float(aaCycle % aa);
-    float yi = float(aaCycle) / float(aa);
-
-    float ox = (xi + 0.5) / float(aa) - 0.5f; // Center of each subpixel grid cell
-    float oy = (yi + 0.5) / float(aa) - 0.5f;
-
-    ox /= resolution.x/2;
-    oy /= resolution.y/2;
-
-    vec2 coord = screenCoord + vec2(ox, oy);
-
-    float fovDegX = 60;
-    float fovRadX = fovDegX/180. * 3.1415926;
-    coord *= tan(fovRadX*0.5);
-
-    vec3 dir = camForward
-        + camRight * coord.x
-        + camUp * coord.y;
-
-    dir = normalize(dir);
-
-    return dir;
-}
-
-vec3 calculateRandDir(vec3 normal, inout uint state){
-    return normalize(randPointSphere(state)+normal);
-}
-vec3 calculateReflectDir(vec3 normal, vec3 dir){
-    return dir-normal*2*dot(dir, normal);
-}
-
-vec3 calculateOpaqueDir(vec3 normal, vec3 dir, float smoothness, inout uint state) {
-    vec3 random = calculateRandDir(normal, state);
-    vec3 reflect = calculateReflectDir(normal, dir);
-    return normalize(mix(random, reflect, smoothness));
+/* ========================= BRDF / Directions ========================= */
+vec3 calculateRandDir(vec3 n, inout uint st){ return normalize(randPointSphere(st) + n); }
+vec3 calculateReflectDir(vec3 n, vec3 d){ return d - n*2.0*dot(d,n); }
+vec3 calculateOpaqueDir(vec3 n, vec3 d, float sm, inout uint st){
+    vec3 r = calculateRandDir(n, st);
+    vec3 m = calculateReflectDir(n, d);
+    return normalize(mix(r, m, sm));
 }
 vec3 calculateRefractionDir(vec3 normal, vec3 dir, float smoothness, float ior, float specularProb, inout uint state, inout vec3 color){
     bool entering;
     float m1, m2;
     vec3 n = normal;
 
-    // Determine if we're entering or exiting the material
-    if (dot(dir, normal) > 0.0f) {
-        // Ray and normal point in same direction = EXITING
+    if (dot(dir, normal) > 0.0){
         entering = false;
-        m1 = iorStack[iorSize-1];    // Current medium (where ray is coming from)
-        m2 = (iorSize >= 2) ? iorStack[iorSize-2] : 1.0;  // Previous medium (where ray is going)
-        n = -normal; // Flip normal for refraction math
+        m1 = iorStack[iorSize-1];
+        m2 = (iorSize >= 2) ? iorStack[iorSize-2] : 1.0;
+        n  = -normal;
     } else {
-        // Ray and normal point opposite directions = ENTERING
         entering = true;
-        m1 = (iorSize >= 1) ? iorStack[iorSize-1] : 1.0;  // Current medium (air/previous)
-        m2 = ior;                    // New medium we're entering
-        n = normal;  // Keep normal as-is
+        m1 = (iorSize >= 1) ? iorStack[iorSize-1] : 1.0;
+        m2 = ior;
+        n  = normal;
     }
 
-    float eta = m1 / m2;
-    float cos_theta_i = clamp(-dot(dir, n), 0.0f, 1.0f);
+    float eta = m1/m2;
+    float cos_i = clamp(-dot(dir, n), 0.0, 1.0);
+    float r0 = (m1-m2)/(m1+m2); r0*=r0;
+    float reflect_prob = r0 + (1.0-r0)*pow(1.0-cos_i,5.0);
 
-    // Fresnel reflectance using Schlick's approximation
-    float r0 = (m1 - m2) / (m1 + m2);
-    r0 *= r0;
-    float reflect_prob = r0 + (1.0 - r0) * pow(1.0 - cos_theta_i, 5.0);
+    if (randomValue(state) < reflect_prob)
+    return calculateOpaqueDir(normal, dir, smoothness, state);
 
-    // Randomly choose reflection vs refraction based on Fresnel
-    if (randomValue(state) < reflect_prob) {
-        // Use original normal for reflection, not the potentially flipped one
-        return calculateOpaqueDir(normal, dir, smoothness, state);
-    }
+    float disc = 1.0 - eta*eta*(1.0 - cos_i*cos_i);
+    if (disc < 0.0)
+    return calculateOpaqueDir(normal, dir, smoothness, state);
 
-    // Calculate discriminant for Total Internal Reflection check
-    float discriminant = 1.0f - eta * eta * (1.0f - cos_theta_i * cos_theta_i);
+    float cos_t = sqrt(disc);
+    vec3 refr = eta*dir + (eta*cos_i - cos_t)*n;
 
+    if (entering) iorStack[iorSize++] = ior; else iorSize--;
 
-
-    // Check for Total Internal Reflection
-    if (discriminant < 0.0f) {
-        float angle_degrees = acos(cos_theta_i) * 180.0 / 3.14159;
-        return calculateOpaqueDir(normal, dir, smoothness, state);
-    }
-
-    // Calculate refracted direction using Snell's law
-    float cos_theta_t = sqrt(discriminant);
-    vec3 refracted = eta * dir + (eta * cos_theta_i - cos_theta_t) * n;
-
-    // Update IOR stack
-    if (entering) {
-        iorStack[iorSize++] = ior;
-    } else {
-        iorSize--;
-    }
-
-    // For roughness: mix with random direction
-    // Use the normal on the refracted side for the random direction
-    vec3 refract_normal = entering ? normal : -normal;
-    vec3 random = calculateRandDir(refract_normal, state);
-    refracted = mix(random, normalize(refracted), specularProb);
-
-    return normalize(refracted);
+    vec3 rand = calculateRandDir(entering ? normal : -normal, state);
+    refr = mix(rand, normalize(refr), specularProb);
+    return normalize(refr);
 }
-
 vec3 calculateNewDirection(vec3 normal, vec3 dir, float smoothness, float specularProb, float transparency, float ior, inout uint state, inout vec3 color){
-    if (randomValue(state) <= transparency){
-        return calculateRefractionDir(normal, dir, smoothness, ior, specularProb, state, color);
-    }
+    if (randomValue(state) <= transparency)
+    return calculateRefractionDir(normal, dir, smoothness, ior, specularProb, state, color);
     return calculateOpaqueDir(normal, dir, smoothness, state);
 }
 
-//hit updaters
-bool hitTriangleUpdate(int triIndex, float t, float u, float v, float w, inout vec3 pos, inout vec3 dir, inout vec3 invDir, inout vec3 color, inout uint state){
-    pos += dir * t;
-    int material_i = triangles[triIndex].w;
-
-    //calculate normal
-    vec3 normal = calculateNormal(triIndex, u ,v, w);
-    if (dot(normal, dir) > 0) normal *= -1;
-    //color = normal*0.5 +0.5;
-    //return true;
-
-    float specularProb = specularColors[material_i].w;
-    bool diffuseOnly = specularProb == -1;
-    bool isSpecular = randomValue(state) <= specularProb;
-
-    //update color
-    if (updateColor(color, material_i, isSpecular, diffuseOnly)) return true;
-
-    //update direction
-    float smoothness = (isSpecular || diffuseOnly) ? colors[material_i].w : 0;
-    float transparancy = glassLightSettings[material_i].x;
-    float ior = glassLightSettings[material_i].y;
-    dir = calculateNewDirection(normal, dir, smoothness, specularProb, transparancy, ior, state, color);
-    invDir = 1/dir;
-
+/* ========================= Material / Hit ========================= */
+bool updateColor(inout vec3 color, int mat_i, bool isSpecular, bool diffuseOnly){
+    vec3 selected = (isSpecular && !diffuseOnly) ? specularColors[mat_i].xyz : colors[mat_i].xyz;
+    color *= selected;
+    if (glassLightSettings[mat_i].z > 0.0) { color *= glassLightSettings[mat_i].z; return true; }
     return false;
 }
+
+/* ========================= BVH TRAVERSAL (RAY -> LOCAL) ========================= */
+
+/* Transform world ray (origin,dir) by inverse(M) to local; compute invdir. */
+void worldToLocalRay(vec3 roW, vec3 rdW, mat4 invM, out vec3 roL, out vec3 rdL, out vec3 invrdL){
+    roL   = (invM * vec4(roW, 1.0)).xyz;
+    rdL   = (invM * vec4(rdW, 0.0)).xyz; // linear part only
+    invrdL = 1.0 / rdL;
+}
+
+/* Traverse one model’s BVH entirely in LOCAL space.
+   Returns the best WORLD distance and indices via out params. */
+void traverseBVH_local(
+    int nodeOffset,
+    vec3 roW, vec3 rdW,
+    mat4 M, mat4 invM,
+    inout float best_t_world,
+    inout float best_u, inout float best_v,
+    inout int triTest, inout int aabbTest,
+    inout int best_tri_i, inout int best_model_i,
+    int modelIndex){
+    vec3 roL, rdL, invrdL;
+    worldToLocalRay(roW, rdW, invM, roL, rdL, invrdL);
+
+    int sp = 0;
+    stack_[sp++] = nodeOffset;
+
+    while (sp > 0){
+        int node = stack_[--sp];
+        int A = vChildA[node];
+        int B = vChildB[node];
+
+        if (A <= 0){
+            int triStart = -A;
+            int triCount = -B;
+            for (int j = triStart; j < triStart+triCount; ++j){
+                triTest++;
+                ivec4 tri = triangles[j];
+                vec3 v0 = vertices[tri.x].xyz;
+                vec3 v1 = vertices[tri.y].xyz;
+                vec3 v2 = vertices[tri.z].xyz;
+                float tL, u, v;
+                if (!rayTriangleIntersect(roL, rdL, v0, v1, v2, tL, u, v)) continue;
+
+                // local hit -> world hit distance
+                vec3 hitL = roL + tL*rdL;
+                vec3 hitW = (M * vec4(hitL, 1.0)).xyz;
+                float tW = length(hitW - roW);
+
+                if (tW < best_t_world){
+                    best_t_world = tW;
+                    best_tri_i   = j;
+                    best_model_i = modelIndex;
+                    best_u = u; best_v = v;
+                }
+            }
+        } else {
+            vec3 Amin = boundingBoxMin[A].xyz;
+            vec3 Amax = boundingBoxMax[A].xyz;
+            vec3 Bmin = boundingBoxMin[B].xyz;
+            vec3 Bmax = boundingBoxMax[B].xyz;
+
+            aabbTest += 2;
+            float dA = intersectAABB(roL, invrdL, Amin, Amax);
+            float dB = intersectAABB(roL, invrdL, Bmin, Bmax);
+
+            bool nearA = (dA <= dB);
+            float dNear = nearA ? dA : dB;
+            float dFar  = nearA ? dB : dA;
+            int   iNear = nearA ? A  : B;
+            int   iFar  = nearA ? B  : A;
+
+            // prune by converting local distance approx to world scale
+            float scaleApprox = length((invM * vec4(rdW,0.0)).xyz);
+            float worldNear   = dNear * scaleApprox;
+
+            if (worldNear < best_t_world) stack_[sp++] = iNear;
+            if (dFar < 1e29)              stack_[sp++] = iFar;
+
+            if (sp > MAX_STACK_SIZE) break;
+        }
+    }
+}
+
+/* Find best triangle across all models; all traversal is in LOCAL; returns WORLD t. */
+float findBestTri_world(
+    vec3 roW, vec3 rdW,
+    out int best_tri_i, out int best_model_i,
+    out int triTest, out int aabbTest,
+    out float best_u, out float best_v, out float best_w){
+    best_tri_i = -1;
+    best_model_i = -1;
+    triTest = 0; aabbTest = 0;
+    float best_tW = 1e30;
+
+    for (int i=0;i<numModels;i++){
+        mat4 M    = modelTransformations[i];
+        mat4 invM = inverse(M);
+        traverseBVH_local(models[i], roW, rdW, M, invM,
+        best_tW, best_u, best_v,
+        triTest, aabbTest,
+        best_tri_i, best_model_i,
+        i);
+    }
+    best_w = 1.0 - best_u - best_v;
+    return best_tW;
+}
+
+/* ========================= Camera / Path ========================= */
+vec3 calculateInitialDir(int aaCycle, vec2 screenCoord){
+    float xi = float(aaCycle % aa);
+    float yi = float(aaCycle) / float(aa);
+    float ox = (xi + 0.5)/float(aa) - 0.5;
+    float oy = (yi + 0.5)/float(aa) - 0.5;
+    ox /= float(resolution.x)/2.0;
+    oy /= float(resolution.y)/2.0;
+    vec2 coord = screenCoord + vec2(ox,oy);
+    float fovDegX = 60.0;
+    float fovRadX = radians(fovDegX);
+    coord *= tan(0.5*fovRadX);
+    vec3 d = camForward + camRight*coord.x + camUp*coord.y;
+    return normalize(d);
+}
+
+/* ========================= Russian Roulette ========================= */
+bool russianRoulet(inout vec3 color, inout uint state){
+    float p = min(max(max(color.r,color.g),color.b)*5.0, 1.0);
+    if (randomValue(state) >= p) return true;
+    color *= 1.0/p;
+    return false;
+}
+
+/* ========================= Trace / Shading ========================= */
+
+bool hitTriangleUpdateWorld(
+    int triIndex, int modelIndex, float tWorld,
+    float u, float v, float w,
+    inout vec3 posW, inout vec3 dirW, inout vec3 invDirW,
+    inout vec3 color, inout uint state){
+    // advance to world hit
+    posW += dirW * tWorld;
+
+    int material_i = triangles[triIndex].w;
+
+    // local normal -> world normal
+    vec3 nL = calculateNormalLocal(triIndex, u, v, w);
+    mat4 M  = modelTransformations[modelIndex];
+    vec3 nW = toWorldNormal(nL, M);
+    if (dot(nW, dirW) > 0.0) nW = -nW;
+
+    float specP   = specularColors[material_i].w;
+    bool  diffOnly = (specP == -1.0);
+    bool  isSpec   = randomValue(state) <= specP;
+
+    if (updateColor(color, material_i, isSpec, diffOnly)) return true;
+
+    float sm   = (isSpec || diffOnly) ? colors[material_i].w : 0.0;
+    float trans    = glassLightSettings[material_i].x;
+    float ior      = glassLightSettings[material_i].y;
+
+    dirW   = calculateNewDirection(nW, dirW, sm, specP, trans, ior, state, color);
+    invDirW = 1.0/dirW;
+    return false;
+}
+
 bool hitFloorUpdate(inout vec3 pos, inout vec3 dir, inout vec3 invDir, inout vec3 color, inout uint state){
-    float floorHeight = -1000;
-    float t = ((floorHeight)-pos.y)/dir.y;
-    if (t > 0.01 && t < 10000000){
+    float floorY = -1000.0;
+    float t = (floorY - pos.y)/dir.y;
+    if (t > 0.01 && t < 1e7){
         pos += dir*t;
-
-        vec3 normal = vec3(0, 1, 0);
-
-        color *= vec3(0.9,0.9,0.9);
-
-        dir = calculateNewDirection(normal, dir, 0, 0, 0, 1, state, color);
-        invDir = 1/dir;
+        vec3 n = vec3(0,1,0);
+        color *= vec3(0.9);
+        dir = calculateNewDirection(n, dir, 0.0, 0.0, 0.0, 1.0, state, color);
+        invDir = 1.0/dir;
     } else {
         color *= getEnviormentLight(dir);
         return true;
     }
     return false;
 }
-bool russianRoulet(inout vec3 color, inout uint state){
-    float p = min(max(color.r, max(color.g, color.b))*5, 1);
-    if (randomValue(state) >= p) {
-        return true;
-    }
-    color *= 1.0f / p;
-    return false;
-}
 
 vec3 trace(vec3 pos, vec3 dir, inout uint state){
-    iorStack[0] = 1;
-    iorSize = 1;
-    vec3 invDir = 1/dir;
-    vec3 color = vec3(1);
+    iorStack[0] = 1.0; iorSize = 1;
+    vec3 invDir = 1.0/dir;
+    vec3 color  = vec3(1.0);
 
-    for (int i = 0; i < bounceLim; i++) {
+    for (int i=0;i<bounceLim;i++){
+        int triTest, aabbTest, tri_i, model_i;
+        float bu, bv, bw;
+        float tW = findBestTri_world(pos, dir, tri_i, model_i, triTest, aabbTest, bu, bv, bw);
 
-        //find closest triangle
-        int triTest, aabbTest, best_tri_i;
-        float best_u, best_v, best_w;
-        float t = findBestTri(pos, dir, invDir, best_tri_i, triTest, aabbTest, best_u, best_v, best_w);
-
-        //debug view
-        if (false){
-            return debugView(triTest, aabbTest);
+        if (false){ // debug
+            int triTh=75, aabbTh=400;
+            vec3 dbg = vec3(float(triTest)/float(triTh), 0.0, float(aabbTest)/float(aabbTh));
+            if (triTest>triTh) dbg=vec3(1); else if (aabbTest>aabbTh) dbg=vec3(0,1,0);
+            return dbg;
         }
 
-        if (best_tri_i != -1) {if (hitTriangleUpdate(best_tri_i, t, best_u, best_v, best_w, pos, dir, invDir, color, state)) break;} //hit tri
-        else if (dir.y < 0) {if (hitFloorUpdate(pos, dir, invDir, color, state)) break;} //hit floor
-        else {
+        if (tri_i != -1){
+            if (hitTriangleUpdateWorld(tri_i, model_i, tW, bu, bv, bw, pos, dir, invDir, color, state)) break;
+        } else if (dir.y < 0.0){
+            if (hitFloorUpdate(pos, dir, invDir, color, state)) break;
+        } else {
             color *= getEnviormentLight(dir);
             break;
-        } //hit sky
-
-        //russian roulet (low light rays get deleted)
-        if (russianRoulet(color, state)) return vec3(0);
-
-        //max bounce lim clears color
-        if (i == bounceLim-1){
-            return vec3(0);
         }
-    }
 
+        if (russianRoulet(color, state)) return vec3(0.0);
+        if (i == bounceLim-1) return vec3(0.0);
+    }
     return color;
 }
 
-void main() {
-    //setup
-    float aspectRatio = 16./9.;
-    vec2 screenCoord = vec2((2*fragCoord.x-1) * aspectRatio, 2*fragCoord.y-1); // centered at 0,0
+/* ========================= Main ========================= */
+void main(){
+    float aspect = float(resolution.x)/float(resolution.y);
+    vec2  screen = vec2((2.0*fragCoord.x-1.0)*aspect, 2.0*fragCoord.y-1.0);
 
-    uvec2 pixel = uvec2(fragCoord.x * resolution.x, fragCoord.y * resolution.y * aspectRatio);
-    int pixels = int(resolution.x*resolution.y);
-    uint state = pixel.x + pixel.y * uint(resolution.x) + uint(frameCount*time) + uint(frameCount);
+    uvec2 pix = uvec2(fragCoord.x*resolution.x, fragCoord.y*resolution.y*aspect);
+    uint  state = pix.x + pix.y*uint(resolution.x) + uint(frameCount*time) + uint(frameCount);
 
-    vec3 totalColor = vec3(0,0,0);
+    vec3 total = vec3(0.0);
+    int aaCycle = frameCount % (aa*aa);
 
-    //sample loop
-    int aaCycle = frameCount%(aa*aa);
-    for (int s = 0; s < samples; s++) {
-        vec3 pos = cameraPos;
-        vec3 dir = calculateInitialDir(aaCycle, screenCoord);
-
-        totalColor += trace(pos, dir, state);
-        aaCycle++;
-        if (aaCycle >= aa*aa) aaCycle = 0;
+    for (int s=0; s<samples; ++s){
+        vec3 ro = cameraPos;
+        vec3 rd = calculateInitialDir(aaCycle, screen);
+        total += trace(ro, rd, state);
+        aaCycle = (aaCycle+1) % (aa*aa);
     }
-    //gamma correction
-    totalColor /= samples;
-    totalColor = sqrt(totalColor);
 
-    //read previous accumulated color
+    total /= float(samples);
+    total = sqrt(total); // gamma approx
+
     vec3 prev = texture(uPrevFrame, fragCoord).rgb;
+    vec3 accum = mix(prev, total, 1.0/(float(frameCount)+1.0));
 
-    //exponential moving average accumulation
-    vec3 accum = mix(prev, totalColor, 1.0 / (float(frameCount) + 1.0));
-
-    //retrn result
     FragColor = vec4(accum, 1.0);
 }

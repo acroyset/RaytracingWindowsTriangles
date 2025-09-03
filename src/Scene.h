@@ -18,6 +18,14 @@ class Scene {
     std::vector<glm::vec4> specularColors;
     std::vector<glm::vec4> glassLightSettings;
 
+    std::vector<glm::mat4> modelTransforms;
+    int selectedModel = -1;
+
+    std::vector<glm::vec3> modelPos;
+    std::vector<glm::vec3> modelRot;   // radians (x,y,z)
+    std::vector<glm::vec3> modelScale;
+    std::vector<std::string> modelLabels;
+
     std::vector<glm::vec4> boundingBoxMin;
     std::vector<glm::vec4> boundingBoxMax;
     std::vector<int> childA;
@@ -39,6 +47,8 @@ class Scene {
 
     public:
 
+    GLuint ssboModelTransformations = 0;
+
     int frameCount;
     int width, height;
     int samples;
@@ -48,13 +58,11 @@ class Scene {
     Scene();
     Scene(int width, int height, int samples, int aa, int bounceLim);
 
-    static void parse(const std::string& nfilename, glm::vec3 position, glm::vec3 scale, std::vector<glm::vec3>& vertices, std::vector<glm::ivec3>& triangles);
-
     void addModel(const std::string &filename, glm::vec3 position, glm::vec3 scale, glm::vec3 color, float smoothness, glm::vec3 specularColor = glm::vec3(-1), float specularProb = 1, float transparency = 0, float ior = 1, float emission = 0);
 
     void addModel(BaseModel& model, glm::vec3 position, glm::vec3 scale, glm::vec3 color, float smoothness, glm::vec3 specularColor = glm::vec3(-1), float specularProb = 1, float transparency = 0, float ior = 1, float emission = 0);
 
-    void set_ssbo() const;
+    void set_ssbo();
 
     [[nodiscard]] int getNumBVHNodes() const;
 
