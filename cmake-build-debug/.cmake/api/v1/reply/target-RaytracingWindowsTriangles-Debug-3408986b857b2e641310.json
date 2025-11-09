@@ -118,12 +118,12 @@
 	"dependencies" : 
 	[
 		{
-			"backtrace" : 3,
-			"id" : "imgui_glfw_opengl3::@6890427a1f51a3e7e1df"
-		},
-		{
 			"backtrace" : 2,
 			"id" : "glad::@6890427a1f51a3e7e1df"
+		},
+		{
+			"backtrace" : 3,
+			"id" : "imgui_glfw_opengl3::@6890427a1f51a3e7e1df"
 		},
 		{
 			"backtrace" : 2,

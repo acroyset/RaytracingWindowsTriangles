@@ -247,9 +247,10 @@ int main() {
 
     Timer t;
 
-    scene.addModel("models/cube/cube.obj", glm::vec3(0, -20, 0), glm::vec3(300, 20, 300), glm::vec3(0.9), 0.3);
-    scene.addModel("models/dragon800K.obj", glm::vec3(0, 70.498, 0), glm::vec3(100), glm::vec3(0.01), 0.99, glm::vec3(0.15), 0.4);
-    scene.addModel("models/sphere.obj", glm::vec3(200, 50, 0), glm::vec3(50), glm::vec3(1, 0.7, 0.3), 0, glm::vec3(0), 0, 0, 1, 2);
+    scene.addModel("models/dragon800K.obj", glm::vec3(0, 1000, 0), glm::vec3(1000), glm::vec3(0.9), 0.3);
+    //scene.addModel("models/cube/cube.obj", glm::vec3(0, -20, 0), glm::vec3(300, 20, 300), glm::vec3(0.9), 0.3);
+    //scene.addModel("models/dragon800K.obj", glm::vec3(0, 70.498, 0), glm::vec3(100), glm::vec3(0.01), 0.99, glm::vec3(0.15), 0.4);
+    //scene.addModel("models/sphere.obj", glm::vec3(200, 50, 0), glm::vec3(50), glm::vec3(1, 0.7, 0.3), 0, glm::vec3(0), 0, 0, 1, 2);
 
     //scene.addModel("models/quad.txt", glm::vec3(0,4999, 0), glm::vec3(1000), glm::vec3(0.95), 0, glm::vec3(0), 0, 0, 1, 20);
     //scene.addModel("models/cubeInternal.txt", glm::vec3(0,2000, 0), glm::vec3(3000), glm::vec3(0.95), 0);

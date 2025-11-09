@@ -20,6 +20,7 @@ class Scene {
 
     std::vector<glm::mat4> modelTransforms;
     int selectedModel = -1;
+    int selectedColor = -1;
 
     std::vector<glm::vec3> modelPos;
     std::vector<glm::vec3> modelRot;   // radians (x,y,z)

@@ -418,10 +418,23 @@ void Scene::updateFrame(const GLuint shaderProgram, GLFWwindow& window, float dt
                 changedPRS |= DragFloat3("Scale",    S, 1.0f, 0.0f, 1e36);
                 changedPRS |= DragFloat3("Rotation (deg)", rotDeg, 0.2f);
 
-                for (int i = modelsColors[selectedModel][0]; i < modelsColors[selectedModel][1]; i++) {
-                    glm::vec4& C = colors[i];
-                    glm::vec4& SC = specularColors[i];
-                    glm::vec4& GLS = glassLightSettings[i];
+                if (ImGui::BeginCombo("Color", std::to_string(selectedColor).c_str())) {
+                    for (int i = modelsColors[selectedModel].x; i < modelsColors[selectedModel].y; ++i) {
+                        bool sel = (selectedColor == i); 
+                        if (ImGui::Selectable(std::to_string(i).c_str(), sel)) {
+                            selectedColor = i;
+                            frameCount = 0; // reset accumulation on selection change
+                        }
+                        if (sel) ImGui::SetItemDefaultFocus();
+                    }
+                    ImGui::EndCombo();
+                }
+
+                if (selectedColor != -1){
+                    glm::vec4& C = colors[selectedColor];
+                    glm::vec4& SC = specularColors[selectedColor];
+                    glm::vec4& GLS = glassLightSettings[selectedColor];
+                    ImGui::Text(std::to_string(selectedColor).c_str());
                     changedC |= ColorEdit3("Color", C);
                     changedC |= ImGui::SliderFloat("Smoothness", &C.w, 0.0f, 1.0f);
                     changedSC |= ColorEdit3("Specular Color", SC);
@@ -429,9 +442,9 @@ void Scene::updateFrame(const GLuint shaderProgram, GLFWwindow& window, float dt
                     changedGLS |= ImGui::SliderFloat("Transparency", &GLS.x, 0.0f, 1.0f);
                     changedGLS |= ImGui::SliderFloat("Index of Refraction", &GLS.y, 0.0f, 3.0f);
                     changedGLS |= ImGui::SliderFloat("Emission Strength", &GLS.z, 0.0f, 10.0f);
-                    colors[i] = C;
-                    specularColors[i] = SC;
-                    glassLightSettings[i] = GLS;
+                    colors[selectedColor] = C;
+                    specularColors[selectedColor] = SC;
+                    glassLightSettings[selectedColor] = GLS;
                 }
 
                 if (changedPRS) {
