@@ -1,41 +1,41 @@
 # ninja log v6
-1	34	7785601821161785	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-mkdir	8357c33500718bef
-34	20482	7785602025655857	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-download	b92348accbcb0104
-6	74	7785604953810054	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-update	929cfc0cf37d81f4
-1	34	7785601821161785	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-mkdir	8357c33500718bef
-34	20482	7785602025655857	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-download	b92348accbcb0104
-74	101	7785604954735323	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-patch	cc583048506322aa
-74	101	7785604954735323	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-patch	cc583048506322aa
-6	74	7785604953810054	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-update	929cfc0cf37d81f4
-101	126	7785604954981930	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-configure	36e19258b09296e8
-207	244	7785604956161706	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/CMakeFiles/imgui-populate-complete	7772aaac09da151e
-101	126	7785604954981930	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-configure	36e19258b09296e8
-207	244	7785604956161706	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-done	7772aaac09da151e
-126	152	7785604955244348	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-build	f3be230ea052a14b
-207	244	7785604956161706	CMakeFiles/imgui-populate-complete	7772aaac09da151e
-126	152	7785604955244348	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-build	f3be230ea052a14b
-153	180	7785604955523016	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-install	586109fe53433f8a
-153	180	7785604955523016	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-install	586109fe53433f8a
-180	207	7785604955796533	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-test	aecd6dab1220134
-180	207	7785604955796533	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-test	aecd6dab1220134
-207	244	7785604956161706	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-done	7772aaac09da151e
-7	40	7786418827945546	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-mkdir	c1361c18cf74510a
-7	40	7786418827945546	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-mkdir	c1361c18cf74510a
-40	79327	7786419620817103	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-download	94bcbcc0aa93bb4f
-40	79327	7786419620817103	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-download	94bcbcc0aa93bb4f
-79327	79398	7786419620847031	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-update	71b11991a1776012
-79327	79398	7786419620847031	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-update	71b11991a1776012
-79398	79427	7786419621810267	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-patch	44c383c444e98394
-79398	79427	7786419621810267	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-patch	44c383c444e98394
-79427	79454	7786419622087660	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-configure	a783298261316a8f
-79427	79454	7786419622087660	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-configure	a783298261316a8f
-79454	79486	7786419622402254	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-build	e182525e5b763d85
-79454	79486	7786419622402254	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-build	e182525e5b763d85
-79486	79514	7786419622686144	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-install	a55cbfa07cf58036
-79486	79514	7786419622686144	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-install	a55cbfa07cf58036
-79514	79541	7786419622959476	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-test	d3194e29c1bf0912
-79514	79541	7786419622959476	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-test	d3194e29c1bf0912
-79541	79580	7786419623344700	CMakeFiles/imgui-populate-complete	8747b75eaab623d9
-79541	79580	7786419623344700	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-done	8747b75eaab623d9
-79541	79580	7786419623344700	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/CMakeFiles/imgui-populate-complete	8747b75eaab623d9
-79541	79580	7786419623344700	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-done	8747b75eaab623d9
+8	40	7846962380897837	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-mkdir	8357c33500718bef
+12	25914	7846963030388853	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-download	b92348accbcb0104
+25915	25978	7846963030418851	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-update	929cfc0cf37d81f4
+8	40	7846962380897837	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-mkdir	8357c33500718bef
+12	25914	7846963030388853	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-download	b92348accbcb0104
+25979	26007	7846963031315287	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-patch	cc583048506322aa
+25979	26007	7846963031315287	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-patch	cc583048506322aa
+25915	25978	7846963030418851	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-update	929cfc0cf37d81f4
+26007	26035	7846963031586988	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-configure	36e19258b09296e8
+26114	26149	7846963032732622	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/CMakeFiles/imgui-populate-complete	7772aaac09da151e
+26007	26035	7846963031586988	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-configure	36e19258b09296e8
+26114	26149	7846963032732622	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-done	7772aaac09da151e
+26035	26061	7846963031856986	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-build	f3be230ea052a14b
+26114	26149	7846963032732622	CMakeFiles/imgui-populate-complete	7772aaac09da151e
+26035	26061	7846963031856986	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-build	f3be230ea052a14b
+26061	26087	7846963032118469	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-install	586109fe53433f8a
+26061	26087	7846963032118469	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-install	586109fe53433f8a
+26087	26113	7846963032373443	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-test	aecd6dab1220134
+26087	26113	7846963032373443	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-test	aecd6dab1220134
+26114	26149	7846963032732622	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-done	7772aaac09da151e
+9	55	7869551346250223	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-mkdir	c1361c18cf74510a
+9	55	7869551346250223	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-mkdir	c1361c18cf74510a
+56	20847	7869551554171396	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-download	94bcbcc0aa93bb4f
+56	20847	7869551554171396	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-download	94bcbcc0aa93bb4f
+20847	20925	7869551554206395	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-update	71b11991a1776012
+20847	20925	7869551554206395	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-update	71b11991a1776012
+20925	20960	7869551555296398	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-patch	44c383c444e98394
+20925	20960	7869551555296398	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-patch	44c383c444e98394
+20960	20995	7869551555651399	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-configure	a783298261316a8f
+20960	20995	7869551555651399	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-configure	a783298261316a8f
+20995	21027	7869551555976396	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-build	e182525e5b763d85
+20995	21027	7869551555976396	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-build	e182525e5b763d85
+21027	21062	7869551556316502	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-install	a55cbfa07cf58036
+21027	21062	7869551556316502	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-install	a55cbfa07cf58036
+21062	21094	7869551556641396	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-test	d3194e29c1bf0912
+21062	21094	7869551556641396	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-test	d3194e29c1bf0912
+21094	21139	7869551557096423	CMakeFiles/imgui-populate-complete	8747b75eaab623d9
+21094	21139	7869551557096423	imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-done	8747b75eaab623d9
+21094	21139	7869551557096423	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/CMakeFiles/imgui-populate-complete	8747b75eaab623d9
+21094	21139	7869551557096423	C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-done	8747b75eaab623d9

@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="BackendCodeEditorMiscSettings">
-    <option name="/Default/Environment/Hierarchy/GeneratedFilesCacheKey/Timestamp/@EntryValue" value="5" type="long" />
+    <option name="/Default/Environment/Hierarchy/GeneratedFilesCacheKey/Timestamp/@EntryValue" value="8" type="long" />
     <option name="/Default/Housekeeping/FeatureSuggestion/FeatureSuggestionManager/DisabledSuggesters/=SwitchToGoToActionSuggester/@EntryIndexedValue" value="true" type="bool" />
     <option name="/Default/Housekeeping/GlobalSettingsUpgraded/IsUpgraded/@EntryValue" value="true" type="bool" />
     <option name="/Default/RiderDebugger/RiderRestoreDecompile/RestoreDecompileSetting/@EntryValue" value="false" type="bool" />
@@ -36,77 +36,20 @@
   <component name="ChangeListManager">
     <list default="true" id="cd06d447-a7c8-42f4-a8e5-4bf88ac1888b" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/.cmake/api/v1/reply/cache-v2-f000199cb6003b888a40.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/.cmake/api/v1/reply/cmakeFiles-v1-a32afea2f8862e6c86c9.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/.cmake/api/v1/reply/codemodel-v2-569a9e1733d5e5f55d23.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/.cmake/api/v1/reply/index-2025-09-02T23-54-55-0713.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/.cmake/api/v1/reply/target-RaytracingWindowsTriangles-Debug-d41a9cc048ca63725bff.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/.cmake/api/v1/reply/toolchains-v1-ae8ff3b9c345011c4b2e.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug/.cmake/api/v1/reply/index-2025-09-03T22-32-42-0494.json" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/.ninja_deps" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/.ninja_deps" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/.ninja_log" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/.ninja_log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeCache.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeCache.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.31.6/CMakeCCompiler.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.31.6/CMakeCCompiler.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.31.6/CMakeCXXCompiler.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.31.6/CMakeCXXCompiler.cmake" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.31.6/CMakeDetermineCompilerABI_C.bin" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.31.6/CMakeDetermineCompilerABI_C.bin" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.31.6/CMakeDetermineCompilerABI_CXX.bin" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.31.6/CMakeDetermineCompilerABI_CXX.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.31.6/CMakeRCCompiler.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.31.6/CMakeRCCompiler.cmake" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.31.6/CompilerIdC/a.exe" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.31.6/CompilerIdC/a.exe" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.31.6/CompilerIdCXX/a.exe" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.31.6/CompilerIdCXX/a.exe" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/CMakeConfigureLog.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/CMakeConfigureLog.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/RaytracingWindowsTriangles.dir/src/BaseModel.cpp.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/RaytracingWindowsTriangles.dir/src/BaseModel.cpp.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/RaytracingWindowsTriangles.dir/src/Scene.cpp.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/RaytracingWindowsTriangles.dir/src/Scene.cpp.obj" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/RaytracingWindowsTriangles.dir/src/main.cpp.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/RaytracingWindowsTriangles.dir/src/main.cpp.obj" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/clion-Debug-log.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/clion-Debug-log.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/clion-environment.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/clion-environment.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/glad.dir/external/glad/src/glad.c.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/glad.dir/external/glad/src/glad.c.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/imgui_glfw_opengl3.dir/_deps/imgui-src/backends/imgui_impl_glfw.cpp.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/imgui_glfw_opengl3.dir/_deps/imgui-src/backends/imgui_impl_glfw.cpp.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/imgui_glfw_opengl3.dir/_deps/imgui-src/backends/imgui_impl_opengl3.cpp.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/imgui_glfw_opengl3.dir/_deps/imgui-src/backends/imgui_impl_opengl3.cpp.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/imgui_glfw_opengl3.dir/_deps/imgui-src/imgui.cpp.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/imgui_glfw_opengl3.dir/_deps/imgui-src/imgui.cpp.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/imgui_glfw_opengl3.dir/_deps/imgui-src/imgui_draw.cpp.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/imgui_glfw_opengl3.dir/_deps/imgui-src/imgui_draw.cpp.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/imgui_glfw_opengl3.dir/_deps/imgui-src/imgui_tables.cpp.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/imgui_glfw_opengl3.dir/_deps/imgui-src/imgui_tables.cpp.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/imgui_glfw_opengl3.dir/_deps/imgui-src/imgui_widgets.cpp.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/imgui_glfw_opengl3.dir/_deps/imgui-src/imgui_widgets.cpp.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/rules.ninja" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/rules.ninja" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/RaytracingWindowsTriangles.exe" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/RaytracingWindowsTriangles.exe" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/Testing/Temporary/LastTest.log" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/Testing/Temporary/LastTest.log" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/_deps/imgui-subbuild/.ninja_log" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/_deps/imgui-subbuild/.ninja_log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/_deps/imgui-subbuild/CMakeCache.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/_deps/imgui-subbuild/CMakeCache.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/_deps/imgui-subbuild/CMakeFiles/rules.ninja" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/_deps/imgui-subbuild/CMakeFiles/rules.ninja" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/_deps/imgui-subbuild/build.ninja" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/_deps/imgui-subbuild/build.ninja" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-gitclone-lastrun.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-gitclone-lastrun.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-gitinfo.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-gitinfo.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-update-info.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/_deps/imgui-subbuild/imgui-populate-prefix/src/imgui-populate-stamp/imgui-populate-update-info.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/build.ninja" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/build.ninja" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/cmake_install.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/cmake_install.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/cmake_install.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/cmake_install.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/cmake_uninstall.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/cmake_uninstall.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/docs/cmake_install.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/docs/cmake_install.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/context.c.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/context.c.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/egl_context.c.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/egl_context.c.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/init.c.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/init.c.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/input.c.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/input.c.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/monitor.c.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/monitor.c.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/null_init.c.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/null_init.c.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/null_joystick.c.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/null_joystick.c.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/null_monitor.c.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/null_monitor.c.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/null_window.c.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/null_window.c.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/osmesa_context.c.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/osmesa_context.c.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/platform.c.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/platform.c.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/vulkan.c.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/vulkan.c.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/wgl_context.c.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/wgl_context.c.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/win32_init.c.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/win32_init.c.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/win32_joystick.c.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/win32_joystick.c.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/win32_module.c.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/win32_module.c.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/win32_monitor.c.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/win32_monitor.c.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/win32_thread.c.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/win32_thread.c.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/win32_time.c.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/win32_time.c.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/win32_window.c.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/win32_window.c.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/window.c.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/CMakeFiles/glfw.dir/window.c.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/cmake_install.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/cmake_install.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/libglfw3.a" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/external/glfw/src/libglfw3.a" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/libglad.a" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/libglad.a" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/imgui.ini" beforeDir="false" afterPath="$PROJECT_DIR$/imgui.ini" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -284,6 +227,14 @@
       <workItem from="1762637146176" duration="2000" />
       <workItem from="1762648591475" duration="48000" />
       <workItem from="1762649131689" duration="11000" />
+      <workItem from="1762657143512" duration="37000" />
+      <workItem from="1762657388561" duration="65000" />
+      <workItem from="1762993036369" duration="19000" />
+      <workItem from="1762993076416" duration="191000" />
+      <workItem from="1762995061249" duration="160000" />
+      <workItem from="1765251933446" duration="74000" />
+      <workItem from="1766815236208" duration="2781000" />
+      <workItem from="1767744684426" duration="20000" />
     </task>
     <servers />
   </component>

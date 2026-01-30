@@ -18,6 +18,6 @@
 -- Including Win32 support
 -- Could NOT find Doxygen (missing: DOXYGEN_EXECUTABLE) 
 -- Documentation generation requires Doxygen 1.9.8 or later
--- Configuring done (82.7s)
+-- Configuring done (22.9s)
 -- Generating done (0.1s)
 -- Build files have been written to: C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug

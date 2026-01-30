@@ -28,7 +28,7 @@ uniform int   numNodes;
 uniform int   samples;
 uniform int   aa;
 uniform int   bounceLim;
-uniform sampler2D uPrevFrame;
+uniform sampler2D previousFrame;
 uniform uint  time;
 
 uniform vec3  skyColor;
@@ -446,7 +446,7 @@ void main(){
     total /= float(samples);
     total = sqrt(total); // gamma approx
 
-    vec3 prev = texture(uPrevFrame, fragCoord).rgb;
+    vec3 prev = texture(previousFrame, fragCoord).rgb;
     vec3 accum = mix(prev, total, 1.0/(float(frameCount)+1.0));
 
     FragColor = vec4(accum, 1.0);

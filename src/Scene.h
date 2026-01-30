@@ -79,9 +79,9 @@ class Scene {
 
     void setUniforms(GLuint shaderProgram) const;
 
-    bool updateCamera(GLFWwindow& window, float speed, float sensitivity, float dt);
+    bool updateCamera(GLFWwindow* window, float speed, float sensitivity, float dt);
 
-    void updateFrame(GLuint shaderProgram, GLFWwindow& window, float dt);
+    void updateFrame(GLuint shaderProgram, GLFWwindow* window, float dt);
 
     int numTriBelow(int index);
 

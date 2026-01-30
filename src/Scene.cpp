@@ -281,10 +281,10 @@ void Scene::setUniforms(const GLuint shaderProgram) const {
     glUniform1i(glGetUniformLocation(shaderProgram, "aabbTh"), aabbTh);
 }
 
-bool Scene::updateCamera(GLFWwindow& window, float speed, float sensitivity, float dt) {
+bool Scene::updateCamera(GLFWwindow* window, float speed, float sensitivity, float dt) {
     double xpos, ypos;
     bool moved = false;
-    glfwGetCursorPos(&window, &xpos, &ypos);
+    glfwGetCursorPos(window, &xpos, &ypos);
     glm::vec2 center = glm::vec2(float(width)/2, float(height)/2);
     glm::vec2 delta = glm::vec2(xpos - center.x, -(ypos - center.y));
     if (delta.x*delta.x + delta.y*delta.y > 0 and !lock) {
@@ -293,37 +293,37 @@ bool Scene::updateCamera(GLFWwindow& window, float speed, float sensitivity, flo
         camForward = glm::normalize(camForward);
         moved = true;
         setBasisVectors(camForward, camUp, camRight);
-        glfwSetCursorPos(&window, center.x, center.y);
+        glfwSetCursorPos(window, center.x, center.y);
     }
 
     glm::vec3 change = glm::vec3(0, 0, 0);
-    if (glfwGetKey(&window, GLFW_KEY_W) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
         change += camForward;
     }
-    if (glfwGetKey(&window, GLFW_KEY_S) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
         change -= camForward;
     }
-    if (glfwGetKey(&window, GLFW_KEY_A) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
         change -= camRight;
     }
-    if (glfwGetKey(&window, GLFW_KEY_D) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
         change += camRight;
     }
-    if (glfwGetKey(&window, GLFW_KEY_E) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
         change += camUp;
     }
-    if (glfwGetKey(&window, GLFW_KEY_Q) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
         change -= camUp;
     }
-    if (glfwGetKey(&window, GLFW_KEY_L) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) {
         lock = true;
     }
-    if (glfwGetKey(&window, GLFW_KEY_U) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS) {
         lock = false;
-        glfwSetCursorPos(&window, center.x, center.y);
+        glfwSetCursorPos(window, center.x, center.y);
     }
-    if (glfwGetKey(&window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
-       glfwGetKey(&window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
+       glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
         speed *= 2;
        }
     if (pow(change.x, 2) + pow(change.y, 2) + pow(change.z, 2) > 0 and !lock) {
@@ -334,7 +334,7 @@ bool Scene::updateCamera(GLFWwindow& window, float speed, float sensitivity, flo
     return moved;
 }
 
-void Scene::updateFrame(const GLuint shaderProgram, GLFWwindow& window, float dt) {
+void Scene::updateFrame(const GLuint shaderProgram, GLFWwindow* window, float dt) {
     const bool moved = updateCamera(window, 500, 2, dt);
 
     setUniforms(shaderProgram);
@@ -357,7 +357,7 @@ void Scene::updateFrame(const GLuint shaderProgram, GLFWwindow& window, float dt
         ImGui::Checkbox("Lock", &lock);
         if (check && !lock) {
             glm::vec2 center = glm::vec2(float(width)/2, float(height)/2);
-            glfwSetCursorPos(&window, center.x, center.y);
+            glfwSetCursorPos(window, center.x, center.y);
         }
 
         changed |= ColorEdit3("Sun Color", sunColor);

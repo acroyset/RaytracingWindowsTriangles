@@ -15,132 +15,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <filesystem>
 
+#include "ShaderWindow.h"
 #include "stb_image.h"
 
 
-GLFWwindow* window = nullptr;
-GLuint shaderProgram = 0;
-GLuint displayShader = 0;
-GLuint vao = 0;
-
-GLuint pingpongFBO[2];
-GLuint pingpongTex[2];
-
-void createPingPongBuffers(int width, int height) {
-    glGenFramebuffers(2, pingpongFBO);
-    glGenTextures(2, pingpongTex);
-
-    for (int i = 0; i < 2; ++i) {
-        glBindTexture(GL_TEXTURE_2D, pingpongTex[i]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[i]);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pingpongTex[i], 0);
-
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-            std::cerr << "Ping-pong FBO " << i << " not complete!\n";
-    }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-std::string loadShaderSource(const char* path) {
-    std::ifstream file(path);
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    return buffer.str();
-}
-GLuint compileShader(GLenum type, const std::string& source) {
-    GLuint shader = glCreateShader(type);
-    const char* src = source.c_str();
-    glShaderSource(shader, 1, &src, nullptr);
-    glCompileShader(shader);
-
-    GLint success;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        char log[512];
-        glGetShaderInfoLog(shader, 512, nullptr, log);
-        std::cerr << "Shader compilation failed:\n" << log << std::endl;
-    }
-    return shader;
-}
-GLuint createShaderProgram(const char* vertPath, const char* fragPath) {
-    GLuint vert = compileShader(GL_VERTEX_SHADER, loadShaderSource(vertPath));
-    GLuint frag = compileShader(GL_FRAGMENT_SHADER, loadShaderSource(fragPath));
-    GLuint program = glCreateProgram();
-    glAttachShader(program, vert);
-    glAttachShader(program, frag);
-    glLinkProgram(program);
-
-    glDeleteShader(vert);
-    glDeleteShader(frag);
-    return program;
-}
-void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-}
-bool setup() {
-    if (!glfwInit()) return false;
-
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-    window = glfwCreateWindow(mode->width, mode->height, "Modular OpenGL Shader Window", monitor, nullptr);
-    if (!window) {
-        std::cerr << "Failed to create window\n";
-        glfwTerminate();
-        return false;
-    }
-
-    glfwMakeContextCurrent(window);
-    glfwSetKeyCallback(window, keyCallback);
-    if (!gladLoadGL(glfwGetProcAddress)) {
-        std::cerr << "Failed to initialize GLAD\n";
-        return false;
-    }
-
-    shaderProgram = createShaderProgram("shaders/fullscreen.vert", "shaders/fullscreen.frag");
-    displayShader = createShaderProgram("shaders/fullscreen.vert", "shaders/display.frag");
-
-    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-
-    // --- ImGui init ---
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    // io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // optional docking
-    ImGui::StyleColorsDark();
-
-    // Match your GL profile (you requested 4.3 core)
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 430");
-
-
-    return true;
-}
-bool shouldClose() {
-    return glfwWindowShouldClose(window);
-}
-void shutdown() {
-    glDeleteProgram(shaderProgram);
-    glDeleteVertexArrays(1, &vao);
-    glfwDestroyWindow(window);
-    glfwTerminate();
-
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-
-}
 static void setDefault2DParams() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -239,16 +117,17 @@ public:
 };
 
 int main() {
-    if (!setup()) return -1;
+    ShaderWindow window{};
+    window.setFeedbackMode(true);
 
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-    Scene scene(width, height, 1,3, 32);
+    unsigned int width = window.size().x;
+    unsigned int height = window.size().y;
+    Scene scene(int(width), int(height), 1,3, 16);
 
     Timer t;
 
-    scene.addModel("models/dragon800K.obj", glm::vec3(0, 1000, 0), glm::vec3(1000), glm::vec3(0.9), 0.3);
-    //scene.addModel("models/cube/cube.obj", glm::vec3(0, -20, 0), glm::vec3(300, 20, 300), glm::vec3(0.9), 0.3);
+    //scene.addModel("models/bull.obj", glm::vec3(0, 50, 0), glm::vec3(100), glm::vec3(0.9), 0.3);
+    scene.addModel("models/cube/cube.obj", glm::vec3(0, -20, 0), glm::vec3(300, 20, 300), glm::vec3(0.9), 0.3);
     //scene.addModel("models/dragon800K.obj", glm::vec3(0, 70.498, 0), glm::vec3(100), glm::vec3(0.01), 0.99, glm::vec3(0.15), 0.4);
     //scene.addModel("models/sphere.obj", glm::vec3(200, 50, 0), glm::vec3(50), glm::vec3(1, 0.7, 0.3), 0, glm::vec3(0), 0, 0, 1, 2);
 
@@ -266,8 +145,8 @@ int main() {
 
     scene.set_ssbo();
 
-    createPingPongBuffers(width, height);
-    int ping = 0; int pong = 1;
+    const auto uEnvLatLong = window.createUniform<int>("uEnvLatLong");
+    const auto uEnvYaw = window.createUniform<float>("uEnvYaw");
 
     // display bvh stats
     if (false) {
@@ -292,59 +171,27 @@ int main() {
 
     // render loop
     Timer deltaTimer;
-    while (!shouldClose()) {
+    while (window.open()) {
         // delta time
         const auto dt = float(deltaTimer.reset());
 
-        //bind to ping buffer
-        glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[ping]);
-        glViewport(0, 0, width, height);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        glUseProgram(shaderProgram);
         glActiveTexture(GL_TEXTURE0 + 5); // choose a slot
         glBindTexture(GL_TEXTURE_2D, skyTex);
-        glUniform1i(glGetUniformLocation(shaderProgram, "uEnvLatLong"), 5);
-
-        // Optional: yaw rotation for the sky (in radians)
-        glUniform1f(glGetUniformLocation(shaderProgram, "uEnvYaw"), 0.0f);
+        uEnvLatLong.set(5);
+        uEnvYaw.set(0.0f);
 
         // update camera / uniforms
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        scene.updateFrame(shaderProgram, *window, dt);
-
-        // set uniforms for display shader
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, pingpongTex[pong]);
-        glUniform1i(glGetUniformLocation(shaderProgram, "uPrevFrame"), 0);
-
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-
-        // bind to screen
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glClear(GL_COLOR_BUFFER_BIT);
-        glUseProgram(displayShader); // just draws the texture
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, pingpongTex[ping]);
-        glUniform1i(glGetUniformLocation(displayShader, "screenTex"), 0);
-        glUniform1f(glGetUniformLocation(displayShader, "uExposure"), 1.0f);
-
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-
-        // Swap ping-pong buffers
-        std::swap(ping, pong);
+        scene.updateFrame(window.getShaderProgram(), window.getWindow(), dt);
 
         // >>> ImGui render on top <<<
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        glfwSwapBuffers(window);
-        glfwPollEvents();
     }
-    shutdown();
+
     return 0;
 }
 
