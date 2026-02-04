@@ -1,3 +1,0 @@
-C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/CMakeFiles/imgui-populate.dir
-C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/CMakeFiles/edit_cache.dir
-C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-subbuild/CMakeFiles/rebuild_cache.dir
