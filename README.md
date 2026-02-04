@@ -2,9 +2,9 @@
 
 > High-Performance BVH-Accelerated Renderer with OpenGL Backend
 
-[![Millions of Triangles](https://img.shields.io/badge/Triangles-Millions-purple)]
-[![Real-Time](https://img.shields.io/badge/Performance-Real--Time-blue)]
-[![Interactive](https://img.shields.io/badge/Controls-Interactive-green)]
+![Millions of Triangles](https://img.shields.io/badge/Triangles-Millions-purple)
+![Real-Time](https://img.shields.io/badge/Performance-Real--Time-blue)
+![Interactive](https://img.shields.io/badge/Controls-Interactive-green)
 
 ## ✨ Features
 
