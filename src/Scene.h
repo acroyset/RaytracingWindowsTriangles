@@ -8,50 +8,61 @@
 #include <string>
 #include <GLFW/glfw3.h>
 #include "Model.h"
+#include "ShaderWindow.h"
 #include "Uniform.h"
+#include <glm/gtc/type_ptr.hpp>
+
+#define GLAD_GL_IMPLEMENTATION
+#include <chrono>
+#include <imgui.h>
+
+#include "stb_image.h"
+#define STB_IMAGE_IMPLEMENTATION
 
 class Scene {
-    std::vector<glm::vec4> vertices;
-    std::vector<glm::ivec4> triangles;
-    std::vector<glm::ivec4> normals;
-    std::vector<glm::vec4> normalsList;
-    std::vector<glm::vec4> colors;
-    std::vector<glm::vec4> specularColors;
-    std::vector<glm::vec4> glassLightSettings;
+    ShaderWindow window{};
 
-    std::vector<glm::mat4> modelTransforms;
-    std::vector<glm::mat4> modelInvTransforms;
+    std::vector<vec4> vertices;
+    std::vector<ivec4> triangles;
+    std::vector<ivec4> normals;
+    std::vector<vec4> normalsList;
+    std::vector<vec4> colors;
+    std::vector<vec4> specularColors;
+    std::vector<vec4> glassLightSettings;
+
+    std::vector<mat4> modelTransforms;
+    std::vector<mat4> modelInvTransforms;
     int selectedModel = -1;
     int selectedColor = -1;
 
-    std::vector<glm::vec3> modelPos;
-    std::vector<glm::vec3> modelRot;   // radians (x,y,z)
-    std::vector<glm::vec3> modelScale;
+    std::vector<vec3> modelPos;
+    std::vector<vec3> modelRot;   // radians (x,y,z)
+    std::vector<vec3> modelScale;
     std::vector<std::string> modelLabels;
 
-    std::vector<glm::vec4> boundingBoxMin;
-    std::vector<glm::vec4> boundingBoxMax;
+    std::vector<vec4> boundingBoxMin;
+    std::vector<vec4> boundingBoxMax;
     std::vector<int> childA;
     std::vector<int> childB;
 
     std::vector<int> models;
-    std::vector<glm::ivec2> modelsColors;
+    std::vector<ivec2> modelsColors;
 
-    glm::vec3 cameraPos{};
-    glm::vec3 camForward{};
-    glm::vec3 camUp{};
-    glm::vec3 camRight{};
+    vec3 cameraPos{};
+    vec3 camForward{};
+    vec3 camUp{};
+    vec3 camRight{};
 
     bool lock;
 
-    glm::vec3 skyColor = glm::vec3(0.5,0.7,0.9);
-    glm::vec3 sunDir = glm::normalize(glm::vec3(0.28, 0.33, 0.2));
+    vec3 skyColor = vec3(0.5,0.7,0.9);
+    vec3 sunDir = normalize(vec3(0.28, 0.33, 0.2));
     float sunStrength = 100;
-    glm::vec3 sunColor = glm::vec3(1, .7, .3);
+    vec3 sunColor = vec3(1, .7, .3);
 
-    GLuint ssboColors;
-    GLuint ssboSpecularColors;
-    GLuint ssboGlassLightSettings;
+    GLuint ssboColors = 0;
+    GLuint ssboSpecularColors = 0;
+    GLuint ssboGlassLightSettings = 0;
     GLuint ssboModelTransformations = 0;
     GLuint ssboModelInvTransformations = 0;
 
@@ -67,12 +78,22 @@ class Scene {
     int aa;
     int bounceLim;
 
+    GLuint skyTex = 0;
+    Uniform<int> uEnvLatLong{};
+    Uniform<float> uEnvYaw{};
+
     Scene();
-    Scene(int width, int height, int samples, int aa, int bounceLim);
+    Scene(int samples, int aa, int bounceLim);
 
-    void addModel(const std::string &filename, glm::vec3 position, glm::vec3 scale, glm::vec3 color, float smoothness, glm::vec3 specularColor = glm::vec3(-1), float specularProb = 1, float transparency = 0, float ior = 1, float emission = 0);
+    ~Scene() {
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
+    }
 
-    void addModel(Model& model, glm::vec3 position, glm::vec3 scale, glm::vec3 color, float smoothness, glm::vec3 specularColor = glm::vec3(-1), float specularProb = 1, float transparency = 0, float ior = 1, float emission = 0);
+    void addModel(const std::string &filename, vec3 position, vec3 scale, vec3 color, float smoothness, vec3 specularColor = vec3(-1), float specularProb = 1, float transparency = 0, float ior = 1, float emission = 0);
+
+    void addModel(Model& model, vec3 position, vec3 scale, vec3 color, float smoothness, vec3 specularColor = vec3(-1), float specularProb = 1, float transparency = 0, float ior = 1, float emission = 0);
 
     void set_ssbo();
 
@@ -84,7 +105,7 @@ class Scene {
 
     bool updateCamera(GLFWwindow* window, float speed, float sensitivity, float dt);
 
-    void updateFrame(GLuint shaderProgram, GLFWwindow* window, float dt);
+    void updateFrame();
 
     int numTriBelow(int index);
 
@@ -93,6 +114,10 @@ class Scene {
     void displayBVH();
 
     void displayBVH(int index, std::string prefix);
+
+    bool open() {
+        return window.open();
+    }
 };
 
 #endif //SCENE_H

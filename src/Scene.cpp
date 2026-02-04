@@ -1,18 +1,6 @@
 // Scene.cpp
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
-#define GLAD_GL_IMPLEMENTATION
-#include <glad/glad.h>
 #include "Scene.h"
-#include <iostream>
-#include <fstream>
-#include <GLFW/glfw3.h>
-#include <chrono>
-#include <imgui.h>
 
-#include "Model.h"
 
 using Clock = std::chrono::high_resolution_clock;
 
@@ -60,6 +48,65 @@ inline bool ColorEdit3(const char* label, glm::vec4& v) {
     return out;
 }
 
+static void setDefault2DParams() {
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);        // horiz repeat
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // clamp vertically
+}
+GLuint LoadEnvLatLongTextureAuto(const char* path) {
+    stbi_set_flip_vertically_on_load(false); // equirect usually not flipped
+
+    int w=0, h=0, n=0;  // n = channels in file
+    GLuint tex=0;
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+
+    // Alignment fix (prevents rainbow banding on RGB 3-byte rows)
+    GLint prevAlign = 4;
+    glGetIntegerv(GL_UNPACK_ALIGNMENT, &prevAlign);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    if (stbi_is_hdr(path)) {
+        float* data = stbi_loadf(path, &w, &h, &n, 0); // keep original n (3 or 4)
+        if (!data) {
+            fprintf(stderr, "HDR load failed: %s (%s)\n", path, stbi_failure_reason());
+            glBindTexture(GL_TEXTURE_2D, 0);
+            glDeleteTextures(1, &tex);
+            glPixelStorei(GL_UNPACK_ALIGNMENT, prevAlign);
+            return 0;
+        }
+        GLenum srcFmt = (n == 4) ? GL_RGBA : GL_RGB;
+        GLint  dstFmt = (n == 4) ? GL_RGBA16F : GL_RGB16F; // linear HDR
+        glTexImage2D(GL_TEXTURE_2D, 0, dstFmt, w, h, 0, srcFmt, GL_FLOAT, data);
+        stbi_image_free(data);
+    } else {
+        unsigned char* data = stbi_load(path, &w, &h, &n, 0); // keep original n (3 or 4)
+        if (!data) {
+            fprintf(stderr, "LDR load failed: %s (%s)\n", path, stbi_failure_reason());
+            glBindTexture(GL_TEXTURE_2D, 0);
+            glDeleteTextures(1, &tex);
+            glPixelStorei(GL_UNPACK_ALIGNMENT, prevAlign);
+            return 0;
+        }
+        GLenum srcFmt = (n == 4) ? GL_RGBA : GL_RGB;
+        // sRGB internal formats → sampling returns LINEAR color automatically
+        GLint  dstFmt = (n == 4) ? GL_SRGB8_ALPHA8 : GL_SRGB8;
+        glTexImage2D(GL_TEXTURE_2D, 0, dstFmt, w, h, 0, srcFmt, GL_UNSIGNED_BYTE, data);
+        stbi_image_free(data);
+    }
+
+
+
+    setDefault2DParams();
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    return tex;
+}
+
 Scene::Scene() {
     samples = 1;
     aa = 1;
@@ -73,14 +120,34 @@ Scene::Scene() {
     lock = false;
 }
 
-Scene::Scene(const int width, const int height, const int samples, const int aa, const int bounceLim)
-    : samples(samples), aa(aa), bounceLim(bounceLim), frameCount(0), width(width), height(height){
+Scene::Scene(const int samples, const int aa, const int bounceLim)
+    : samples(samples), aa(aa), bounceLim(bounceLim), frameCount(0){
+
+    window.setFeedbackMode(true);
+    unsigned int width = window.size().x;
+    unsigned int height = window.size().y;
+    this->width = width;
+    this->height = height;
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGui::StyleColorsDark();
+
+    const char* glsl_version = "#version 430";
+    ImGui_ImplGlfw_InitForOpenGL(window.getWindow(), true);
+    ImGui_ImplOpenGL3_Init(glsl_version);
+
     camForward = glm::vec3(0, 0, -1);
     setBasisVectors(camForward, camUp, camRight);
 
     cameraPos = glm::vec3(0, 0, 0);
 
     lock = false;
+
+    skyTex = LoadEnvLatLongTextureAuto("sky.png");
+    uEnvLatLong = window.createUniform<int>("uEnvLatLong");
+    uEnvYaw = window.createUniform<float>("uEnvYaw");
 }
 
 void Scene::addModel(const std::string& filename, const glm::vec3 position, const glm::vec3 scale, const glm::vec3 color, const float smoothness, const glm::vec3 specularColor, const float specularProb, const float transparency, const float ior, const float emission) {
@@ -340,10 +407,18 @@ bool Scene::updateCamera(GLFWwindow* window, float speed, float sensitivity, flo
     return moved;
 }
 
-void Scene::updateFrame(const GLuint shaderProgram, GLFWwindow* window, float dt) {
-    const bool moved = updateCamera(window, 500, 2, dt);
+void Scene::updateFrame() {
+    window.start();
 
-    setUniforms(shaderProgram);
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    float dt = window.getDeltaTime();
+
+    const bool moved = updateCamera(window.getWindow(), 500, 2, dt);
+
+    setUniforms(window.getShaderProgram());
 
     frameCount++;
 
@@ -362,13 +437,13 @@ void Scene::updateFrame(const GLuint shaderProgram, GLFWwindow* window, float dt
         bool check = lock;
         ImGui::Checkbox("Lock", &lock);
         if (check && !lock) {
-            glm::vec2 center = glm::vec2(float(width)/2, float(height)/2);
-            glfwSetCursorPos(window, center.x, center.y);
+            vec2 center = vec2(float(width)/2, float(height)/2);
+            glfwSetCursorPos(window.getWindow(), center.x, center.y);
         }
 
         changed |= ColorEdit3("Sun Color", sunColor);
         changed |= DragFloat3("Sun Direction", sunDir);
-        sunDir = glm::normalize(sunDir);
+        sunDir = normalize(sunDir);
 
         changed |= ImGui::SliderFloat("Sun Strength", &sunStrength, 0, 300);
 
@@ -437,9 +512,9 @@ void Scene::updateFrame(const GLuint shaderProgram, GLFWwindow* window, float dt
                 }
 
                 if (selectedColor != -1){
-                    glm::vec4& C = colors[selectedColor];
-                    glm::vec4& SC = specularColors[selectedColor];
-                    glm::vec4& GLS = glassLightSettings[selectedColor];
+                    vec4& C = colors[selectedColor];
+                    vec4& SC = specularColors[selectedColor];
+                    vec4& GLS = glassLightSettings[selectedColor];
                     ImGui::Text(std::to_string(selectedColor).c_str());
                     changedC |= ColorEdit3("Color", C);
                     changedC |= ImGui::SliderFloat("Smoothness", &C.w, 0.0f, 1.0f);
@@ -511,6 +586,20 @@ void Scene::updateFrame(const GLuint shaderProgram, GLFWwindow* window, float dt
     if (ui_resetAccum) {
         frameCount = 0;
     }
+
+    glActiveTexture(GL_TEXTURE0 + 5); // choose a slot
+    glBindTexture(GL_TEXTURE_2D, skyTex);
+    uEnvLatLong.set(5);
+    uEnvYaw.set(0.0f);
+
+    window.render();
+
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+
+    glfwSwapBuffers(window.getWindow());
+    glfwPollEvents();
 }
 
 int Scene::numTriBelow(int index) {

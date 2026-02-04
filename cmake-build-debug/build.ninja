@@ -39,7 +39,7 @@ include CMakeFiles/rules.ninja
 #############################################
 # Logical path to working directory; prefix for absolute paths.
 
-cmake_ninja_workdir = C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/
+cmake_ninja_workdir = /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/
 # =============================================================================
 # Object build statements for STATIC_LIBRARY target glad
 
@@ -49,12 +49,12 @@ cmake_ninja_workdir = C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingW
 
 build cmake_object_order_depends_target_glad: phony || .
 
-build CMakeFiles/glad.dir/external/glad/src/glad.c.obj: C_COMPILER__glad_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glad/src/glad.c || cmake_object_order_depends_target_glad
-  DEP_FILE = CMakeFiles\glad.dir\external\glad\src\glad.c.obj.d
-  FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glad/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/glm"
-  OBJECT_DIR = CMakeFiles\glad.dir
-  OBJECT_FILE_DIR = CMakeFiles\glad.dir\external\glad\src
+build CMakeFiles/glad.dir/external/glad/src/glad.c.o: C_COMPILER__glad_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glad/src/glad.c || cmake_object_order_depends_target_glad
+  DEP_FILE = CMakeFiles/glad.dir/external/glad/src/glad.c.o.d
+  FLAGS = -g -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fcolor-diagnostics
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glad/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/glm"
+  OBJECT_DIR = CMakeFiles/glad.dir
+  OBJECT_FILE_DIR = CMakeFiles/glad.dir/external/glad/src
 
 
 # =============================================================================
@@ -64,11 +64,12 @@ build CMakeFiles/glad.dir/external/glad/src/glad.c.obj: C_COMPILER__glad_unscann
 #############################################
 # Link the static library libglad.a
 
-build libglad.a: C_STATIC_LIBRARY_LINKER__glad_Debug CMakeFiles/glad.dir/external/glad/src/glad.c.obj
+build libglad.a: C_STATIC_LIBRARY_LINKER__glad_Debug CMakeFiles/glad.dir/external/glad/src/glad.c.o
+  ARCH_FLAGS = -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk
   LANGUAGE_COMPILE_FLAGS = -g
-  OBJECT_DIR = CMakeFiles\glad.dir
-  POST_BUILD = cd .
-  PRE_LINK = cd .
+  OBJECT_DIR = CMakeFiles/glad.dir
+  POST_BUILD = :
+  PRE_LINK = :
   TARGET_FILE = libglad.a
   TARGET_PDB = glad.a.dbg
 
@@ -79,31 +80,28 @@ build libglad.a: C_STATIC_LIBRARY_LINKER__glad_Debug CMakeFiles/glad.dir/externa
 #############################################
 # Order-only phony target for RaytracingWindowsTriangles
 
-build cmake_object_order_depends_target_RaytracingWindowsTriangles: phony || cmake_object_order_depends_target_glad cmake_object_order_depends_target_glfw cmake_object_order_depends_target_imgui_glfw_opengl3
+build cmake_object_order_depends_target_RaytracingWindowsTriangles: phony || cmake_object_order_depends_target_glad cmake_object_order_depends_target_glfw
 
-build CMakeFiles/RaytracingWindowsTriangles.dir/src/main.cpp.obj: CXX_COMPILER__RaytracingWindowsTriangles_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/src/main.cpp || cmake_object_order_depends_target_RaytracingWindowsTriangles
-  DEFINES = -DIMGUI_IMPL_OPENGL_LOADER_GLAD
-  DEP_FILE = CMakeFiles\RaytracingWindowsTriangles.dir\src\main.cpp.obj.d
-  FLAGS = -g -std=gnu++17 -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/glm" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glad/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src/backends"
-  OBJECT_DIR = CMakeFiles\RaytracingWindowsTriangles.dir
-  OBJECT_FILE_DIR = CMakeFiles\RaytracingWindowsTriangles.dir\src
+build CMakeFiles/RaytracingWindowsTriangles.dir/src/main.cpp.o: CXX_COMPILER__RaytracingWindowsTriangles_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/src/main.cpp || cmake_object_order_depends_target_RaytracingWindowsTriangles
+  DEP_FILE = CMakeFiles/RaytracingWindowsTriangles.dir/src/main.cpp.o.d
+  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fcolor-diagnostics
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/glm" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glad/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -iframework /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk/System/Library/Frameworks
+  OBJECT_DIR = CMakeFiles/RaytracingWindowsTriangles.dir
+  OBJECT_FILE_DIR = CMakeFiles/RaytracingWindowsTriangles.dir/src
 
-build CMakeFiles/RaytracingWindowsTriangles.dir/src/Scene.cpp.obj: CXX_COMPILER__RaytracingWindowsTriangles_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/src/Scene.cpp || cmake_object_order_depends_target_RaytracingWindowsTriangles
-  DEFINES = -DIMGUI_IMPL_OPENGL_LOADER_GLAD
-  DEP_FILE = CMakeFiles\RaytracingWindowsTriangles.dir\src\Scene.cpp.obj.d
-  FLAGS = -g -std=gnu++17 -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/glm" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glad/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src/backends"
-  OBJECT_DIR = CMakeFiles\RaytracingWindowsTriangles.dir
-  OBJECT_FILE_DIR = CMakeFiles\RaytracingWindowsTriangles.dir\src
+build CMakeFiles/RaytracingWindowsTriangles.dir/src/Scene.cpp.o: CXX_COMPILER__RaytracingWindowsTriangles_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/src/Scene.cpp || cmake_object_order_depends_target_RaytracingWindowsTriangles
+  DEP_FILE = CMakeFiles/RaytracingWindowsTriangles.dir/src/Scene.cpp.o.d
+  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fcolor-diagnostics
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/glm" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glad/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -iframework /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk/System/Library/Frameworks
+  OBJECT_DIR = CMakeFiles/RaytracingWindowsTriangles.dir
+  OBJECT_FILE_DIR = CMakeFiles/RaytracingWindowsTriangles.dir/src
 
-build CMakeFiles/RaytracingWindowsTriangles.dir/src/Model.cpp.obj: CXX_COMPILER__RaytracingWindowsTriangles_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/src/Model.cpp || cmake_object_order_depends_target_RaytracingWindowsTriangles
-  DEFINES = -DIMGUI_IMPL_OPENGL_LOADER_GLAD
-  DEP_FILE = CMakeFiles\RaytracingWindowsTriangles.dir\src\Model.cpp.obj.d
-  FLAGS = -g -std=gnu++17 -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/glm" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glad/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src/backends"
-  OBJECT_DIR = CMakeFiles\RaytracingWindowsTriangles.dir
-  OBJECT_FILE_DIR = CMakeFiles\RaytracingWindowsTriangles.dir\src
+build CMakeFiles/RaytracingWindowsTriangles.dir/src/Model.cpp.o: CXX_COMPILER__RaytracingWindowsTriangles_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/src/Model.cpp || cmake_object_order_depends_target_RaytracingWindowsTriangles
+  DEP_FILE = CMakeFiles/RaytracingWindowsTriangles.dir/src/Model.cpp.o.d
+  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fcolor-diagnostics
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/glm" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glad/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -iframework /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk/System/Library/Frameworks
+  OBJECT_DIR = CMakeFiles/RaytracingWindowsTriangles.dir
+  OBJECT_FILE_DIR = CMakeFiles/RaytracingWindowsTriangles.dir/src
 
 
 # =============================================================================
@@ -111,97 +109,23 @@ build CMakeFiles/RaytracingWindowsTriangles.dir/src/Model.cpp.obj: CXX_COMPILER_
 
 
 #############################################
-# Link the executable RaytracingWindowsTriangles.exe
+# Link the executable RaytracingWindowsTriangles
 
-build RaytracingWindowsTriangles.exe: CXX_EXECUTABLE_LINKER__RaytracingWindowsTriangles_Debug CMakeFiles/RaytracingWindowsTriangles.dir/src/main.cpp.obj CMakeFiles/RaytracingWindowsTriangles.dir/src/Scene.cpp.obj CMakeFiles/RaytracingWindowsTriangles.dir/src/Model.cpp.obj | external/glfw/src/libglfw3.a libglad.a libimgui_glfw_opengl3.a external/glfw/src/libglfw3.a libglad.a || external/glfw/src/libglfw3.a libglad.a libimgui_glfw_opengl3.a
-  FLAGS = -g
-  LINK_LIBRARIES = external/glfw/src/libglfw3.a  libglad.a  -lopengl32  libimgui_glfw_opengl3.a  external/glfw/src/libglfw3.a  libglad.a  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
-  OBJECT_DIR = CMakeFiles\RaytracingWindowsTriangles.dir
-  POST_BUILD = cd .
-  PRE_LINK = cd .
-  TARGET_FILE = RaytracingWindowsTriangles.exe
-  TARGET_IMPLIB = libRaytracingWindowsTriangles.dll.a
-  TARGET_PDB = RaytracingWindowsTriangles.exe.dbg
-
-# =============================================================================
-# Object build statements for STATIC_LIBRARY target imgui_glfw_opengl3
-
-
-#############################################
-# Order-only phony target for imgui_glfw_opengl3
-
-build cmake_object_order_depends_target_imgui_glfw_opengl3: phony || cmake_object_order_depends_target_glad cmake_object_order_depends_target_glfw
-
-build CMakeFiles/imgui_glfw_opengl3.dir/_deps/imgui-src/imgui.cpp.obj: CXX_COMPILER__imgui_glfw_opengl3_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src/imgui.cpp || cmake_object_order_depends_target_imgui_glfw_opengl3
-  DEFINES = -DIMGUI_IMPL_OPENGL_LOADER_GLAD
-  DEP_FILE = CMakeFiles\imgui_glfw_opengl3.dir\_deps\imgui-src\imgui.cpp.obj.d
-  FLAGS = -g -std=gnu++17 -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/glm" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src/backends" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glad/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include"
-  OBJECT_DIR = CMakeFiles\imgui_glfw_opengl3.dir
-  OBJECT_FILE_DIR = CMakeFiles\imgui_glfw_opengl3.dir\_deps\imgui-src
-
-build CMakeFiles/imgui_glfw_opengl3.dir/_deps/imgui-src/imgui_draw.cpp.obj: CXX_COMPILER__imgui_glfw_opengl3_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src/imgui_draw.cpp || cmake_object_order_depends_target_imgui_glfw_opengl3
-  DEFINES = -DIMGUI_IMPL_OPENGL_LOADER_GLAD
-  DEP_FILE = CMakeFiles\imgui_glfw_opengl3.dir\_deps\imgui-src\imgui_draw.cpp.obj.d
-  FLAGS = -g -std=gnu++17 -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/glm" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src/backends" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glad/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include"
-  OBJECT_DIR = CMakeFiles\imgui_glfw_opengl3.dir
-  OBJECT_FILE_DIR = CMakeFiles\imgui_glfw_opengl3.dir\_deps\imgui-src
-
-build CMakeFiles/imgui_glfw_opengl3.dir/_deps/imgui-src/imgui_widgets.cpp.obj: CXX_COMPILER__imgui_glfw_opengl3_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src/imgui_widgets.cpp || cmake_object_order_depends_target_imgui_glfw_opengl3
-  DEFINES = -DIMGUI_IMPL_OPENGL_LOADER_GLAD
-  DEP_FILE = CMakeFiles\imgui_glfw_opengl3.dir\_deps\imgui-src\imgui_widgets.cpp.obj.d
-  FLAGS = -g -std=gnu++17 -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/glm" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src/backends" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glad/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include"
-  OBJECT_DIR = CMakeFiles\imgui_glfw_opengl3.dir
-  OBJECT_FILE_DIR = CMakeFiles\imgui_glfw_opengl3.dir\_deps\imgui-src
-
-build CMakeFiles/imgui_glfw_opengl3.dir/_deps/imgui-src/imgui_tables.cpp.obj: CXX_COMPILER__imgui_glfw_opengl3_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src/imgui_tables.cpp || cmake_object_order_depends_target_imgui_glfw_opengl3
-  DEFINES = -DIMGUI_IMPL_OPENGL_LOADER_GLAD
-  DEP_FILE = CMakeFiles\imgui_glfw_opengl3.dir\_deps\imgui-src\imgui_tables.cpp.obj.d
-  FLAGS = -g -std=gnu++17 -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/glm" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src/backends" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glad/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include"
-  OBJECT_DIR = CMakeFiles\imgui_glfw_opengl3.dir
-  OBJECT_FILE_DIR = CMakeFiles\imgui_glfw_opengl3.dir\_deps\imgui-src
-
-build CMakeFiles/imgui_glfw_opengl3.dir/_deps/imgui-src/backends/imgui_impl_glfw.cpp.obj: CXX_COMPILER__imgui_glfw_opengl3_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src/backends/imgui_impl_glfw.cpp || cmake_object_order_depends_target_imgui_glfw_opengl3
-  DEFINES = -DIMGUI_IMPL_OPENGL_LOADER_GLAD
-  DEP_FILE = CMakeFiles\imgui_glfw_opengl3.dir\_deps\imgui-src\backends\imgui_impl_glfw.cpp.obj.d
-  FLAGS = -g -std=gnu++17 -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/glm" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src/backends" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glad/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include"
-  OBJECT_DIR = CMakeFiles\imgui_glfw_opengl3.dir
-  OBJECT_FILE_DIR = CMakeFiles\imgui_glfw_opengl3.dir\_deps\imgui-src\backends
-
-build CMakeFiles/imgui_glfw_opengl3.dir/_deps/imgui-src/backends/imgui_impl_opengl3.cpp.obj: CXX_COMPILER__imgui_glfw_opengl3_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src/backends/imgui_impl_opengl3.cpp || cmake_object_order_depends_target_imgui_glfw_opengl3
-  DEFINES = -DIMGUI_IMPL_OPENGL_LOADER_GLAD
-  DEP_FILE = CMakeFiles\imgui_glfw_opengl3.dir\_deps\imgui-src\backends\imgui_impl_opengl3.cpp.obj.d
-  FLAGS = -g -std=gnu++17 -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/glm" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src/backends" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glad/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include"
-  OBJECT_DIR = CMakeFiles\imgui_glfw_opengl3.dir
-  OBJECT_FILE_DIR = CMakeFiles\imgui_glfw_opengl3.dir\_deps\imgui-src\backends
-
-
-# =============================================================================
-# Link build statements for STATIC_LIBRARY target imgui_glfw_opengl3
-
-
-#############################################
-# Link the static library libimgui_glfw_opengl3.a
-
-build libimgui_glfw_opengl3.a: CXX_STATIC_LIBRARY_LINKER__imgui_glfw_opengl3_Debug CMakeFiles/imgui_glfw_opengl3.dir/_deps/imgui-src/imgui.cpp.obj CMakeFiles/imgui_glfw_opengl3.dir/_deps/imgui-src/imgui_draw.cpp.obj CMakeFiles/imgui_glfw_opengl3.dir/_deps/imgui-src/imgui_widgets.cpp.obj CMakeFiles/imgui_glfw_opengl3.dir/_deps/imgui-src/imgui_tables.cpp.obj CMakeFiles/imgui_glfw_opengl3.dir/_deps/imgui-src/backends/imgui_impl_glfw.cpp.obj CMakeFiles/imgui_glfw_opengl3.dir/_deps/imgui-src/backends/imgui_impl_opengl3.cpp.obj || external/glfw/src/libglfw3.a libglad.a
-  LANGUAGE_COMPILE_FLAGS = -g
-  OBJECT_DIR = CMakeFiles\imgui_glfw_opengl3.dir
-  POST_BUILD = cd .
-  PRE_LINK = cd .
-  TARGET_FILE = libimgui_glfw_opengl3.a
-  TARGET_PDB = imgui_glfw_opengl3.a.dbg
+build RaytracingWindowsTriangles: CXX_EXECUTABLE_LINKER__RaytracingWindowsTriangles_Debug CMakeFiles/RaytracingWindowsTriangles.dir/src/main.cpp.o CMakeFiles/RaytracingWindowsTriangles.dir/src/Scene.cpp.o CMakeFiles/RaytracingWindowsTriangles.dir/src/Model.cpp.o | external/glfw/src/libglfw3.a libglad.a /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk/System/Library/Frameworks/OpenGL.framework || external/glfw/src/libglfw3.a libglad.a
+  FLAGS = -g -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk
+  LINK_LIBRARIES = external/glfw/src/libglfw3.a  libglad.a  -framework OpenGL  -framework Cocoa  -framework IOKit  -framework CoreFoundation  -framework QuartzCore
+  OBJECT_DIR = CMakeFiles/RaytracingWindowsTriangles.dir
+  POST_BUILD = :
+  PRE_LINK = :
+  TARGET_FILE = RaytracingWindowsTriangles
+  TARGET_PDB = RaytracingWindowsTriangles.dbg
 
 
 #############################################
 # Utility command for edit_cache
 
 build CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug" && "C:\Users\acroy\AppData\Local\JetBrains\CLion 2025.1.3\bin\cmake\win\x64\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
+  COMMAND = cd "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug" && /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
   DESC = No interactive CMake dialog available...
   restat = 1
 
@@ -212,7 +136,7 @@ build edit_cache: phony CMakeFiles/edit_cache.util
 # Utility command for rebuild_cache
 
 build CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug" && "C:\Users\acroy\AppData\Local\JetBrains\CLion 2025.1.3\bin\cmake\win\x64\bin\cmake.exe" --regenerate-during-build -S"C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles" -B"C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug""
+  COMMAND = cd "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug" && /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake --regenerate-during-build -S"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles" -B"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug"
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -230,7 +154,7 @@ build list_install_components: phony
 # Utility command for install
 
 build CMakeFiles/install.util: CUSTOM_COMMAND all
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug" && "C:\Users\acroy\AppData\Local\JetBrains\CLion 2025.1.3\bin\cmake\win\x64\bin\cmake.exe" -P cmake_install.cmake"
+  COMMAND = cd "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug" && /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -P cmake_install.cmake
   DESC = Install the project...
   pool = console
   restat = 1
@@ -242,7 +166,7 @@ build install: phony CMakeFiles/install.util
 # Utility command for install/local
 
 build CMakeFiles/install/local.util: CUSTOM_COMMAND all
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug" && "C:\Users\acroy\AppData\Local\JetBrains\CLion 2025.1.3\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
+  COMMAND = cd "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug" && /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
   DESC = Installing only the local directory...
   pool = console
   restat = 1
@@ -254,7 +178,7 @@ build install/local: phony CMakeFiles/install/local.util
 # Utility command for install/strip
 
 build CMakeFiles/install/strip.util: CUSTOM_COMMAND all
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug" && "C:\Users\acroy\AppData\Local\JetBrains\CLion 2025.1.3\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake"
+  COMMAND = cd "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug" && /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
   DESC = Installing the project stripped...
   pool = console
   restat = 1
@@ -263,7 +187,7 @@ build install/strip: phony CMakeFiles/install/strip.util
 
 # =============================================================================
 # Write statements declared in CMakeLists.txt:
-# C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/CMakeLists.txt
+# /Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/CMakeLists.txt
 # =============================================================================
 
 
@@ -277,7 +201,7 @@ build external/glfw/uninstall: phony external/glfw/CMakeFiles/uninstall
 # Utility command for edit_cache
 
 build external/glfw/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug\external\glfw" && "C:\Users\acroy\AppData\Local\JetBrains\CLion 2025.1.3\bin\cmake\win\x64\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
+  COMMAND = cd "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw" && /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
   DESC = No interactive CMake dialog available...
   restat = 1
 
@@ -288,7 +212,7 @@ build external/glfw/edit_cache: phony external/glfw/CMakeFiles/edit_cache.util
 # Utility command for rebuild_cache
 
 build external/glfw/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug\external\glfw" && "C:\Users\acroy\AppData\Local\JetBrains\CLion 2025.1.3\bin\cmake\win\x64\bin\cmake.exe" --regenerate-during-build -S"C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles" -B"C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug""
+  COMMAND = cd "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw" && /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake --regenerate-during-build -S"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles" -B"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug"
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -306,7 +230,7 @@ build external/glfw/list_install_components: phony
 # Utility command for install
 
 build external/glfw/CMakeFiles/install.util: CUSTOM_COMMAND external/glfw/all
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug\external\glfw" && "C:\Users\acroy\AppData\Local\JetBrains\CLion 2025.1.3\bin\cmake\win\x64\bin\cmake.exe" -P cmake_install.cmake"
+  COMMAND = cd "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw" && /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -P cmake_install.cmake
   DESC = Install the project...
   pool = console
   restat = 1
@@ -318,7 +242,7 @@ build external/glfw/install: phony external/glfw/CMakeFiles/install.util
 # Utility command for install/local
 
 build external/glfw/CMakeFiles/install/local.util: CUSTOM_COMMAND external/glfw/all
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug\external\glfw" && "C:\Users\acroy\AppData\Local\JetBrains\CLion 2025.1.3\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
+  COMMAND = cd "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw" && /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
   DESC = Installing only the local directory...
   pool = console
   restat = 1
@@ -330,7 +254,7 @@ build external/glfw/install/local: phony external/glfw/CMakeFiles/install/local.
 # Utility command for install/strip
 
 build external/glfw/CMakeFiles/install/strip.util: CUSTOM_COMMAND external/glfw/all
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug\external\glfw" && "C:\Users\acroy\AppData\Local\JetBrains\CLion 2025.1.3\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake"
+  COMMAND = cd "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw" && /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
   DESC = Installing the project stripped...
   pool = console
   restat = 1
@@ -339,14 +263,14 @@ build external/glfw/install/strip: phony external/glfw/CMakeFiles/install/strip.
 
 
 #############################################
-# Custom command for external\glfw\CMakeFiles\uninstall
+# Custom command for external/glfw/CMakeFiles/uninstall
 
 build external/glfw/CMakeFiles/uninstall | ${cmake_ninja_workdir}external/glfw/CMakeFiles/uninstall: CUSTOM_COMMAND
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug\external\glfw" && "C:\Users\acroy\AppData\Local\JetBrains\CLion 2025.1.3\bin\cmake\win\x64\bin\cmake.exe" -P "C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/cmake_uninstall.cmake""
+  COMMAND = cd "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw" && /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -P /Users/viking/Desktop/C++\ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/cmake_uninstall.cmake
 
 # =============================================================================
 # Write statements declared in CMakeLists.txt:
-# C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/CMakeLists.txt
+# /Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/CMakeLists.txt
 # =============================================================================
 
 # =============================================================================
@@ -358,173 +282,173 @@ build external/glfw/CMakeFiles/uninstall | ${cmake_ninja_workdir}external/glfw/C
 
 build cmake_object_order_depends_target_glfw: phony || .
 
-build external/glfw/src/CMakeFiles/glfw.dir/context.c.obj: C_COMPILER__glfw_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/context.c || cmake_object_order_depends_target_glfw
-  DEFINES = -DUNICODE -D_GLFW_WIN32 -D_UNICODE
-  DEP_FILE = external\glfw\src\CMakeFiles\glfw.dir\context.c.obj.d
-  FLAGS = -g -std=c99 -fdiagnostics-color=always -Wall
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
-  OBJECT_DIR = external\glfw\src\CMakeFiles\glfw.dir
-  OBJECT_FILE_DIR = external\glfw\src\CMakeFiles\glfw.dir
+build external/glfw/src/CMakeFiles/glfw.dir/context.c.o: C_COMPILER__glfw_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/context.c || cmake_object_order_depends_target_glfw
+  DEFINES = -D_GLFW_COCOA
+  DEP_FILE = external/glfw/src/CMakeFiles/glfw.dir/context.c.o.d
+  FLAGS = -g -std=c99 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fPIC -fcolor-diagnostics -Wall
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
+  OBJECT_DIR = external/glfw/src/CMakeFiles/glfw.dir
+  OBJECT_FILE_DIR = external/glfw/src/CMakeFiles/glfw.dir
 
-build external/glfw/src/CMakeFiles/glfw.dir/init.c.obj: C_COMPILER__glfw_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/init.c || cmake_object_order_depends_target_glfw
-  DEFINES = -DUNICODE -D_GLFW_WIN32 -D_UNICODE
-  DEP_FILE = external\glfw\src\CMakeFiles\glfw.dir\init.c.obj.d
-  FLAGS = -g -std=c99 -fdiagnostics-color=always -Wall
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
-  OBJECT_DIR = external\glfw\src\CMakeFiles\glfw.dir
-  OBJECT_FILE_DIR = external\glfw\src\CMakeFiles\glfw.dir
+build external/glfw/src/CMakeFiles/glfw.dir/init.c.o: C_COMPILER__glfw_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/init.c || cmake_object_order_depends_target_glfw
+  DEFINES = -D_GLFW_COCOA
+  DEP_FILE = external/glfw/src/CMakeFiles/glfw.dir/init.c.o.d
+  FLAGS = -g -std=c99 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fPIC -fcolor-diagnostics -Wall
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
+  OBJECT_DIR = external/glfw/src/CMakeFiles/glfw.dir
+  OBJECT_FILE_DIR = external/glfw/src/CMakeFiles/glfw.dir
 
-build external/glfw/src/CMakeFiles/glfw.dir/input.c.obj: C_COMPILER__glfw_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/input.c || cmake_object_order_depends_target_glfw
-  DEFINES = -DUNICODE -D_GLFW_WIN32 -D_UNICODE
-  DEP_FILE = external\glfw\src\CMakeFiles\glfw.dir\input.c.obj.d
-  FLAGS = -g -std=c99 -fdiagnostics-color=always -Wall
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
-  OBJECT_DIR = external\glfw\src\CMakeFiles\glfw.dir
-  OBJECT_FILE_DIR = external\glfw\src\CMakeFiles\glfw.dir
+build external/glfw/src/CMakeFiles/glfw.dir/input.c.o: C_COMPILER__glfw_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/input.c || cmake_object_order_depends_target_glfw
+  DEFINES = -D_GLFW_COCOA
+  DEP_FILE = external/glfw/src/CMakeFiles/glfw.dir/input.c.o.d
+  FLAGS = -g -std=c99 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fPIC -fcolor-diagnostics -Wall
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
+  OBJECT_DIR = external/glfw/src/CMakeFiles/glfw.dir
+  OBJECT_FILE_DIR = external/glfw/src/CMakeFiles/glfw.dir
 
-build external/glfw/src/CMakeFiles/glfw.dir/monitor.c.obj: C_COMPILER__glfw_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/monitor.c || cmake_object_order_depends_target_glfw
-  DEFINES = -DUNICODE -D_GLFW_WIN32 -D_UNICODE
-  DEP_FILE = external\glfw\src\CMakeFiles\glfw.dir\monitor.c.obj.d
-  FLAGS = -g -std=c99 -fdiagnostics-color=always -Wall
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
-  OBJECT_DIR = external\glfw\src\CMakeFiles\glfw.dir
-  OBJECT_FILE_DIR = external\glfw\src\CMakeFiles\glfw.dir
+build external/glfw/src/CMakeFiles/glfw.dir/monitor.c.o: C_COMPILER__glfw_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/monitor.c || cmake_object_order_depends_target_glfw
+  DEFINES = -D_GLFW_COCOA
+  DEP_FILE = external/glfw/src/CMakeFiles/glfw.dir/monitor.c.o.d
+  FLAGS = -g -std=c99 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fPIC -fcolor-diagnostics -Wall
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
+  OBJECT_DIR = external/glfw/src/CMakeFiles/glfw.dir
+  OBJECT_FILE_DIR = external/glfw/src/CMakeFiles/glfw.dir
 
-build external/glfw/src/CMakeFiles/glfw.dir/platform.c.obj: C_COMPILER__glfw_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/platform.c || cmake_object_order_depends_target_glfw
-  DEFINES = -DUNICODE -D_GLFW_WIN32 -D_UNICODE
-  DEP_FILE = external\glfw\src\CMakeFiles\glfw.dir\platform.c.obj.d
-  FLAGS = -g -std=c99 -fdiagnostics-color=always -Wall
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
-  OBJECT_DIR = external\glfw\src\CMakeFiles\glfw.dir
-  OBJECT_FILE_DIR = external\glfw\src\CMakeFiles\glfw.dir
+build external/glfw/src/CMakeFiles/glfw.dir/platform.c.o: C_COMPILER__glfw_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/platform.c || cmake_object_order_depends_target_glfw
+  DEFINES = -D_GLFW_COCOA
+  DEP_FILE = external/glfw/src/CMakeFiles/glfw.dir/platform.c.o.d
+  FLAGS = -g -std=c99 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fPIC -fcolor-diagnostics -Wall
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
+  OBJECT_DIR = external/glfw/src/CMakeFiles/glfw.dir
+  OBJECT_FILE_DIR = external/glfw/src/CMakeFiles/glfw.dir
 
-build external/glfw/src/CMakeFiles/glfw.dir/vulkan.c.obj: C_COMPILER__glfw_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/vulkan.c || cmake_object_order_depends_target_glfw
-  DEFINES = -DUNICODE -D_GLFW_WIN32 -D_UNICODE
-  DEP_FILE = external\glfw\src\CMakeFiles\glfw.dir\vulkan.c.obj.d
-  FLAGS = -g -std=c99 -fdiagnostics-color=always -Wall
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
-  OBJECT_DIR = external\glfw\src\CMakeFiles\glfw.dir
-  OBJECT_FILE_DIR = external\glfw\src\CMakeFiles\glfw.dir
+build external/glfw/src/CMakeFiles/glfw.dir/vulkan.c.o: C_COMPILER__glfw_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/vulkan.c || cmake_object_order_depends_target_glfw
+  DEFINES = -D_GLFW_COCOA
+  DEP_FILE = external/glfw/src/CMakeFiles/glfw.dir/vulkan.c.o.d
+  FLAGS = -g -std=c99 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fPIC -fcolor-diagnostics -Wall
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
+  OBJECT_DIR = external/glfw/src/CMakeFiles/glfw.dir
+  OBJECT_FILE_DIR = external/glfw/src/CMakeFiles/glfw.dir
 
-build external/glfw/src/CMakeFiles/glfw.dir/window.c.obj: C_COMPILER__glfw_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/window.c || cmake_object_order_depends_target_glfw
-  DEFINES = -DUNICODE -D_GLFW_WIN32 -D_UNICODE
-  DEP_FILE = external\glfw\src\CMakeFiles\glfw.dir\window.c.obj.d
-  FLAGS = -g -std=c99 -fdiagnostics-color=always -Wall
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
-  OBJECT_DIR = external\glfw\src\CMakeFiles\glfw.dir
-  OBJECT_FILE_DIR = external\glfw\src\CMakeFiles\glfw.dir
+build external/glfw/src/CMakeFiles/glfw.dir/window.c.o: C_COMPILER__glfw_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/window.c || cmake_object_order_depends_target_glfw
+  DEFINES = -D_GLFW_COCOA
+  DEP_FILE = external/glfw/src/CMakeFiles/glfw.dir/window.c.o.d
+  FLAGS = -g -std=c99 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fPIC -fcolor-diagnostics -Wall
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
+  OBJECT_DIR = external/glfw/src/CMakeFiles/glfw.dir
+  OBJECT_FILE_DIR = external/glfw/src/CMakeFiles/glfw.dir
 
-build external/glfw/src/CMakeFiles/glfw.dir/egl_context.c.obj: C_COMPILER__glfw_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/egl_context.c || cmake_object_order_depends_target_glfw
-  DEFINES = -DUNICODE -D_GLFW_WIN32 -D_UNICODE
-  DEP_FILE = external\glfw\src\CMakeFiles\glfw.dir\egl_context.c.obj.d
-  FLAGS = -g -std=c99 -fdiagnostics-color=always -Wall
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
-  OBJECT_DIR = external\glfw\src\CMakeFiles\glfw.dir
-  OBJECT_FILE_DIR = external\glfw\src\CMakeFiles\glfw.dir
+build external/glfw/src/CMakeFiles/glfw.dir/egl_context.c.o: C_COMPILER__glfw_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/egl_context.c || cmake_object_order_depends_target_glfw
+  DEFINES = -D_GLFW_COCOA
+  DEP_FILE = external/glfw/src/CMakeFiles/glfw.dir/egl_context.c.o.d
+  FLAGS = -g -std=c99 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fPIC -fcolor-diagnostics -Wall
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
+  OBJECT_DIR = external/glfw/src/CMakeFiles/glfw.dir
+  OBJECT_FILE_DIR = external/glfw/src/CMakeFiles/glfw.dir
 
-build external/glfw/src/CMakeFiles/glfw.dir/osmesa_context.c.obj: C_COMPILER__glfw_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/osmesa_context.c || cmake_object_order_depends_target_glfw
-  DEFINES = -DUNICODE -D_GLFW_WIN32 -D_UNICODE
-  DEP_FILE = external\glfw\src\CMakeFiles\glfw.dir\osmesa_context.c.obj.d
-  FLAGS = -g -std=c99 -fdiagnostics-color=always -Wall
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
-  OBJECT_DIR = external\glfw\src\CMakeFiles\glfw.dir
-  OBJECT_FILE_DIR = external\glfw\src\CMakeFiles\glfw.dir
+build external/glfw/src/CMakeFiles/glfw.dir/osmesa_context.c.o: C_COMPILER__glfw_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/osmesa_context.c || cmake_object_order_depends_target_glfw
+  DEFINES = -D_GLFW_COCOA
+  DEP_FILE = external/glfw/src/CMakeFiles/glfw.dir/osmesa_context.c.o.d
+  FLAGS = -g -std=c99 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fPIC -fcolor-diagnostics -Wall
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
+  OBJECT_DIR = external/glfw/src/CMakeFiles/glfw.dir
+  OBJECT_FILE_DIR = external/glfw/src/CMakeFiles/glfw.dir
 
-build external/glfw/src/CMakeFiles/glfw.dir/null_init.c.obj: C_COMPILER__glfw_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/null_init.c || cmake_object_order_depends_target_glfw
-  DEFINES = -DUNICODE -D_GLFW_WIN32 -D_UNICODE
-  DEP_FILE = external\glfw\src\CMakeFiles\glfw.dir\null_init.c.obj.d
-  FLAGS = -g -std=c99 -fdiagnostics-color=always -Wall
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
-  OBJECT_DIR = external\glfw\src\CMakeFiles\glfw.dir
-  OBJECT_FILE_DIR = external\glfw\src\CMakeFiles\glfw.dir
+build external/glfw/src/CMakeFiles/glfw.dir/null_init.c.o: C_COMPILER__glfw_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/null_init.c || cmake_object_order_depends_target_glfw
+  DEFINES = -D_GLFW_COCOA
+  DEP_FILE = external/glfw/src/CMakeFiles/glfw.dir/null_init.c.o.d
+  FLAGS = -g -std=c99 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fPIC -fcolor-diagnostics -Wall
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
+  OBJECT_DIR = external/glfw/src/CMakeFiles/glfw.dir
+  OBJECT_FILE_DIR = external/glfw/src/CMakeFiles/glfw.dir
 
-build external/glfw/src/CMakeFiles/glfw.dir/null_monitor.c.obj: C_COMPILER__glfw_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/null_monitor.c || cmake_object_order_depends_target_glfw
-  DEFINES = -DUNICODE -D_GLFW_WIN32 -D_UNICODE
-  DEP_FILE = external\glfw\src\CMakeFiles\glfw.dir\null_monitor.c.obj.d
-  FLAGS = -g -std=c99 -fdiagnostics-color=always -Wall
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
-  OBJECT_DIR = external\glfw\src\CMakeFiles\glfw.dir
-  OBJECT_FILE_DIR = external\glfw\src\CMakeFiles\glfw.dir
+build external/glfw/src/CMakeFiles/glfw.dir/null_monitor.c.o: C_COMPILER__glfw_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/null_monitor.c || cmake_object_order_depends_target_glfw
+  DEFINES = -D_GLFW_COCOA
+  DEP_FILE = external/glfw/src/CMakeFiles/glfw.dir/null_monitor.c.o.d
+  FLAGS = -g -std=c99 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fPIC -fcolor-diagnostics -Wall
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
+  OBJECT_DIR = external/glfw/src/CMakeFiles/glfw.dir
+  OBJECT_FILE_DIR = external/glfw/src/CMakeFiles/glfw.dir
 
-build external/glfw/src/CMakeFiles/glfw.dir/null_window.c.obj: C_COMPILER__glfw_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/null_window.c || cmake_object_order_depends_target_glfw
-  DEFINES = -DUNICODE -D_GLFW_WIN32 -D_UNICODE
-  DEP_FILE = external\glfw\src\CMakeFiles\glfw.dir\null_window.c.obj.d
-  FLAGS = -g -std=c99 -fdiagnostics-color=always -Wall
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
-  OBJECT_DIR = external\glfw\src\CMakeFiles\glfw.dir
-  OBJECT_FILE_DIR = external\glfw\src\CMakeFiles\glfw.dir
+build external/glfw/src/CMakeFiles/glfw.dir/null_window.c.o: C_COMPILER__glfw_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/null_window.c || cmake_object_order_depends_target_glfw
+  DEFINES = -D_GLFW_COCOA
+  DEP_FILE = external/glfw/src/CMakeFiles/glfw.dir/null_window.c.o.d
+  FLAGS = -g -std=c99 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fPIC -fcolor-diagnostics -Wall
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
+  OBJECT_DIR = external/glfw/src/CMakeFiles/glfw.dir
+  OBJECT_FILE_DIR = external/glfw/src/CMakeFiles/glfw.dir
 
-build external/glfw/src/CMakeFiles/glfw.dir/null_joystick.c.obj: C_COMPILER__glfw_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/null_joystick.c || cmake_object_order_depends_target_glfw
-  DEFINES = -DUNICODE -D_GLFW_WIN32 -D_UNICODE
-  DEP_FILE = external\glfw\src\CMakeFiles\glfw.dir\null_joystick.c.obj.d
-  FLAGS = -g -std=c99 -fdiagnostics-color=always -Wall
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
-  OBJECT_DIR = external\glfw\src\CMakeFiles\glfw.dir
-  OBJECT_FILE_DIR = external\glfw\src\CMakeFiles\glfw.dir
+build external/glfw/src/CMakeFiles/glfw.dir/null_joystick.c.o: C_COMPILER__glfw_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/null_joystick.c || cmake_object_order_depends_target_glfw
+  DEFINES = -D_GLFW_COCOA
+  DEP_FILE = external/glfw/src/CMakeFiles/glfw.dir/null_joystick.c.o.d
+  FLAGS = -g -std=c99 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fPIC -fcolor-diagnostics -Wall
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
+  OBJECT_DIR = external/glfw/src/CMakeFiles/glfw.dir
+  OBJECT_FILE_DIR = external/glfw/src/CMakeFiles/glfw.dir
 
-build external/glfw/src/CMakeFiles/glfw.dir/win32_module.c.obj: C_COMPILER__glfw_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/win32_module.c || cmake_object_order_depends_target_glfw
-  DEFINES = -DUNICODE -D_GLFW_WIN32 -D_UNICODE
-  DEP_FILE = external\glfw\src\CMakeFiles\glfw.dir\win32_module.c.obj.d
-  FLAGS = -g -std=c99 -fdiagnostics-color=always -Wall
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
-  OBJECT_DIR = external\glfw\src\CMakeFiles\glfw.dir
-  OBJECT_FILE_DIR = external\glfw\src\CMakeFiles\glfw.dir
+build external/glfw/src/CMakeFiles/glfw.dir/cocoa_time.c.o: C_COMPILER__glfw_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/cocoa_time.c || cmake_object_order_depends_target_glfw
+  DEFINES = -D_GLFW_COCOA
+  DEP_FILE = external/glfw/src/CMakeFiles/glfw.dir/cocoa_time.c.o.d
+  FLAGS = -g -std=c99 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fPIC -fcolor-diagnostics -Wall
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
+  OBJECT_DIR = external/glfw/src/CMakeFiles/glfw.dir
+  OBJECT_FILE_DIR = external/glfw/src/CMakeFiles/glfw.dir
 
-build external/glfw/src/CMakeFiles/glfw.dir/win32_time.c.obj: C_COMPILER__glfw_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/win32_time.c || cmake_object_order_depends_target_glfw
-  DEFINES = -DUNICODE -D_GLFW_WIN32 -D_UNICODE
-  DEP_FILE = external\glfw\src\CMakeFiles\glfw.dir\win32_time.c.obj.d
-  FLAGS = -g -std=c99 -fdiagnostics-color=always -Wall
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
-  OBJECT_DIR = external\glfw\src\CMakeFiles\glfw.dir
-  OBJECT_FILE_DIR = external\glfw\src\CMakeFiles\glfw.dir
+build external/glfw/src/CMakeFiles/glfw.dir/posix_module.c.o: C_COMPILER__glfw_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/posix_module.c || cmake_object_order_depends_target_glfw
+  DEFINES = -D_GLFW_COCOA
+  DEP_FILE = external/glfw/src/CMakeFiles/glfw.dir/posix_module.c.o.d
+  FLAGS = -g -std=c99 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fPIC -fcolor-diagnostics -Wall
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
+  OBJECT_DIR = external/glfw/src/CMakeFiles/glfw.dir
+  OBJECT_FILE_DIR = external/glfw/src/CMakeFiles/glfw.dir
 
-build external/glfw/src/CMakeFiles/glfw.dir/win32_thread.c.obj: C_COMPILER__glfw_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/win32_thread.c || cmake_object_order_depends_target_glfw
-  DEFINES = -DUNICODE -D_GLFW_WIN32 -D_UNICODE
-  DEP_FILE = external\glfw\src\CMakeFiles\glfw.dir\win32_thread.c.obj.d
-  FLAGS = -g -std=c99 -fdiagnostics-color=always -Wall
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
-  OBJECT_DIR = external\glfw\src\CMakeFiles\glfw.dir
-  OBJECT_FILE_DIR = external\glfw\src\CMakeFiles\glfw.dir
+build external/glfw/src/CMakeFiles/glfw.dir/posix_thread.c.o: C_COMPILER__glfw_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/posix_thread.c || cmake_object_order_depends_target_glfw
+  DEFINES = -D_GLFW_COCOA
+  DEP_FILE = external/glfw/src/CMakeFiles/glfw.dir/posix_thread.c.o.d
+  FLAGS = -g -std=c99 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fPIC -fcolor-diagnostics -Wall
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
+  OBJECT_DIR = external/glfw/src/CMakeFiles/glfw.dir
+  OBJECT_FILE_DIR = external/glfw/src/CMakeFiles/glfw.dir
 
-build external/glfw/src/CMakeFiles/glfw.dir/win32_init.c.obj: C_COMPILER__glfw_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/win32_init.c || cmake_object_order_depends_target_glfw
-  DEFINES = -DUNICODE -D_GLFW_WIN32 -D_UNICODE
-  DEP_FILE = external\glfw\src\CMakeFiles\glfw.dir\win32_init.c.obj.d
-  FLAGS = -g -std=c99 -fdiagnostics-color=always -Wall
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
-  OBJECT_DIR = external\glfw\src\CMakeFiles\glfw.dir
-  OBJECT_FILE_DIR = external\glfw\src\CMakeFiles\glfw.dir
+build external/glfw/src/CMakeFiles/glfw.dir/cocoa_init.m.o: OBJC_COMPILER__glfw_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/cocoa_init.m || cmake_object_order_depends_target_glfw
+  DEFINES = -D_GLFW_COCOA
+  DEP_FILE = external/glfw/src/CMakeFiles/glfw.dir/cocoa_init.m.o.d
+  FLAGS = -g -std=c99 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fPIC -fcolor-diagnostics -Wall
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
+  OBJECT_DIR = external/glfw/src/CMakeFiles/glfw.dir
+  OBJECT_FILE_DIR = external/glfw/src/CMakeFiles/glfw.dir
 
-build external/glfw/src/CMakeFiles/glfw.dir/win32_joystick.c.obj: C_COMPILER__glfw_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/win32_joystick.c || cmake_object_order_depends_target_glfw
-  DEFINES = -DUNICODE -D_GLFW_WIN32 -D_UNICODE
-  DEP_FILE = external\glfw\src\CMakeFiles\glfw.dir\win32_joystick.c.obj.d
-  FLAGS = -g -std=c99 -fdiagnostics-color=always -Wall
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
-  OBJECT_DIR = external\glfw\src\CMakeFiles\glfw.dir
-  OBJECT_FILE_DIR = external\glfw\src\CMakeFiles\glfw.dir
+build external/glfw/src/CMakeFiles/glfw.dir/cocoa_joystick.m.o: OBJC_COMPILER__glfw_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/cocoa_joystick.m || cmake_object_order_depends_target_glfw
+  DEFINES = -D_GLFW_COCOA
+  DEP_FILE = external/glfw/src/CMakeFiles/glfw.dir/cocoa_joystick.m.o.d
+  FLAGS = -g -std=c99 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fPIC -fcolor-diagnostics -Wall
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
+  OBJECT_DIR = external/glfw/src/CMakeFiles/glfw.dir
+  OBJECT_FILE_DIR = external/glfw/src/CMakeFiles/glfw.dir
 
-build external/glfw/src/CMakeFiles/glfw.dir/win32_monitor.c.obj: C_COMPILER__glfw_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/win32_monitor.c || cmake_object_order_depends_target_glfw
-  DEFINES = -DUNICODE -D_GLFW_WIN32 -D_UNICODE
-  DEP_FILE = external\glfw\src\CMakeFiles\glfw.dir\win32_monitor.c.obj.d
-  FLAGS = -g -std=c99 -fdiagnostics-color=always -Wall
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
-  OBJECT_DIR = external\glfw\src\CMakeFiles\glfw.dir
-  OBJECT_FILE_DIR = external\glfw\src\CMakeFiles\glfw.dir
+build external/glfw/src/CMakeFiles/glfw.dir/cocoa_monitor.m.o: OBJC_COMPILER__glfw_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/cocoa_monitor.m || cmake_object_order_depends_target_glfw
+  DEFINES = -D_GLFW_COCOA
+  DEP_FILE = external/glfw/src/CMakeFiles/glfw.dir/cocoa_monitor.m.o.d
+  FLAGS = -g -std=c99 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fPIC -fcolor-diagnostics -Wall
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
+  OBJECT_DIR = external/glfw/src/CMakeFiles/glfw.dir
+  OBJECT_FILE_DIR = external/glfw/src/CMakeFiles/glfw.dir
 
-build external/glfw/src/CMakeFiles/glfw.dir/win32_window.c.obj: C_COMPILER__glfw_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/win32_window.c || cmake_object_order_depends_target_glfw
-  DEFINES = -DUNICODE -D_GLFW_WIN32 -D_UNICODE
-  DEP_FILE = external\glfw\src\CMakeFiles\glfw.dir\win32_window.c.obj.d
-  FLAGS = -g -std=c99 -fdiagnostics-color=always -Wall
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
-  OBJECT_DIR = external\glfw\src\CMakeFiles\glfw.dir
-  OBJECT_FILE_DIR = external\glfw\src\CMakeFiles\glfw.dir
+build external/glfw/src/CMakeFiles/glfw.dir/cocoa_window.m.o: OBJC_COMPILER__glfw_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/cocoa_window.m || cmake_object_order_depends_target_glfw
+  DEFINES = -D_GLFW_COCOA
+  DEP_FILE = external/glfw/src/CMakeFiles/glfw.dir/cocoa_window.m.o.d
+  FLAGS = -g -std=c99 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fPIC -fcolor-diagnostics -Wall
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
+  OBJECT_DIR = external/glfw/src/CMakeFiles/glfw.dir
+  OBJECT_FILE_DIR = external/glfw/src/CMakeFiles/glfw.dir
 
-build external/glfw/src/CMakeFiles/glfw.dir/wgl_context.c.obj: C_COMPILER__glfw_unscanned_Debug C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/wgl_context.c || cmake_object_order_depends_target_glfw
-  DEFINES = -DUNICODE -D_GLFW_WIN32 -D_UNICODE
-  DEP_FILE = external\glfw\src\CMakeFiles\glfw.dir\wgl_context.c.obj.d
-  FLAGS = -g -std=c99 -fdiagnostics-color=always -Wall
-  INCLUDES = -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
-  OBJECT_DIR = external\glfw\src\CMakeFiles\glfw.dir
-  OBJECT_FILE_DIR = external\glfw\src\CMakeFiles\glfw.dir
+build external/glfw/src/CMakeFiles/glfw.dir/nsgl_context.m.o: OBJC_COMPILER__glfw_unscanned_Debug /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/nsgl_context.m || cmake_object_order_depends_target_glfw
+  DEFINES = -D_GLFW_COCOA
+  DEP_FILE = external/glfw/src/CMakeFiles/glfw.dir/nsgl_context.m.o.d
+  FLAGS = -g -std=c99 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk -fPIC -fcolor-diagnostics -Wall
+  INCLUDES = -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" -I"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src"
+  OBJECT_DIR = external/glfw/src/CMakeFiles/glfw.dir
+  OBJECT_FILE_DIR = external/glfw/src/CMakeFiles/glfw.dir
 
 
 # =============================================================================
@@ -532,14 +456,15 @@ build external/glfw/src/CMakeFiles/glfw.dir/wgl_context.c.obj: C_COMPILER__glfw_
 
 
 #############################################
-# Link the static library external\glfw\src\libglfw3.a
+# Link the static library external/glfw/src/libglfw3.a
 
-build external/glfw/src/libglfw3.a: C_STATIC_LIBRARY_LINKER__glfw_Debug external/glfw/src/CMakeFiles/glfw.dir/context.c.obj external/glfw/src/CMakeFiles/glfw.dir/init.c.obj external/glfw/src/CMakeFiles/glfw.dir/input.c.obj external/glfw/src/CMakeFiles/glfw.dir/monitor.c.obj external/glfw/src/CMakeFiles/glfw.dir/platform.c.obj external/glfw/src/CMakeFiles/glfw.dir/vulkan.c.obj external/glfw/src/CMakeFiles/glfw.dir/window.c.obj external/glfw/src/CMakeFiles/glfw.dir/egl_context.c.obj external/glfw/src/CMakeFiles/glfw.dir/osmesa_context.c.obj external/glfw/src/CMakeFiles/glfw.dir/null_init.c.obj external/glfw/src/CMakeFiles/glfw.dir/null_monitor.c.obj external/glfw/src/CMakeFiles/glfw.dir/null_window.c.obj external/glfw/src/CMakeFiles/glfw.dir/null_joystick.c.obj external/glfw/src/CMakeFiles/glfw.dir/win32_module.c.obj external/glfw/src/CMakeFiles/glfw.dir/win32_time.c.obj external/glfw/src/CMakeFiles/glfw.dir/win32_thread.c.obj external/glfw/src/CMakeFiles/glfw.dir/win32_init.c.obj external/glfw/src/CMakeFiles/glfw.dir/win32_joystick.c.obj external/glfw/src/CMakeFiles/glfw.dir/win32_monitor.c.obj external/glfw/src/CMakeFiles/glfw.dir/win32_window.c.obj external/glfw/src/CMakeFiles/glfw.dir/wgl_context.c.obj
+build external/glfw/src/libglfw3.a: C_STATIC_LIBRARY_LINKER__glfw_Debug external/glfw/src/CMakeFiles/glfw.dir/context.c.o external/glfw/src/CMakeFiles/glfw.dir/init.c.o external/glfw/src/CMakeFiles/glfw.dir/input.c.o external/glfw/src/CMakeFiles/glfw.dir/monitor.c.o external/glfw/src/CMakeFiles/glfw.dir/platform.c.o external/glfw/src/CMakeFiles/glfw.dir/vulkan.c.o external/glfw/src/CMakeFiles/glfw.dir/window.c.o external/glfw/src/CMakeFiles/glfw.dir/egl_context.c.o external/glfw/src/CMakeFiles/glfw.dir/osmesa_context.c.o external/glfw/src/CMakeFiles/glfw.dir/null_init.c.o external/glfw/src/CMakeFiles/glfw.dir/null_monitor.c.o external/glfw/src/CMakeFiles/glfw.dir/null_window.c.o external/glfw/src/CMakeFiles/glfw.dir/null_joystick.c.o external/glfw/src/CMakeFiles/glfw.dir/cocoa_time.c.o external/glfw/src/CMakeFiles/glfw.dir/posix_module.c.o external/glfw/src/CMakeFiles/glfw.dir/posix_thread.c.o external/glfw/src/CMakeFiles/glfw.dir/cocoa_init.m.o external/glfw/src/CMakeFiles/glfw.dir/cocoa_joystick.m.o external/glfw/src/CMakeFiles/glfw.dir/cocoa_monitor.m.o external/glfw/src/CMakeFiles/glfw.dir/cocoa_window.m.o external/glfw/src/CMakeFiles/glfw.dir/nsgl_context.m.o
+  ARCH_FLAGS = -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk
   LANGUAGE_COMPILE_FLAGS = -g
-  OBJECT_DIR = external\glfw\src\CMakeFiles\glfw.dir
-  POST_BUILD = cd .
-  PRE_LINK = cd .
-  TARGET_FILE = external\glfw\src\libglfw3.a
+  OBJECT_DIR = external/glfw/src/CMakeFiles/glfw.dir
+  POST_BUILD = :
+  PRE_LINK = :
+  TARGET_FILE = external/glfw/src/libglfw3.a
   TARGET_PDB = glfw3.a.dbg
 
 
@@ -553,7 +478,7 @@ build external/glfw/src/update_mappings: phony external/glfw/src/CMakeFiles/upda
 # Utility command for edit_cache
 
 build external/glfw/src/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug\external\glfw\src" && "C:\Users\acroy\AppData\Local\JetBrains\CLion 2025.1.3\bin\cmake\win\x64\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
+  COMMAND = cd "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src" && /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
   DESC = No interactive CMake dialog available...
   restat = 1
 
@@ -564,7 +489,7 @@ build external/glfw/src/edit_cache: phony external/glfw/src/CMakeFiles/edit_cach
 # Utility command for rebuild_cache
 
 build external/glfw/src/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug\external\glfw\src" && "C:\Users\acroy\AppData\Local\JetBrains\CLion 2025.1.3\bin\cmake\win\x64\bin\cmake.exe" --regenerate-during-build -S"C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles" -B"C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug""
+  COMMAND = cd "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src" && /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake --regenerate-during-build -S"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles" -B"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug"
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -582,7 +507,7 @@ build external/glfw/src/list_install_components: phony
 # Utility command for install
 
 build external/glfw/src/CMakeFiles/install.util: CUSTOM_COMMAND external/glfw/src/all
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug\external\glfw\src" && "C:\Users\acroy\AppData\Local\JetBrains\CLion 2025.1.3\bin\cmake\win\x64\bin\cmake.exe" -P cmake_install.cmake"
+  COMMAND = cd "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src" && /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -P cmake_install.cmake
   DESC = Install the project...
   pool = console
   restat = 1
@@ -594,7 +519,7 @@ build external/glfw/src/install: phony external/glfw/src/CMakeFiles/install.util
 # Utility command for install/local
 
 build external/glfw/src/CMakeFiles/install/local.util: CUSTOM_COMMAND external/glfw/src/all
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug\external\glfw\src" && "C:\Users\acroy\AppData\Local\JetBrains\CLion 2025.1.3\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
+  COMMAND = cd "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src" && /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
   DESC = Installing only the local directory...
   pool = console
   restat = 1
@@ -606,7 +531,7 @@ build external/glfw/src/install/local: phony external/glfw/src/CMakeFiles/instal
 # Utility command for install/strip
 
 build external/glfw/src/CMakeFiles/install/strip.util: CUSTOM_COMMAND external/glfw/src/all
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug\external\glfw\src" && "C:\Users\acroy\AppData\Local\JetBrains\CLion 2025.1.3\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake"
+  COMMAND = cd "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src" && /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
   DESC = Installing the project stripped...
   pool = console
   restat = 1
@@ -615,23 +540,29 @@ build external/glfw/src/install/strip: phony external/glfw/src/CMakeFiles/instal
 
 
 #############################################
-# Custom command for external\glfw\src\CMakeFiles\update_mappings
+# Custom command for external/glfw/src/CMakeFiles/update_mappings
 
 build external/glfw/src/CMakeFiles/update_mappings | ${cmake_ninja_workdir}external/glfw/src/CMakeFiles/update_mappings: CUSTOM_COMMAND
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\external\glfw\src" && "C:\Users\acroy\AppData\Local\JetBrains\CLion 2025.1.3\bin\cmake\win\x64\bin\cmake.exe" -P "C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/CMake/GenerateMappings.cmake" mappings.h.in mappings.h"
+  COMMAND = cd "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src" && /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -P "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/CMake/GenerateMappings.cmake" mappings.h.in mappings.h
   DESC = Updating gamepad mappings from upstream repository
 
 # =============================================================================
 # Write statements declared in CMakeLists.txt:
-# C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/CMakeLists.txt
+# /Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/CMakeLists.txt
 # =============================================================================
+
+
+#############################################
+# Utility command for docs
+
+build external/glfw/docs/docs: phony external/glfw/docs/html/index.html
 
 
 #############################################
 # Utility command for edit_cache
 
 build external/glfw/docs/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug\external\glfw\docs" && "C:\Users\acroy\AppData\Local\JetBrains\CLion 2025.1.3\bin\cmake\win\x64\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
+  COMMAND = cd "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/docs" && /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
   DESC = No interactive CMake dialog available...
   restat = 1
 
@@ -642,7 +573,7 @@ build external/glfw/docs/edit_cache: phony external/glfw/docs/CMakeFiles/edit_ca
 # Utility command for rebuild_cache
 
 build external/glfw/docs/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug\external\glfw\docs" && "C:\Users\acroy\AppData\Local\JetBrains\CLion 2025.1.3\bin\cmake\win\x64\bin\cmake.exe" --regenerate-during-build -S"C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles" -B"C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug""
+  COMMAND = cd "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/docs" && /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake --regenerate-during-build -S"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles" -B"/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug"
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -660,7 +591,7 @@ build external/glfw/docs/list_install_components: phony
 # Utility command for install
 
 build external/glfw/docs/CMakeFiles/install.util: CUSTOM_COMMAND external/glfw/docs/all
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug\external\glfw\docs" && "C:\Users\acroy\AppData\Local\JetBrains\CLion 2025.1.3\bin\cmake\win\x64\bin\cmake.exe" -P cmake_install.cmake"
+  COMMAND = cd "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/docs" && /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -P cmake_install.cmake
   DESC = Install the project...
   pool = console
   restat = 1
@@ -672,7 +603,7 @@ build external/glfw/docs/install: phony external/glfw/docs/CMakeFiles/install.ut
 # Utility command for install/local
 
 build external/glfw/docs/CMakeFiles/install/local.util: CUSTOM_COMMAND external/glfw/docs/all
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug\external\glfw\docs" && "C:\Users\acroy\AppData\Local\JetBrains\CLion 2025.1.3\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
+  COMMAND = cd "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/docs" && /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
   DESC = Installing only the local directory...
   pool = console
   restat = 1
@@ -684,23 +615,30 @@ build external/glfw/docs/install/local: phony external/glfw/docs/CMakeFiles/inst
 # Utility command for install/strip
 
 build external/glfw/docs/CMakeFiles/install/strip.util: CUSTOM_COMMAND external/glfw/docs/all
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\cmake-build-debug\external\glfw\docs" && "C:\Users\acroy\AppData\Local\JetBrains\CLion 2025.1.3\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake"
+  COMMAND = cd "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/docs" && /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
   DESC = Installing the project stripped...
   pool = console
   restat = 1
 
 build external/glfw/docs/install/strip: phony external/glfw/docs/CMakeFiles/install/strip.util
 
+
+#############################################
+# Custom command for external/glfw/docs/html/index.html
+
+build external/glfw/docs/html/index.html | ${cmake_ninja_workdir}external/glfw/docs/html/index.html: CUSTOM_COMMAND external/glfw/docs/Doxyfile /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include/GLFW/glfw3.h /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/include/GLFW/glfw3native.h /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/main.md /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/news.md /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/quick.md /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/moving.md /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/compile.md /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/build.md /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/intro.md /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/context.md /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/monitor.md /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/window.md /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/input.md /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/vulkan.md /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/compat.md /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/internal.md /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/DoxygenLayout.xml /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/header.html /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/footer.html /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/extra.css /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/spaces.svg
+  COMMAND = cd "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/docs" && /opt/homebrew/bin/doxygen
+  DESC = Generating HTML documentation
+  restat = 1
+
 # =============================================================================
 # Target aliases.
 
-build RaytracingWindowsTriangles: phony RaytracingWindowsTriangles.exe
+build docs: phony external/glfw/docs/docs
 
 build glad: phony libglad.a
 
 build glfw: phony external/glfw/src/libglfw3.a
-
-build imgui_glfw_opengl3: phony libimgui_glfw_opengl3.a
 
 build libglfw3.a: phony external/glfw/src/libglfw3.a
 
@@ -714,28 +652,28 @@ build update_mappings: phony external/glfw/src/update_mappings
 # =============================================================================
 
 #############################################
-# Folder: C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug
+# Folder: /Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug
 
-build all: phony libglad.a RaytracingWindowsTriangles.exe libimgui_glfw_opengl3.a external/glfw/all
+build all: phony libglad.a RaytracingWindowsTriangles external/glfw/all
 
 # =============================================================================
 
 #############################################
-# Folder: C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw
+# Folder: /Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw
 
 build external/glfw/all: phony external/glfw/src/all external/glfw/docs/all
 
 # =============================================================================
 
 #############################################
-# Folder: C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/docs
+# Folder: /Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/docs
 
-build external/glfw/docs/all: phony
+build external/glfw/docs/all: phony external/glfw/docs/docs
 
 # =============================================================================
 
 #############################################
-# Folder: C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src
+# Folder: /Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/external/glfw/src
 
 build external/glfw/src/all: phony external/glfw/src/libglfw3.a
 
@@ -746,14 +684,14 @@ build external/glfw/src/all: phony external/glfw/src/libglfw3.a
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja: RERUN_CMAKE | C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/BasicConfigVersion-SameMajorVersion.cmake.in C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CMakeCInformation.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CMakeCXXInformation.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CMakeCommonLanguageInclude.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CMakeDependentOption.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CMakeGenericSystem.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CMakeInitializeConfigs.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CMakeLanguageInformation.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CMakePackageConfigHelpers.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CMakeRCInformation.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CMakeSystemSpecificInformation.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CMakeSystemSpecificInitialize.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CheckCSourceCompiles.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CheckIncludeFile.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CheckLibraryExists.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Compiler/GNU-C.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Compiler/GNU-CXX.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Compiler/GNU.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/ExternalProject/shared_internal_commands.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/FetchContent.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/FetchContent/CMakeLists.cmake.in C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/FindDoxygen.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/FindGit.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/FindOpenGL.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/FindPackageHandleStandardArgs.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/FindPackageMessage.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/FindThreads.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/GNUInstallDirs.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Internal/CMakeCLinkerInformation.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Internal/CMakeCXXLinkerInformation.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Internal/CMakeCommonLinkerInformation.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Internal/CheckSourceCompiles.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Linker/GNU-C.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Linker/GNU-CXX.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Linker/GNU.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/Linker/GNU.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/Linker/Windows-GNU-C.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/Linker/Windows-GNU-CXX.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/Linker/Windows-GNU.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/Windows-GNU-C-ABI.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/Windows-GNU-C.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/Windows-GNU-CXX-ABI.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/Windows-GNU-CXX.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/Windows-GNU.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/Windows-Initialize.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/Windows-windres.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/Windows.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/WindowsPaths.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/WriteBasicConfigVersionFile.cmake C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/CMakeLists.txt C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/CMakeLists.txt C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/CMake/cmake_uninstall.cmake.in C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/CMake/glfw3.pc.in C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/CMake/glfw3Config.cmake.in C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/CMakeLists.txt C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/CMakeLists.txt CMakeCache.txt CMakeFiles/3.31.6/CMakeCCompiler.cmake CMakeFiles/3.31.6/CMakeCXXCompiler.cmake CMakeFiles/3.31.6/CMakeRCCompiler.cmake CMakeFiles/3.31.6/CMakeSystem.cmake
+build build.ninja: RERUN_CMAKE | /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/BasicConfigVersion-SameMajorVersion.cmake.in /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CMakeCInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CMakeCXXInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CMakeCommonLanguageInclude.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CMakeDependentOption.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CMakeGenericSystem.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CMakeInitializeConfigs.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CMakeLanguageInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CMakeOBJCInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CMakePackageConfigHelpers.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CMakeSystemSpecificInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CMakeSystemSpecificInitialize.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CheckCSourceCompiles.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CheckIncludeFile.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CheckLibraryExists.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Compiler/AppleClang-C.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Compiler/AppleClang-CXX.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Compiler/AppleClang-OBJC.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Compiler/CMakeCommonCompilerMacros.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Compiler/Clang-OBJC.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Compiler/Clang.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Compiler/GNU.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/FindDoxygen.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/FindOpenGL.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/FindPackageHandleStandardArgs.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/FindPackageMessage.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/FindThreads.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/GNUInstallDirs.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Internal/CMakeCLinkerInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Internal/CMakeCXXLinkerInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Internal/CMakeCommonLinkerInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Internal/CMakeOBJCLinkerInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Internal/CheckSourceCompiles.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Linker/AppleClang-C.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Linker/AppleClang-CXX.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Linker/AppleClang-OBJC.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Linker/AppleClang.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Apple-AppleClang-C.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Apple-AppleClang-CXX.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Apple-AppleClang-OBJC.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Apple-Clang-C.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Apple-Clang-CXX.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Apple-Clang-OBJC.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Apple-Clang.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Darwin-Initialize.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Darwin.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Linker/Apple-AppleClang-C.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Linker/Apple-AppleClang-CXX.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Linker/Apple-AppleClang-OBJC.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Linker/Apple-AppleClang.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/UnixPaths.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/WriteBasicConfigVersionFile.cmake /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/CMakeLists.txt /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/CMake/cmake_uninstall.cmake.in /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/CMake/glfw3.pc.in /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/CMake/glfw3Config.cmake.in /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/CMakeLists.txt /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/CMakeLists.txt /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/Doxyfile.in /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/CMakeLists.txt CMakeCache.txt CMakeFiles/3.31.6/CMakeCCompiler.cmake CMakeFiles/3.31.6/CMakeCXXCompiler.cmake CMakeFiles/3.31.6/CMakeOBJCCompiler.cmake CMakeFiles/3.31.6/CMakeSystem.cmake
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/BasicConfigVersion-SameMajorVersion.cmake.in C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CMakeCInformation.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CMakeCXXInformation.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CMakeCommonLanguageInclude.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CMakeDependentOption.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CMakeGenericSystem.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CMakeInitializeConfigs.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CMakeLanguageInformation.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CMakePackageConfigHelpers.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CMakeRCInformation.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CMakeSystemSpecificInformation.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CMakeSystemSpecificInitialize.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CheckCSourceCompiles.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CheckIncludeFile.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/CheckLibraryExists.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Compiler/GNU-C.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Compiler/GNU-CXX.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Compiler/GNU.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/ExternalProject/shared_internal_commands.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/FetchContent.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/FetchContent/CMakeLists.cmake.in C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/FindDoxygen.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/FindGit.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/FindOpenGL.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/FindPackageHandleStandardArgs.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/FindPackageMessage.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/FindThreads.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/GNUInstallDirs.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Internal/CMakeCLinkerInformation.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Internal/CMakeCXXLinkerInformation.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Internal/CMakeCommonLinkerInformation.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Internal/CheckSourceCompiles.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Linker/GNU-C.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Linker/GNU-CXX.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Linker/GNU.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/Linker/GNU.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/Linker/Windows-GNU-C.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/Linker/Windows-GNU-CXX.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/Linker/Windows-GNU.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/Windows-GNU-C-ABI.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/Windows-GNU-C.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/Windows-GNU-CXX-ABI.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/Windows-GNU-CXX.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/Windows-GNU.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/Windows-Initialize.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/Windows-windres.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/Windows.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/Platform/WindowsPaths.cmake C$:/Users/acroy/AppData/Local/JetBrains/CLion$ 2025.1.3/bin/cmake/win/x64/share/cmake-3.31/Modules/WriteBasicConfigVersionFile.cmake C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/CMakeLists.txt C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/CMakeLists.txt C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/CMake/cmake_uninstall.cmake.in C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/CMake/glfw3.pc.in C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/CMake/glfw3Config.cmake.in C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/CMakeLists.txt C$:/Users/acroy/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/CMakeLists.txt CMakeCache.txt CMakeFiles/3.31.6/CMakeCCompiler.cmake CMakeFiles/3.31.6/CMakeCXXCompiler.cmake CMakeFiles/3.31.6/CMakeRCCompiler.cmake CMakeFiles/3.31.6/CMakeSystem.cmake: phony
+build /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/BasicConfigVersion-SameMajorVersion.cmake.in /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CMakeCInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CMakeCXXInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CMakeCommonLanguageInclude.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CMakeDependentOption.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CMakeGenericSystem.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CMakeInitializeConfigs.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CMakeLanguageInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CMakeOBJCInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CMakePackageConfigHelpers.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CMakeSystemSpecificInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CMakeSystemSpecificInitialize.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CheckCSourceCompiles.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CheckIncludeFile.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/CheckLibraryExists.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Compiler/AppleClang-C.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Compiler/AppleClang-CXX.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Compiler/AppleClang-OBJC.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Compiler/CMakeCommonCompilerMacros.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Compiler/Clang-OBJC.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Compiler/Clang.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Compiler/GNU.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/FindDoxygen.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/FindOpenGL.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/FindPackageHandleStandardArgs.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/FindPackageMessage.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/FindThreads.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/GNUInstallDirs.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Internal/CMakeCLinkerInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Internal/CMakeCXXLinkerInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Internal/CMakeCommonLinkerInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Internal/CMakeOBJCLinkerInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Internal/CheckSourceCompiles.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Linker/AppleClang-C.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Linker/AppleClang-CXX.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Linker/AppleClang-OBJC.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Linker/AppleClang.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Apple-AppleClang-C.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Apple-AppleClang-CXX.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Apple-AppleClang-OBJC.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Apple-Clang-C.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Apple-Clang-CXX.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Apple-Clang-OBJC.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Apple-Clang.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Darwin-Initialize.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Darwin.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Linker/Apple-AppleClang-C.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Linker/Apple-AppleClang-CXX.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Linker/Apple-AppleClang-OBJC.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/Linker/Apple-AppleClang.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/Platform/UnixPaths.cmake /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.31/Modules/WriteBasicConfigVersionFile.cmake /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/CMakeLists.txt /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/CMake/cmake_uninstall.cmake.in /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/CMake/glfw3.pc.in /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/CMake/glfw3Config.cmake.in /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/CMakeLists.txt /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/CMakeLists.txt /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/docs/Doxyfile.in /Users/viking/Desktop/C++$ Projects/Graphics/RaytracingWindowsTriangles/external/glfw/src/CMakeLists.txt CMakeCache.txt CMakeFiles/3.31.6/CMakeCCompiler.cmake CMakeFiles/3.31.6/CMakeCXXCompiler.cmake CMakeFiles/3.31.6/CMakeOBJCCompiler.cmake CMakeFiles/3.31.6/CMakeSystem.cmake: phony
 
 
 #############################################

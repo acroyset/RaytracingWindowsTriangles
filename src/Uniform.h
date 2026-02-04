@@ -7,6 +7,8 @@
 #include <glm/gtc/type_ptr.hpp>
 
 struct UniformBase {
+    UniformBase() = default;
+
     GLint location = -1;
     explicit UniformBase(GLuint program, const std::string& name) {
         location = glGetUniformLocation(program, name.c_str());

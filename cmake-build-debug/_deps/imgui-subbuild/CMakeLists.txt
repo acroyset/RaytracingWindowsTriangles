@@ -18,18 +18,18 @@ project(imgui-populate NONE)
 
 # Pass through things we've already detected in the main project to avoid
 # paying the cost of redetecting them again in ExternalProject_Add()
-set(GIT_EXECUTABLE [==[C:/Program Files/Git/cmd/git.exe]==])
-set(GIT_VERSION_STRING [==[2.50.1.windows.1]==])
+set(GIT_EXECUTABLE [==[/opt/homebrew/bin/git]==])
+set(GIT_VERSION_STRING [==[2.49.0]==])
 set_property(GLOBAL PROPERTY _CMAKE_FindGit_GIT_EXECUTABLE_VERSION
-  [==[C:/Program Files/Git/cmd/git.exe;2.50.1.windows.1]==]
+  [==[/opt/homebrew/bin/git;2.49.0]==]
 )
 
 
 include(ExternalProject)
 ExternalProject_Add(imgui-populate
                      "UPDATE_DISCONNECTED" "False" "GIT_REPOSITORY" "https://github.com/ocornut/imgui.git" "EXTERNALPROJECT_INTERNAL_ARGUMENT_SEPARATOR" "GIT_TAG" "v1.91.0"
-                    SOURCE_DIR          "C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src"
-                    BINARY_DIR          "C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-build"
+                    SOURCE_DIR          "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-src"
+                    BINARY_DIR          "/Users/viking/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/cmake-build-debug/_deps/imgui-build"
                     CONFIGURE_COMMAND   ""
                     BUILD_COMMAND       ""
                     INSTALL_COMMAND     ""
