@@ -16,8 +16,8 @@ include_directories(glm)
 add_executable(RaytracingWindowsTriangles
         src/main.cpp
         src/Scene.cpp
-        src/BaseModel.cpp
-        src/BaseModel.h
+        src/Model.cpp
+        src/Model.h
 )
 target_include_directories(RaytracingWindowsTriangles PRIVATE
         external/glad/include

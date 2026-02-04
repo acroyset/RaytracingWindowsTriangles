@@ -16,6 +16,7 @@ layout(std430, binding = 9) buffer ssboModels { int models[]; };
 layout(std430, binding = 10) buffer ssboNormalsList { vec4 normalsList[]; };
 layout(std430, binding = 11) buffer ssboNormals { ivec4 normals[]; };
 layout(std430, binding = 12) buffer ssboModelTransformations { mat4 modelTransformations[]; };
+layout(std430, binding = 13) buffer ssboModelInvTransformations { mat4 modelInvTransformations[]; };
 
 uniform int   numModels;
 uniform vec3  cameraPos;
@@ -310,7 +311,7 @@ float findBestTri_world(
 
     for (int i=0;i<numModels;i++){
         mat4 M    = modelTransformations[i];
-        mat4 invM = inverse(M);
+        mat4 invM = modelInvTransformations[i];
         traverseBVH_local(models[i], roW, rdW, M, invM,
         best_tW, best_u, best_v,
         triTest, aabbTest,

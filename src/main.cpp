@@ -126,14 +126,14 @@ int main() {
 
     Timer t;
 
-    //scene.addModel("models/bull.obj", glm::vec3(0, 50, 0), glm::vec3(100), glm::vec3(0.9), 0.3);
-    scene.addModel("models/cube/cube.obj", glm::vec3(0, -20, 0), glm::vec3(300, 20, 300), glm::vec3(0.9), 0.3);
-    //scene.addModel("models/dragon800K.obj", glm::vec3(0, 70.498, 0), glm::vec3(100), glm::vec3(0.01), 0.99, glm::vec3(0.15), 0.4);
-    //scene.addModel("models/sphere.obj", glm::vec3(200, 50, 0), glm::vec3(50), glm::vec3(1, 0.7, 0.3), 0, glm::vec3(0), 0, 0, 1, 2);
+    scene.addModel("models/bull.obj", vec3(0, 50, 0), vec3(100), vec3(0.9), 0.3);
+    scene.addModel("models/cube/cube.obj", vec3(0, -20, 0), vec3(300, 20, 300), vec3(0.9), 0.3);
+    //scene.addModel("models/dragon800K.obj", vec3(0, 70.498, 0), vec3(100), vec3(0.01), 0.99, vec3(0.15), 0.4);
+    //scene.addModel("models/sphere.obj", vec3(200, 50, 0), vec3(50), vec3(1, 0.7, 0.3), 0, vec3(0), 0, 0, 1, 2);
 
-    //scene.addModel("models/quad.txt", glm::vec3(0,4999, 0), glm::vec3(1000), glm::vec3(0.95), 0, glm::vec3(0), 0, 0, 1, 20);
-    //scene.addModel("models/cubeInternal.txt", glm::vec3(0,2000, 0), glm::vec3(3000), glm::vec3(0.95), 0);
-    //scene.addModel(dragon, glm::vec3(0,762.30, 0), glm::vec3(2500), glm::vec3(0.01), 0.99, glm::vec3(0.95), 0.15);
+    //scene.addModel("models/quad.txt", vec3(0,4999, 0), vec3(1000), vec3(0.95), 0, vec3(0), 0, 0, 1, 20);
+    //scene.addModel("models/cubeInternal.txt", vec3(0,2000, 0), vec3(3000), vec3(0.95), 0);
+    //scene.addModel(dragon, vec3(0,762.30, 0), vec3(2500), vec3(0.01), 0.99, vec3(0.95), 0.15);
 
 
     float duration = t.reset();
@@ -149,7 +149,7 @@ int main() {
     const auto uEnvYaw = window.createUniform<float>("uEnvYaw");
 
     // display bvh stats
-    if (false) {
+    if (true) {
         int leafNodes = 0, depth = 0, triPerLeaf = 0;
         int minTriPerLeaf = 100000000, maxTriPerLeaf = 0;
         int minDepth = 100000000, maxDepth = 0;
@@ -169,28 +169,52 @@ int main() {
         std::cout << "  -  Mean: " << float(triPerLeaf)/float(leafNodes) << std::endl;
     }
 
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGui::StyleColorsDark();
+
+    bool apple = false;
+
+#ifdef PLATFORM_MAC
+    apple = true;
+#endif
+
+    const char* glsl_version = apple ? "#version 330" : "#version 430";
+    ImGui_ImplGlfw_InitForOpenGL(window.getWindow(), true);
+    ImGui_ImplOpenGL3_Init(glsl_version);
+
     // render loop
-    Timer deltaTimer;
     while (window.open()) {
-        // delta time
-        const auto dt = float(deltaTimer.reset());
+        window.start();
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        scene.updateFrame(window.getShaderProgram(), window.getWindow(), window.getDeltaTime());
+
 
         glActiveTexture(GL_TEXTURE0 + 5); // choose a slot
         glBindTexture(GL_TEXTURE_2D, skyTex);
         uEnvLatLong.set(5);
         uEnvYaw.set(0.0f);
 
-        // update camera / uniforms
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
+        window.render();
 
-        scene.updateFrame(window.getShaderProgram(), window.getWindow(), dt);
-
-        // >>> ImGui render on top <<<
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+
+        glfwSwapBuffers(window.getWindow());
+        glfwPollEvents();
     }
+
+
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 
     return 0;
 }

@@ -144,8 +144,8 @@ class ShaderWindow {
     int currentBuffer = 0;
     bool useFeedback = false;
 
-    const float startTime = static_cast<float>(glfwGetTime());
-    float previousTime = startTime;
+    const float startTime = 0;
+    float previousTime = 0;
     float timeSinceStart = 0;
     float deltaTime = 0;
 
@@ -161,10 +161,10 @@ class ShaderWindow {
                 apple = true;
         #endif
 
-        glfwSetErrorCallback(errorCallback);
         if (!glfwInit()) {
             std::cerr << "Failed to init GLFW\n";
         }
+        glfwSetErrorCallback(errorCallback);
 
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, apple ? 3 : 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -172,7 +172,7 @@ class ShaderWindow {
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         #endif
-        glfwWindowHint(GLFW_REFRESH_RATE, 60);
+        glfwWindowHint(GLFW_REFRESH_RATE, 180);
 
         // Fullscreen on primary monitor
         GLFWmonitor* mon = glfwGetPrimaryMonitor();
@@ -213,15 +213,8 @@ class ShaderWindow {
         // Cursor hidden for screensaver feel
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
-        IMGUI_CHECKVERSION();
-        ImGui::CreateContext();
-        ImGuiIO& io = ImGui::GetIO(); (void)io;
-        // io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // optional docking
-        ImGui::StyleColorsDark();
-
-        // Match your GL profile (you requested 4.3 core)
-        ImGui_ImplGlfw_InitForOpenGL(window, true);
-        ImGui_ImplOpenGL3_Init("#version 430");
+        timeSinceStart = static_cast<float>(glfwGetTime());
+        previousTime = timeSinceStart;
     }
 
     ~ShaderWindow() {
@@ -231,10 +224,6 @@ class ShaderWindow {
         glDeleteTextures(2, textures);
         glfwDestroyWindow(window);
         glfwTerminate();
-
-        ImGui_ImplOpenGL3_Shutdown();
-        ImGui_ImplGlfw_Shutdown();
-        ImGui::DestroyContext();
     }
 
     [[nodiscard]] bool open() const {
@@ -260,8 +249,6 @@ class ShaderWindow {
             glDrawArrays(GL_TRIANGLES, 0, 3);
         }
 
-        glfwSwapBuffers(window);
-        glfwPollEvents();
     }
 
     void start() {

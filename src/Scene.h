@@ -7,7 +7,8 @@
 #include <glm/glm.hpp>
 #include <string>
 #include <GLFW/glfw3.h>
-#include "BaseModel.h"
+#include "Model.h"
+#include "Uniform.h"
 
 class Scene {
     std::vector<glm::vec4> vertices;
@@ -19,6 +20,7 @@ class Scene {
     std::vector<glm::vec4> glassLightSettings;
 
     std::vector<glm::mat4> modelTransforms;
+    std::vector<glm::mat4> modelInvTransforms;
     int selectedModel = -1;
     int selectedColor = -1;
 
@@ -51,6 +53,7 @@ class Scene {
     GLuint ssboSpecularColors;
     GLuint ssboGlassLightSettings;
     GLuint ssboModelTransformations = 0;
+    GLuint ssboModelInvTransformations = 0;
 
     bool debugView = false;
     int triTh = 75;
@@ -69,7 +72,7 @@ class Scene {
 
     void addModel(const std::string &filename, glm::vec3 position, glm::vec3 scale, glm::vec3 color, float smoothness, glm::vec3 specularColor = glm::vec3(-1), float specularProb = 1, float transparency = 0, float ior = 1, float emission = 0);
 
-    void addModel(BaseModel& model, glm::vec3 position, glm::vec3 scale, glm::vec3 color, float smoothness, glm::vec3 specularColor = glm::vec3(-1), float specularProb = 1, float transparency = 0, float ior = 1, float emission = 0);
+    void addModel(Model& model, glm::vec3 position, glm::vec3 scale, glm::vec3 color, float smoothness, glm::vec3 specularColor = glm::vec3(-1), float specularProb = 1, float transparency = 0, float ior = 1, float emission = 0);
 
     void set_ssbo();
 

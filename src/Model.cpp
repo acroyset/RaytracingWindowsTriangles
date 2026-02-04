@@ -2,96 +2,12 @@
 // Created by acroy on 7/26/2025.
 //
 
-#include "BaseModel.h"
+#include "Model.h"
 #include <fstream>
 #include <iostream>
-#include <atomic>
-#include <condition_variable>
 #include <cstring>
-#include <thread>
-#include <mutex>
 #include <sstream>
 #include <unordered_map>
-
-class ThreadPool {
-    std::vector<std::thread> workers;
-    std::vector<std::function<void()>> tasks;
-    std::mutex queue_mutex;
-    std::condition_variable cv;
-    std::condition_variable finished_cv;
-    bool stop = false;
-    size_t active_tasks = 0;  // Tracks how many tasks are currently running
-    std::atomic<size_t> total_enqueued{0};
-    std::atomic<size_t> total_completed{0};
-
-public:
-    explicit ThreadPool(const size_t threads) {
-        for (size_t i = 0; i < threads; ++i) {
-            workers.emplace_back([this] {
-                while (true) {
-                    std::function<void()> task;
-                    {
-                        std::unique_lock<std::mutex> lock(this->queue_mutex);
-                        this->cv.wait(lock, [this] {
-                            return this->stop || !this->tasks.empty();
-                        });
-
-                        if (this->stop && this->tasks.empty())
-                            return;
-
-                        task = std::move(this->tasks.back());
-                        this->tasks.pop_back();
-                        ++active_tasks;
-                    }
-
-                    task();
-
-                    {
-                        std::unique_lock<std::mutex> lock(this->queue_mutex);
-                        --active_tasks;
-                        ++total_completed;
-                        if (tasks.empty() && active_tasks == 0) {
-                            finished_cv.notify_all();
-                        }
-                    }
-                }
-            });
-        }
-    }
-
-    ~ThreadPool() {
-        {
-            std::unique_lock<std::mutex> lock(queue_mutex);
-            stop = true;
-        }
-        cv.notify_all();
-        for (auto &worker : workers)
-            worker.join();
-    }
-
-    void enqueue(std::function<void()> task) {
-        {
-            std::unique_lock<std::mutex> lock(queue_mutex);
-            tasks.push_back(std::move(task));
-            ++total_enqueued;
-        }
-        cv.notify_one();
-    }
-
-    // Wait for all tasks to finish
-    void wait_for_tasks() {
-        std::unique_lock<std::mutex> lock(queue_mutex);
-        finished_cv.wait(lock, [this] {
-            return tasks.empty() && active_tasks == 0;
-        });
-    }
-
-    size_t tasks_left() {
-        std::unique_lock<std::mutex> lock(queue_mutex);
-        return total_enqueued - total_completed;
-    }
-
-};
 
 void splitSlash(const std::string& s, std::string tokens[3]) {
     std::string token;
@@ -290,9 +206,9 @@ void loadMTL(
     flushMaterial();
 }
 
-BaseModel::BaseModel() = default;
+Model::Model() = default;
 
-void BaseModel::parse(
+void Model::parse(
     const std::string& nfilename,
     std::vector<glm::vec3>& vertices,
     std::vector<glm::ivec3>& triangles,
@@ -516,7 +432,7 @@ void BaseModel::parse(
     model.close();
 }
 
-BaseModel::BaseModel(const std::string &filename) {
+Model::Model(const std::string &filename) {
     this->filename = filename;
     std::vector<glm::vec3> tempVertices;
     std::vector<glm::ivec3> tempTriangles;
@@ -564,12 +480,14 @@ BaseModel::BaseModel(const std::string &filename) {
         glassLightSettings.emplace_back(tempGlassLightSetting);
     }
 
+    int testPerAxis = 9;
+
     std::cout << "Starting BVH construction..." << std::endl;
-    createBVH(47, 9, triStart, numTris);
+    createBVH(47, testPerAxis, triStart, numTris);
     std::cout << "BVH construction complete!" << std::endl;
 }
 
-void BaseModel::createBVH(const int depth, const int numTestsPerAxis, int triStart, int numTris) {
+void Model::createBVH(const int depth, const int numTestsPerAxis, int triStart, int numTris) {
 
     auto min = glm::vec3(1000000000.0f);
     auto max = glm::vec3(-1000000000.0f);
@@ -596,7 +514,7 @@ void BaseModel::createBVH(const int depth, const int numTestsPerAxis, int triSta
     childB[index] = indexB;
 }
 
-void BaseModel::precomputeTriangleData() {
+void Model::precomputeTriangleData() {
     triangleCenters.resize(triangles.size());
     triangleMin.resize(triangles.size());
     triangleMax.resize(triangles.size());
@@ -614,7 +532,7 @@ void BaseModel::precomputeTriangleData() {
     }
 }
 
-float BaseModel::evaluateSplit(const int childA, const int childB, const int axis, const float pos) const {
+float Model::evaluateSplit(const int childA, const int childB, const int axis, const float pos) const {
     auto minA = glm::vec3(1000000000.0f), maxA = glm::vec3(-1000000000.0f);
     auto minB = glm::vec3(1000000000.0f), maxB = glm::vec3(-1000000000.0f);
 
@@ -642,29 +560,49 @@ float BaseModel::evaluateSplit(const int childA, const int childB, const int axi
     return nodeCost(minA, maxA, numA) + nodeCost(minB, maxB, numB);
 }
 
-void BaseModel::chooseSplit(const int numTestsPerAxis, glm::vec3 min, const int childA, glm::vec3 max, const int childB, int& bestAxis, float& bestPos, float& bestCost) const {
+void Model::chooseSplit(const int numTestsPerAxis, glm::vec3 min, const int childA, glm::vec3 max, const int childB, int& bestAxis, float& bestPos, float& bestCost) {
 
     for (int axis = 0; axis < 3; ++axis) {
         float bStart = min[axis];
         float bEnd = max[axis];
 
         for (int i = 0; i < numTestsPerAxis; ++i) {
-            float splitT = float(i+1) / float(numTestsPerAxis+1);
 
-            float pos = bStart + (bEnd - bStart) * splitT;
-            float cost = evaluateSplit(childA, childB, axis, pos);
+            if (-childB > 1000) {
 
-            if (cost < bestCost) {
-                bestPos = pos;
-                bestCost = cost;
-                bestAxis = axis;
+                pool.enqueue([numTestsPerAxis, childA, childB, i, bStart, bEnd, axis, &bestPos, &bestCost, &bestAxis, this] {
+                    float splitT = float(i+1) / float(numTestsPerAxis+1);
+
+                    float pos = bStart + (bEnd - bStart) * splitT;
+                    float cost = evaluateSplit(childA, childB, axis, pos);
+
+                    if (cost < bestCost) {
+                        bestPos = pos;
+                        bestCost = cost;
+                        bestAxis = axis;
+                    }
+                });
+
+            } else {
+                float splitT = float(i+1) / float(numTestsPerAxis+1);
+
+                float pos = bStart + (bEnd - bStart) * splitT;
+                float cost = evaluateSplit(childA, childB, axis, pos);
+
+                if (cost < bestCost) {
+                    bestPos = pos;
+                    bestCost = cost;
+                    bestAxis = axis;
+                }
             }
         }
+
+        pool.wait_for_tasks();
     }
 
 }
 
-void BaseModel::split(int numTestsPerAxis, glm::vec3 bboxMin, int& childA, glm::vec3 bboxMax, int& childB, int depth) {
+void Model::split(int numTestsPerAxis, glm::vec3 bboxMin, int& childA, glm::vec3 bboxMax, int& childB, int depth) {
     if (depth <= 0) {return;};
 
     int triStart = -childA;

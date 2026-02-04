@@ -12,7 +12,7 @@
 #include <chrono>
 #include <imgui.h>
 
-#include "BaseModel.h"
+#include "Model.h"
 
 using Clock = std::chrono::high_resolution_clock;
 
@@ -84,13 +84,13 @@ Scene::Scene(const int width, const int height, const int samples, const int aa,
 }
 
 void Scene::addModel(const std::string& filename, const glm::vec3 position, const glm::vec3 scale, const glm::vec3 color, const float smoothness, const glm::vec3 specularColor, const float specularProb, const float transparency, const float ior, const float emission) {
-    BaseModel model(filename);
+    Model model(filename);
 
     addModel(model, position, scale, color, smoothness, specularColor, specularProb, transparency, ior, emission);
 }
 
 void Scene::addModel(
-    BaseModel& model,
+    Model& model,
     glm::vec3 position,
     glm::vec3 scale,
     glm::vec3 color,
@@ -158,6 +158,7 @@ void Scene::addModel(
         glm::vec3(0, 0, 0),
         scale
         ));
+    modelInvTransforms.emplace_back(glm::inverse(modelTransforms.back()));
 
     modelPos.emplace_back(position);
     modelRot.emplace_back(0.0f, 0.0f, 0.0f);
@@ -247,6 +248,11 @@ void Scene::set_ssbo() {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboModelTransformations);
     glBufferData(GL_SHADER_STORAGE_BUFFER, int(modelTransforms.size() * sizeof(glm::mat4)),modelTransforms.data(),GL_DYNAMIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 12, ssboModelTransformations);
+
+    glGenBuffers(1, &ssboModelInvTransformations);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboModelInvTransformations);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, int(modelInvTransforms.size() * sizeof(glm::mat4)),modelInvTransforms.data(),GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 13, ssboModelInvTransformations);
 }
 
 int Scene::getNumBVHNodes() const {
@@ -458,6 +464,13 @@ void Scene::updateFrame(const GLuint shaderProgram, GLFWwindow* window, float dt
                     glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset,
                                     sizeof(glm::mat4),
                                     &modelTransforms[selectedModel]);
+
+                    modelInvTransforms[selectedModel] = glm::inverse(modelTransforms[selectedModel]);
+
+                    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboModelInvTransformations);
+                    glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset,
+                                    sizeof(glm::mat4),
+                                    &modelInvTransforms[selectedModel]);
 
                     frameCount = 0; // nuke accumulation so the new transform converges cleanly
                 }
