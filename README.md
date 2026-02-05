@@ -5,7 +5,6 @@
 ![C++](https://img.shields.io/badge/C++-17-blue.svg)
 ![OpenGL](https://img.shields.io/badge/OpenGL-4.3-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey.svg)
-![License](https://img.shields.io/badge/license-MIT-orange.svg)
 
 A physically-based path tracer running entirely on the GPU, capable of rendering millions of triangles in real-time with full global illumination, refractions, and physically-based materials.
 
