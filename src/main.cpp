@@ -1,13 +1,9 @@
 #include <ctime>
 #include <iostream>
 #include <fstream>
-#include <sstream>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "Scene.h"
-#include "imgui.h"
-#include "backends/imgui_impl_glfw.h"
-#include "backends/imgui_impl_opengl3.h"
 
 class Timer {
     std::clock_t start;
@@ -52,7 +48,11 @@ int main() {
 
     Timer t;
 
-    scene.addModel("models/bull.obj", vec3(0, 50, 0), vec3(100), vec3(0.9), 0.3);
+    Model bull("models/bull.obj");
+    scene.addModel(bull, vec3(-150, 50, 0), vec3(100), vec3(1, 0, 0), 1, vec3(1), 0.1);
+    scene.addModel(bull, vec3(-75, 37.5, 0), vec3(75), vec3(0, 1, 0), 1, vec3(1), 0.1);
+    scene.addModel(bull, vec3(-25, 25, 0), vec3(50), vec3(0, 0, 1), 1, vec3(1), 0.1);
+    scene.addModel(bull, vec3(25, 12.5, 0), vec3(25), vec3(1, 1, 0), 1, vec3(1), 0.1);
     scene.addModel("models/cube/cube.obj", vec3(0, -20, 0), vec3(300, 20, 300), vec3(0.9), 0.3);
     //scene.addModel("models/dragon800K.obj", vec3(0, 70.498, 0), vec3(100), vec3(0.01), 0.99, vec3(0.15), 0.4);
     //scene.addModel("models/sphere.obj", vec3(200, 50, 0), vec3(50), vec3(1, 0.7, 0.3), 0, vec3(0), 0, 0, 1, 2);
@@ -63,7 +63,6 @@ int main() {
 
 
     float duration = t.reset();
-
 
     //scene.displayBVH();
 

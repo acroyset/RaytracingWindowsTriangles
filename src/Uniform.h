@@ -1,7 +1,6 @@
 // Uniform.h
 #pragma once
 #include <string>
-#include <type_traits>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>

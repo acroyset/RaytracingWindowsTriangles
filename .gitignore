@@ -1,8 +1,5 @@
-# glad / glfw
+# glad / glfw / glm
 external
-
-# glm
-glm
 
 # build debug
 cmake-build-debug

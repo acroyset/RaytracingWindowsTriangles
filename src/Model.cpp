@@ -71,6 +71,7 @@ void splitSpace4(const std::string& s, std::string words[4], int& num) {
         i++;
     }
 }
+
 void growToInclude(glm::vec3& min, glm::vec3& max, const glm::vec3 point) {
     if (point.x < min.x) min.x = point.x;
     if (point.y < min.y) min.y = point.y;
@@ -103,6 +104,7 @@ void growToInclude(glm::vec4& min, glm::vec4& max, const glm::vec3 point) {
     if (point.y > max.y) max.y = point.y;
     if (point.z > max.z) max.z = point.z;
 }
+
 void makeBoundingBox(glm::vec3& min, glm::vec3& max, const std::vector<glm::vec3>& vertices) {
     for (const auto & vertice : vertices) {
         growToInclude(min, max, vertice);
@@ -113,6 +115,7 @@ void makeBoundingBox(glm::vec3& min, glm::vec3& max, const std::vector<glm::vec4
         growToInclude(min, max, xyz(vertice));
     }
 }
+
 void center(std::vector<glm::vec3>& points) {
     auto min = glm::vec3(1000000000.0f), max = glm::vec3(-1000000000.0f);
     makeBoundingBox(min, max, points);
@@ -126,11 +129,13 @@ void center(std::vector<glm::vec3>& points) {
         point *= scaler;
     }
 }
+
 float nodeCost(const glm::vec3 min, const glm::vec3 max, const int numTris) {
     const glm::vec3 size = max-min;
     const float halfArea = size.x * (size.y + size.z) + size.y * size.z;
     return halfArea * float(numTris);
 }
+
 inline float fast_strtof(const char* str, char** endptr) {
     return std::strtof(str, endptr);
     // Or use a faster implementation like:
@@ -139,10 +144,12 @@ inline float fast_strtof(const char* str, char** endptr) {
 inline int fast_strtoi(const char* str, char** endptr) {
     return std::strtol(str, endptr, 10);
 }
+
 std::string dirOf(const std::string& path) {
     size_t p = path.find_last_of("/\\");
     return (p == std::string::npos) ? std::string() : path.substr(0, p+1);
 }
+
 void loadMTL(
     const std::string& mtlPath,
     std::unordered_map<std::string, int>& nameToIndex,
@@ -420,6 +427,7 @@ void Model::parse(
         if (i.y < 0) i.y += int(vertices.size()) + 1;
         if (i.z < 0) i.z += int(normalsList.size()) + 1;
         i.x--;
+
         i.y--;
         i.z--;
 
@@ -480,7 +488,7 @@ Model::Model(const std::string &filename) {
         glassLightSettings.emplace_back(tempGlassLightSetting);
     }
 
-    int testPerAxis = 9;
+    int testPerAxis = 3;
 
     std::cout << "Starting BVH construction..." << std::endl;
     createBVH(47, testPerAxis, triStart, numTris);

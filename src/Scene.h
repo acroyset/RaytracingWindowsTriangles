@@ -6,18 +6,20 @@
 #define SCENE_H
 #include <glm/glm.hpp>
 #include <string>
-#include <GLFW/glfw3.h>
 #include "Model.h"
+#define GLFW_INCLUDE_NONE  // Prevent GLFW from including OpenGL headers
+#include <glad/glad.h>      // Include glad FIRST
+#include <GLFW/glfw3.h>     // Then GLFW
 #include "ShaderWindow.h"
 #include "Uniform.h"
 #include <glm/gtc/type_ptr.hpp>
 
 #define GLAD_GL_IMPLEMENTATION
-#include <chrono>
-#include <imgui.h>
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+#include "SSBO.h"
 
-#include "stb_image.h"
-#define STB_IMAGE_IMPLEMENTATION
 
 class Scene {
     ShaderWindow window{};
@@ -60,11 +62,20 @@ class Scene {
     float sunStrength = 100;
     vec3 sunColor = vec3(1, .7, .3);
 
-    GLuint ssboColors = 0;
-    GLuint ssboSpecularColors = 0;
-    GLuint ssboGlassLightSettings = 0;
-    GLuint ssboModelTransformations = 0;
-    GLuint ssboModelInvTransformations = 0;
+    SSBO<vec4> ssboVertices;
+    SSBO<ivec4> ssboTriangles;
+    SSBO<vec4> ssboColors;
+    SSBO<vec4> ssboSpecularColors;
+    SSBO<vec4> ssboGlassLightSettings;
+    SSBO<vec4> ssboBoundingBoxMin;
+    SSBO<vec4> ssboBoundingBoxMax;
+    SSBO<int> ssboChildA;
+    SSBO<int> ssboChildB;
+    SSBO<int> ssboModels;
+    SSBO<vec4> ssboNormalsList;
+    SSBO<ivec4> ssboNormals;
+    SSBO<mat4> ssboModelTransformations;
+    SSBO<mat4> ssboModelInvTransformations;
 
     bool debugView = false;
     int triTh = 75;
@@ -77,6 +88,24 @@ class Scene {
     int samples;
     int aa;
     int bounceLim;
+
+    Uniform<int> uNumModels;
+    Uniform<vec3> uCameraPos;
+    Uniform<vec3> uCameraForward;
+    Uniform<vec3> uCameraUp;
+    Uniform<vec3> uCameraRight;
+    Uniform<uvec2> uResolution;
+    Uniform<int> uFrameCount;
+    Uniform<int> uNumNodes;
+    Uniform<int> uSamples;
+    Uniform<int> uAA;
+    Uniform<int> uBounceLim;
+    Uniform<vec3> uSkyColor;
+    Uniform<vec3> uSunDir;
+    Uniform<vec3> uSunColor;
+    Uniform<int> uDebugView;
+    Uniform<int> uTriThreshold;
+    Uniform<int> uAABBThreshold;
 
     GLuint skyTex = 0;
     Uniform<int> uEnvLatLong{};
@@ -91,6 +120,8 @@ class Scene {
         ImGui::DestroyContext();
     }
 
+    void createUniforms();
+
     void addModel(const std::string &filename, vec3 position, vec3 scale, vec3 color, float smoothness, vec3 specularColor = vec3(-1), float specularProb = 1, float transparency = 0, float ior = 1, float emission = 0);
 
     void addModel(Model& model, vec3 position, vec3 scale, vec3 color, float smoothness, vec3 specularColor = vec3(-1), float specularProb = 1, float transparency = 0, float ior = 1, float emission = 0);
@@ -101,7 +132,7 @@ class Scene {
 
     [[nodiscard]] int getNumTris() const;
 
-    void setUniforms(GLuint shaderProgram) const;
+    void setUniforms() const;
 
     bool updateCamera(GLFWwindow* window, float speed, float sensitivity, float dt);
 

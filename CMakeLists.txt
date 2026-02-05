@@ -22,7 +22,7 @@ add_executable(RaytracingWindowsTriangles
 target_include_directories(RaytracingWindowsTriangles PRIVATE
         external/glad/include
         external/glfw/include
-        glm
+        external/glm
 )
 target_link_libraries(RaytracingWindowsTriangles PRIVATE glfw glad OpenGL::GL)
 

@@ -45,6 +45,18 @@ public:
         glBufferData(GL_SHADER_STORAGE_BUFFER, int(data.size() * sizeof(T)), data.data(), dynamicDraw ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, id, ssbo);
     }
+
+    void update(int startIdx, int endIdx, const T* data) {
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+        const GLsizeiptr offset = (GLsizeiptr)startIdx * sizeof(T);
+        glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, sizeof(T) * (endIdx-startIdx), data);
+    }
+
+    void update(int startIdx, T data) {
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+        const GLsizeiptr offset = (GLsizeiptr)startIdx * sizeof(T);
+        glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, sizeof(T), &data);
+    }
 };
 
 #endif //SSBO_H

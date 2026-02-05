@@ -30,7 +30,6 @@ uniform int   samples;
 uniform int   aa;
 uniform int   bounceLim;
 uniform sampler2D previousFrame;
-uniform uint  time;
 
 uniform vec3  skyColor;
 uniform vec3  sunDir;
@@ -57,6 +56,12 @@ float randomValue(inout uint state){
     result = (result >> 22) ^ result;
     return float(result) * (1.0/4294967295.0);
 }
+uint randomValueU(inout uint state){
+    state = state * 747796405u + 2891336453u;
+    uint result = ((state >> ((state >> 28) + 4u)) ^ state) * 277803737u;
+    result = (result >> 22) ^ result;
+    return result;
+}
 float randomValueNormalDistribution(inout uint state){
     float theta = 2.0*PI * randomValue(state);
     float rho   = sqrt(-3.0 * log(max(1e-7, randomValue(state))));
@@ -71,6 +76,18 @@ vec3 randPointSphere(inout uint state){
         if (m < 1.0 && m > 0.0) return p * inversesqrt(m);
     }
     return vec3(1,0,0);
+}
+uint hash_u32(uint v) {
+    v ^= v >> 16;
+    v *= 0x7feb352du;
+    v ^= v >> 15;
+    v *= 0x846ca68bu;
+    v ^= v >> 16;
+    return v;
+}
+uint pixelFrameSeed(uvec2 pix, uint frame) {
+    uint v = pix.x * 0x1f123bb5u ^ pix.y * 0x05491333u ^ frame * 0x9e3779b9u;
+    return hash_u32(v);
 }
 
 /* ========================= Helpers ========================= */
@@ -93,7 +110,7 @@ vec2 dirToLatLongUV(vec3 d){
 vec2 seamSafeUV(vec2 uv){
     uv.x -= floor(uv.x);
     vec2 texel = 1.0/vec2(textureSize(uEnvLatLong,0));
-    uv = clamp(uv, texel*0.5, 1.0-texel*0.5);
+    uv = clamp(uv, texel, 1.0-texel);
     return uv;
 }
 
@@ -432,7 +449,7 @@ void main(){
     vec2  screen = vec2((2.0*fragCoord.x-1.0)*aspect, 2.0*fragCoord.y-1.0);
 
     uvec2 pix = uvec2(fragCoord.x*resolution.x, fragCoord.y*resolution.y*aspect);
-    uint  state = pix.x + pix.y*uint(resolution.x) + uint(frameCount*time) + uint(frameCount);
+    uint  state = pixelFrameSeed(pix, frameCount);
 
     vec3 total = vec3(0.0);
     int aaCycle = frameCount % (aa*aa);

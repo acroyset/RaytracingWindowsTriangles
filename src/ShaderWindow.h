@@ -20,10 +20,6 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include "Uniform.h"
 
 using namespace glm;
@@ -187,7 +183,7 @@ class ShaderWindow {
         glfwSwapInterval(1); // vsync
 
         // GLAD (GLAD1-style loader)
-        if (!gladLoadGL(glfwGetProcAddress)) {
+        if (!gladLoadGL()) {
             std::cerr << "Failed to initialize GLAD2\n";
         }
 

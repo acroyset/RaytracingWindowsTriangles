@@ -1,47 +1,50 @@
 // Scene.cpp
 #include "Scene.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "../external/stb_image.h"
 
 using Clock = std::chrono::high_resolution_clock;
 
 auto start = Clock::now();
 
-void setBasisVectors(const glm::vec3& forward, glm::vec3& up, glm::vec3& right) {
-    constexpr glm::vec3 world_up(0, 1, 0);
-    right = glm::normalize(glm::cross(forward, world_up));
-    up = glm::normalize(glm::cross(right, forward));
+void setBasisVectors(const vec3& forward, vec3& up, vec3& right) {
+    constexpr vec3 world_up(0, 1, 0);
+    right = normalize(cross(forward, world_up));
+    up = normalize(cross(right, forward));
 }
 
-glm::mat4 composeTransform(const glm::vec3& position,
-                           const glm::vec3& rotation, // Euler angles in radians
-                           const glm::vec3& scale) {
-    glm::mat4 I(1.0f);
+mat4 composeTransform(const vec3& position,
+                           const vec3& rotation, // Euler angles in radians
+                           const vec3& scale) {
+    mat4 I(1.0f);
 
     // Scale
-    glm::mat4 S = glm::scale(I, scale);
+    mat4 S = glm::scale(I, scale);
 
     // Rotation (order: Z * Y * X)
-    glm::mat4 Rx = glm::rotate(I, rotation.x, glm::vec3(1, 0, 0));
-    glm::mat4 Ry = glm::rotate(I, rotation.y, glm::vec3(0, 1, 0));
-    glm::mat4 Rz = glm::rotate(I, rotation.z, glm::vec3(0, 0, 1));
-    glm::mat4 R = Rz * Ry * Rx;
+    mat4 Rx = rotate(I, rotation.x, vec3(1, 0, 0));
+    mat4 Ry = rotate(I, rotation.y, vec3(0, 1, 0));
+    mat4 Rz = rotate(I, rotation.z, vec3(0, 0, 1));
+    mat4 R = Rz * Ry * Rx;
 
     // Translation
-    glm::mat4 T = glm::translate(I, position);
+    mat4 T = translate(I, position);
 
     // Final TRS matrix
     return T * R * S;
 }
-inline bool DragFloat3(const char* label, glm::vec3& v,
+
+inline bool DragFloat3(const char* label, vec3& v,
                        float speed = 0.01f, float min = 0.0f, float max = 0.0f) {
-    return ImGui::DragFloat3(label, glm::value_ptr(v), speed, min, max);
+    return ImGui::DragFloat3(label, value_ptr(v), speed, min, max);
 }
-inline bool ColorEdit3(const char* label, glm::vec3& v) {
-    return ImGui::ColorEdit3(label, glm::value_ptr(v));
+inline bool ColorEdit3(const char* label, vec3& v) {
+    return ImGui::ColorEdit3(label, value_ptr(v));
 }
-inline bool ColorEdit3(const char* label, glm::vec4& v) {
-    auto v3 = glm::vec3(v.x, v.y, v.z);
-    const bool out = ImGui::ColorEdit3(label, glm::value_ptr(v3));
+inline bool ColorEdit3(const char* label, vec4& v) {
+    auto v3 = vec3(v.x, v.y, v.z);
+    const bool out = ImGui::ColorEdit3(label, value_ptr(v3));
     v.x = v3.x;
     v.y = v3.y;
     v.z = v3.z;
@@ -138,19 +141,41 @@ Scene::Scene(const int samples, const int aa, const int bounceLim)
     ImGui_ImplGlfw_InitForOpenGL(window.getWindow(), true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    camForward = glm::vec3(0, 0, -1);
+    camForward = vec3(0, 0, -1);
     setBasisVectors(camForward, camUp, camRight);
 
-    cameraPos = glm::vec3(0, 0, 0);
+    cameraPos = vec3(0, 0, 0);
 
     lock = false;
 
+    createUniforms();
+
     skyTex = LoadEnvLatLongTextureAuto("sky.png");
+}
+
+void Scene::createUniforms() {
+    uNumModels = window.createUniform<int>("numModels");
+    uCameraPos = window.createUniform<vec3>("cameraPos");
+    uCameraForward = window.createUniform<vec3>("camForward");
+    uCameraUp = window.createUniform<vec3>("camUp");
+    uCameraRight = window.createUniform<vec3>("camRight");
+    uResolution = window.createUniform<uvec2>("resolution");
+    uFrameCount = window.createUniform<int>("frameCount");
+    uNumNodes = window.createUniform<int>("numNodes");
+    uSamples = window.createUniform<int>("samples");
+    uAA = window.createUniform<int>("aa");
+    uBounceLim = window.createUniform<int>("bounceLim");
+    uSkyColor = window.createUniform<vec3>("skyColor");
+    uSunDir = window.createUniform<vec3>("sunDir");
+    uSunColor = window.createUniform<vec3>("sunColor");
+    uDebugView = window.createUniform<int>("debugView");
+    uTriThreshold = window.createUniform<int>("triTh");
+    uAABBThreshold =  window.createUniform<int>("aabbTh");
     uEnvLatLong = window.createUniform<int>("uEnvLatLong");
     uEnvYaw = window.createUniform<float>("uEnvYaw");
 }
 
-void Scene::addModel(const std::string& filename, const glm::vec3 position, const glm::vec3 scale, const glm::vec3 color, const float smoothness, const glm::vec3 specularColor, const float specularProb, const float transparency, const float ior, const float emission) {
+void Scene::addModel(const std::string& filename, const vec3 position, const vec3 scale, const vec3 color, const float smoothness, const vec3 specularColor, const float specularProb, const float transparency, const float ior, const float emission) {
     Model model(filename);
 
     addModel(model, position, scale, color, smoothness, specularColor, specularProb, transparency, ior, emission);
@@ -158,16 +183,17 @@ void Scene::addModel(const std::string& filename, const glm::vec3 position, cons
 
 void Scene::addModel(
     Model& model,
-    glm::vec3 position,
-    glm::vec3 scale,
-    glm::vec3 color,
+    vec3 position,
+    vec3 scale,
+    vec3 color,
     float smoothness,
-    glm::vec3 specularColor,
+    vec3 specularColor,
     float specularProb,
     const float transparency,
     const float ior,
     float emission) {
-    if (specularColor == glm::vec3(-1)) specularProb = -1;
+
+    if (specularColor == vec3(-1)) specularProb = -1;
     int Voffset = int(vertices.size());
     int Toffset = int(triangles.size());
     int BBoffset = int(boundingBoxMin.size());
@@ -176,16 +202,16 @@ void Scene::addModel(
 
     models.emplace_back(BBoffset);
 
-    for (glm::vec3 vertex : model.vertices) {
+    for (vec3 vertex : model.vertices) {
         vertices.emplace_back(vertex, 0);
     }
-    for (glm::ivec4 triangle : model.triangles) {
-        triangle += glm::vec4(Voffset, Voffset, Voffset, Coffset);
+    for (ivec4 triangle : model.triangles) {
+        triangle += vec4(Voffset, Voffset, Voffset, Coffset);
         triangles.emplace_back(triangle);
     }
     for (int i = 0; i < model.boundingBoxMin.size(); i++) {
-        glm::vec3 bboxMin = model.boundingBoxMin[i];
-        glm::vec3 bboxMax = model.boundingBoxMax[i];
+        vec3 bboxMin = model.boundingBoxMin[i];
+        vec3 bboxMax = model.boundingBoxMax[i];
         int childA = model.childA[i];
         int childB = model.childB[i];
 
@@ -199,8 +225,8 @@ void Scene::addModel(
     for (auto & i : model.normalsList) {
         normalsList.emplace_back(i, 0);
     }
-    for (glm::ivec3 normal : model.normals) {
-        normal += glm::ivec3(Noffset, Noffset, Noffset);
+    for (ivec3 normal : model.normals) {
+        normal += ivec3(Noffset, Noffset, Noffset);
         normals.emplace_back(normal, 0);
     }
 
@@ -209,23 +235,23 @@ void Scene::addModel(
         specularColors.emplace_back(specularColor, specularProb);
         glassLightSettings.emplace_back(transparency, ior, emission, 0);
     } else {
-        for (glm::vec4 tempColor : model.colors) {
+        for (vec4 tempColor : model.colors) {
             colors.emplace_back(tempColor);
         }
-        for (glm::vec4 tempSpecularColor : model.specularColors) {
+        for (vec4 tempSpecularColor : model.specularColors) {
             specularColors.emplace_back(tempSpecularColor);
         }
-        for (glm::vec4 tempGlassLightSetting : model.glassLightSettings) {
+        for (vec4 tempGlassLightSetting : model.glassLightSettings) {
             glassLightSettings.emplace_back(tempGlassLightSetting);
         }
     }
 
     modelTransforms.emplace_back(composeTransform(
         position,
-        glm::vec3(0, 0, 0),
+        vec3(0, 0, 0),
         scale
         ));
-    modelInvTransforms.emplace_back(glm::inverse(modelTransforms.back()));
+    modelInvTransforms.emplace_back(inverse(modelTransforms.back()));
 
     modelPos.emplace_back(position);
     modelRot.emplace_back(0.0f, 0.0f, 0.0f);
@@ -242,84 +268,22 @@ void Scene::addModel(
 }
 
 void Scene::set_ssbo() {
-    GLuint ssboVertices;
-    glGenBuffers(1, &ssboVertices);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboVertices);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, int(vertices.size() * sizeof(glm::vec4)), vertices.data(), GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboVertices);
 
-    GLuint ssboTriangles;
-    glGenBuffers(1, &ssboTriangles);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboTriangles);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, int(triangles.size() * sizeof(glm::ivec4)), triangles.data(), GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssboTriangles);
+    ssboVertices.set(vertices, 0);
+    ssboTriangles.set(triangles, 1);
+    ssboColors.set(colors, 2, true);
+    ssboSpecularColors.set(specularColors, 3, true);
+    ssboGlassLightSettings.set(glassLightSettings, 4, true);
+    ssboBoundingBoxMin.set(boundingBoxMin, 5);
+    ssboBoundingBoxMax.set(boundingBoxMax, 6);
+    ssboChildA.set(childA, 7);
+    ssboChildB.set(childB, 8);
+    ssboModels.set(models, 9);
+    ssboNormalsList.set(normalsList, 10);
+    ssboNormals.set(normals, 11);
+    ssboModelTransformations.set(modelTransforms, 12, true);
+    ssboModelInvTransformations.set(modelInvTransforms, 13, true);
 
-    glGenBuffers(1, &ssboColors);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboColors);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, int(colors.size() * sizeof(glm::vec4)), colors.data(), GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssboColors);
-
-    glGenBuffers(1, &ssboSpecularColors);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboSpecularColors);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, int(specularColors.size() * sizeof(glm::vec4)), specularColors.data(), GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssboSpecularColors);
-
-    glGenBuffers(1, &ssboGlassLightSettings);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboGlassLightSettings);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, int(glassLightSettings.size() * sizeof(glm::vec4)), glassLightSettings.data(), GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, ssboGlassLightSettings);
-
-    GLuint ssboBoundingBoxMin;
-    glGenBuffers(1, &ssboBoundingBoxMin);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboBoundingBoxMin);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, int(boundingBoxMin.size() * sizeof(glm::vec4)), boundingBoxMin.data(), GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, ssboBoundingBoxMin);
-
-    GLuint ssboBoundingBoxMax;
-    glGenBuffers(1, &ssboBoundingBoxMax);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboBoundingBoxMax);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, int(boundingBoxMax.size() * sizeof(glm::vec4)), boundingBoxMax.data(), GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, ssboBoundingBoxMax);
-
-    GLuint ssboChildA;
-    glGenBuffers(1, &ssboChildA);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboChildA);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, int(childA.size() * sizeof(int)), childA.data(), GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, ssboChildA);
-
-    GLuint ssboChildB;
-    glGenBuffers(1, &ssboChildB);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboChildB);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, int(childB.size() * sizeof(int)), childB.data(), GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, ssboChildB);
-
-    GLuint ssboModels;
-    glGenBuffers(1, &ssboModels);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboModels);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, int(models.size() * sizeof(int)), models.data(), GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 9, ssboModels);
-
-    GLuint ssboNormalsList;
-    glGenBuffers(1, &ssboNormalsList);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboNormalsList);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, int(normalsList.size() * sizeof(glm::vec4)), normalsList.data(), GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, ssboNormalsList);
-
-    GLuint ssboNormals;
-    glGenBuffers(1, &ssboNormals);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboNormals);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, int(normals.size() * sizeof(glm::ivec4)), normals.data(), GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 11, ssboNormals);
-
-    glGenBuffers(1, &ssboModelTransformations);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboModelTransformations);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, int(modelTransforms.size() * sizeof(glm::mat4)),modelTransforms.data(),GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 12, ssboModelTransformations);
-
-    glGenBuffers(1, &ssboModelInvTransformations);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboModelInvTransformations);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, int(modelInvTransforms.size() * sizeof(glm::mat4)),modelInvTransforms.data(),GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 13, ssboModelInvTransformations);
 }
 
 int Scene::getNumBVHNodes() const {
@@ -330,46 +294,45 @@ int Scene::getNumTris() const {
     return int(triangles.size());
 }
 
-void Scene::setUniforms(const GLuint shaderProgram) const {
+void Scene::setUniforms() const {
     const auto end = Clock::now();
-    const glm::uint duration = static_cast<glm::uint>(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()) % (width*height);
+    const uint duration = static_cast<uint>(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()) % (width*height);
 
-    glUniform1i(glGetUniformLocation(shaderProgram, "numModels"), int(models.size()));
-    glUniform3f(glGetUniformLocation(shaderProgram, "cameraPos"), cameraPos.x, cameraPos.y, cameraPos.z);
-    glUniform3f(glGetUniformLocation(shaderProgram, "camForward"), camForward.x, camForward.y, camForward.z);
-    glUniform3f(glGetUniformLocation(shaderProgram, "camUp"), camUp.x, camUp.y, camUp.z);
-    glUniform3f(glGetUniformLocation(shaderProgram, "camRight"), camRight.x, camRight.y, camRight.z);
-    glUniform2ui(glGetUniformLocation(shaderProgram, "resolution"), width, height);
-    glUniform1i(glGetUniformLocation(shaderProgram, "frameCount"), frameCount);
-    glUniform1i(glGetUniformLocation(shaderProgram, "numNodes"), getNumBVHNodes());
-    glUniform1i(glGetUniformLocation(shaderProgram, "samples"), samples);
-    glUniform1i(glGetUniformLocation(shaderProgram, "aa"), aa);
-    glUniform1i(glGetUniformLocation(shaderProgram, "bounceLim"), bounceLim);
-    glUniform1ui(glGetUniformLocation(shaderProgram, "time"), duration);
-    glUniform3f(glGetUniformLocation(shaderProgram, "skyColor"), skyColor.x, skyColor.y, skyColor.z);
-    glUniform3f(glGetUniformLocation(shaderProgram, "sunDir"), sunDir.x, sunDir.y, sunDir.z);
-    glUniform3f(glGetUniformLocation(shaderProgram, "sunColor"), sunStrength*sunColor.x, sunStrength*sunColor.y, sunStrength*sunColor.z);
-    glUniform1i(glGetUniformLocation(shaderProgram, "debugView"), debugView ? 1 : 0);
-    glUniform1i(glGetUniformLocation(shaderProgram, "triTh"), triTh);
-    glUniform1i(glGetUniformLocation(shaderProgram, "aabbTh"), aabbTh);
+    uNumModels.set(int(models.size()));
+    uCameraPos.set(cameraPos);
+    uCameraForward.set(camForward);
+    uCameraUp.set(camUp);
+    uCameraRight.set(camRight);
+    uResolution.set({width, height});
+    uFrameCount.set(frameCount);
+    uNumNodes.set(getNumBVHNodes());
+    uSamples.set(samples);
+    uAA.set(aa);
+    uBounceLim.set(bounceLim);
+    uSkyColor.set(skyColor);
+    uSunDir.set(sunDir);
+    uSunColor.set(sunColor*sunStrength);
+    uDebugView.set(debugView);
+    uTriThreshold.set(triTh);
+    uAABBThreshold.set(aabbTh);
 }
 
 bool Scene::updateCamera(GLFWwindow* window, float speed, float sensitivity, float dt) {
     double xpos, ypos;
     bool moved = false;
     glfwGetCursorPos(window, &xpos, &ypos);
-    glm::vec2 center = glm::vec2(float(width)/2, float(height)/2);
-    glm::vec2 delta = glm::vec2(xpos - center.x, -(ypos - center.y));
+    vec2 center = vec2(float(width)/2, float(height)/2);
+    vec2 delta = vec2(xpos - center.x, -(ypos - center.y));
     if (delta.x*delta.x + delta.y*delta.y > 0 and !lock) {
         delta *= 2.0f/float(height) * sensitivity;
         camForward += delta.x * camRight + delta.y * camUp;
-        camForward = glm::normalize(camForward);
+        camForward = normalize(camForward);
         moved = true;
         setBasisVectors(camForward, camUp, camRight);
         glfwSetCursorPos(window, center.x, center.y);
     }
 
-    glm::vec3 change = glm::vec3(0, 0, 0);
+    vec3 change = vec3(0, 0, 0);
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
         change += camForward;
     }
@@ -400,7 +363,7 @@ bool Scene::updateCamera(GLFWwindow* window, float speed, float sensitivity, flo
         speed *= 2;
        }
     if (pow(change.x, 2) + pow(change.y, 2) + pow(change.z, 2) > 0 and !lock) {
-        change = glm::normalize(change);
+        change = normalize(change);
         cameraPos += change*speed*dt;
         moved = true;
     }
@@ -418,7 +381,7 @@ void Scene::updateFrame() {
 
     const bool moved = updateCamera(window.getWindow(), 500, 2, dt);
 
-    setUniforms(window.getShaderProgram());
+    setUniforms();
 
     frameCount++;
 
@@ -489,12 +452,12 @@ void Scene::updateFrame() {
                 bool changedGLS = false;
 
                 // Local aliases
-                glm::vec3& P = modelPos[selectedModel];
-                glm::vec3& R = modelRot[selectedModel];   // radians
-                glm::vec3& S = modelScale[selectedModel];
+                vec3& P = modelPos[selectedModel];
+                vec3& R = modelRot[selectedModel];   // radians
+                vec3& S = modelScale[selectedModel];
 
                 // Rotation UI in degrees (convert to/from radians for nicer UX)
-                glm::vec3 rotDeg = glm::degrees(R);
+                vec3 rotDeg = degrees(R);
                 changedPRS |= DragFloat3("Position", P, 3.0f);                     // world units
                 changedPRS |= DragFloat3("Scale",    S, 1.0f, 0.0f, 1e36);
                 changedPRS |= DragFloat3("Rotation (deg)", rotDeg, 0.2f);
@@ -529,51 +492,35 @@ void Scene::updateFrame() {
                 }
 
                 if (changedPRS) {
-                    R = glm::radians(rotDeg);
+                    R = radians(rotDeg);
 
-                    // Rebuild the matrix and overwrite just this model's slice in the SSBO
                     modelTransforms[selectedModel] = composeTransform(P, R, S);
+                    modelInvTransforms[selectedModel] = inverse(modelTransforms[selectedModel]);
 
-                    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboModelTransformations);
-                    const GLsizeiptr offset = (GLsizeiptr)selectedModel * sizeof(glm::mat4);
-                    glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset,
-                                    sizeof(glm::mat4),
-                                    &modelTransforms[selectedModel]);
-
-                    modelInvTransforms[selectedModel] = glm::inverse(modelTransforms[selectedModel]);
-
-                    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboModelInvTransformations);
-                    glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset,
-                                    sizeof(glm::mat4),
-                                    &modelInvTransforms[selectedModel]);
+                    ssboModelTransformations.update(selectedModel, modelTransforms[selectedModel]);
+                    ssboModelInvTransformations.update(selectedModel, modelInvTransforms[selectedModel]);
 
                     frameCount = 0; // nuke accumulation so the new transform converges cleanly
                 }
                 // All materials for this model share the same contiguous range:
                 const int start = modelsColors[selectedModel][0];   // inclusive
                 const int end   = modelsColors[selectedModel][1];   // exclusive
-                const GLsizeiptr count = (GLsizeiptr)(end - start);
-                const GLsizeiptr byteOff = (GLsizeiptr)start * sizeof(glm::vec4);
-                const GLsizeiptr byteSize = count * sizeof(glm::vec4);
+                const GLsizeiptr count = end - start;
+                const GLsizeiptr byteOff = (GLsizeiptr)start * sizeof(vec4);
+                const GLsizeiptr byteSize = count * sizeof(vec4);
 
                 if (changedC) {
-                    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboColors);
-                    glBufferSubData(GL_SHADER_STORAGE_BUFFER, byteOff, byteSize, colors.data() + start);
-                    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssboColors);
+                    ssboColors.update(start, end, colors.data() + start);
                     frameCount = 0;
                 }
 
                 if (changedSC) {
-                    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboSpecularColors);
-                    glBufferSubData(GL_SHADER_STORAGE_BUFFER, byteOff, byteSize, specularColors.data() + start);
-                    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssboSpecularColors);
+                    ssboSpecularColors.update(start, end, specularColors.data() + start);
                     frameCount = 0;
                 }
 
                 if (changedGLS) {
-                    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboGlassLightSettings);
-                    glBufferSubData(GL_SHADER_STORAGE_BUFFER, byteOff, byteSize, glassLightSettings.data() + start);
-                    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, ssboGlassLightSettings);
+                    ssboGlassLightSettings.update(start, end, glassLightSettings.data() + start);
                     frameCount = 0;
                 }
             }
@@ -644,8 +591,8 @@ void Scene::displayBVH() {
 }
 
 void Scene::displayBVH(int index, std::string prefix) {
-    glm::vec3 bboxMin = boundingBoxMin[index];
-    glm::vec3 bboxMax = boundingBoxMax[index];
+    vec3 bboxMin = boundingBoxMin[index];
+    vec3 bboxMax = boundingBoxMax[index];
     int childA = this->childA[index];
     int childB = this->childB[index];
     int numTris = numTriBelow(index);
@@ -665,9 +612,9 @@ void Scene::displayBVH(int index, std::string prefix) {
     return;
     prefix += "   ";
     for (int i = triStart; i < numTris+triStart; i++) {
-        glm::vec3 v1 = vertices[triangles[i*3+0].x];
-        glm::vec3 v2 = vertices[triangles[i*3+1].x];
-        glm::vec3 v3 = vertices[triangles[i*3+2].x];
+        vec3 v1 = vertices[triangles[i*3+0].x];
+        vec3 v2 = vertices[triangles[i*3+1].x];
+        vec3 v3 = vertices[triangles[i*3+2].x];
         bool check =
             v1.x >= bboxMin.x && v1.x <= bboxMax.x &&
             v2.x >= bboxMin.x && v2.x <= bboxMax.x &&
