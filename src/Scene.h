@@ -84,6 +84,7 @@ class Scene {
     public:
 
     int frameCount;
+    int sampleCount;
     int width, height;
     int samples;
     int aa;
@@ -132,11 +133,13 @@ class Scene {
 
     [[nodiscard]] int getNumTris() const;
 
-    void setUniforms() const;
+    void setUniforms(bool moved) const;
 
     bool updateCamera(GLFWwindow* window, float speed, float sensitivity, float dt);
 
     void updateFrame();
+
+    void ImGuiRender(float dt);
 
     int numTriBelow(int index);
 

@@ -193,7 +193,7 @@ void Scene::addModel(
     const float ior,
     float emission) {
 
-    if (specularColor == vec3(-1)) specularProb = -1;
+    if (specularColor == vec3(-1)) {specularColor = color; specularProb = 1;}
     int Voffset = int(vertices.size());
     int Toffset = int(triangles.size());
     int BBoffset = int(boundingBoxMin.size());
@@ -294,9 +294,7 @@ int Scene::getNumTris() const {
     return int(triangles.size());
 }
 
-void Scene::setUniforms() const {
-    const auto end = Clock::now();
-    const uint duration = static_cast<uint>(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()) % (width*height);
+void Scene::setUniforms(bool moved) const {
 
     uNumModels.set(int(models.size()));
     uCameraPos.set(cameraPos);
@@ -306,9 +304,9 @@ void Scene::setUniforms() const {
     uResolution.set({width, height});
     uFrameCount.set(frameCount);
     uNumNodes.set(getNumBVHNodes());
-    uSamples.set(samples);
+    uSamples.set(moved ? 1 : samples);
     uAA.set(aa);
-    uBounceLim.set(bounceLim);
+    uBounceLim.set(moved ? 3 : bounceLim);
     uSkyColor.set(skyColor);
     uSunDir.set(sunDir);
     uSunColor.set(sunColor*sunStrength);
@@ -380,159 +378,18 @@ void Scene::updateFrame() {
     float dt = window.getDeltaTime();
 
     const bool moved = updateCamera(window.getWindow(), 500, 2, dt);
+    if (moved) {
+        frameCount = 0;
+        sampleCount = 0;
+    }
 
-    setUniforms();
+    setUniforms(moved);
 
     frameCount++;
-
-    bool ui_resetAccum = false;
-
-    if (moved) frameCount = 0;
+    sampleCount += samples;
 
     // --- Controls window ---
-    {
-        bool changed = false;
-
-        ImGui::Begin("Controls");
-        ImGui::Text("Renderer");
-        ImGui::Separator();
-
-        bool check = lock;
-        ImGui::Checkbox("Lock", &lock);
-        if (check && !lock) {
-            vec2 center = vec2(float(width)/2, float(height)/2);
-            glfwSetCursorPos(window.getWindow(), center.x, center.y);
-        }
-
-        changed |= ColorEdit3("Sun Color", sunColor);
-        changed |= DragFloat3("Sun Direction", sunDir);
-        sunDir = normalize(sunDir);
-
-        changed |= ImGui::SliderFloat("Sun Strength", &sunStrength, 0, 300);
-
-        changed |= ImGui::SliderInt("Samples", &samples, 1, 25);
-        changed |= ImGui::SliderInt("Antialiasing", &aa, 1, 5);
-        changed |= ImGui::SliderInt("Bounces", &bounceLim, 1, 16);
-
-        changed |= ImGui::Checkbox("Debug View" , &debugView);
-        if (debugView) {
-            changed |= ImGui::SliderInt("Triangle Threshhold", &triTh, 0, 1000);
-            changed |= ImGui::SliderInt("AABB Threshhold", &aabbTh, 0, 1000);
-        }
-
-        if (ImGui::Button("Reset accumulation") || changed) {
-            ui_resetAccum = true;
-        }
-
-        ImGui::Separator();
-        ImGui::Text("Models");
-
-        const bool hasModels = !modelLabels.empty();
-        if (!hasModels) {
-            ImGui::TextDisabled("(no models)");
-        } else {
-            // Current label
-            const char* preview = (selectedModel >= 0) ? modelLabels[selectedModel].c_str() : "(select)";
-            if (ImGui::BeginCombo("Model", preview)) {
-                for (int i = 0; i < (int)modelLabels.size(); ++i) {
-                    bool sel = (selectedModel == i);
-                    if (ImGui::Selectable(modelLabels[i].c_str(), sel)) {
-                        selectedModel = i;
-                        frameCount = 0; // reset accumulation on selection change
-                    }
-                    if (sel) ImGui::SetItemDefaultFocus();
-                }
-                ImGui::EndCombo();
-            }
-
-            if (selectedModel >= 0) {
-                bool changedPRS = false;
-                bool changedC = false;
-                bool changedSC = false;
-                bool changedGLS = false;
-
-                // Local aliases
-                vec3& P = modelPos[selectedModel];
-                vec3& R = modelRot[selectedModel];   // radians
-                vec3& S = modelScale[selectedModel];
-
-                // Rotation UI in degrees (convert to/from radians for nicer UX)
-                vec3 rotDeg = degrees(R);
-                changedPRS |= DragFloat3("Position", P, 3.0f);                     // world units
-                changedPRS |= DragFloat3("Scale",    S, 1.0f, 0.0f, 1e36);
-                changedPRS |= DragFloat3("Rotation (deg)", rotDeg, 0.2f);
-
-                if (ImGui::BeginCombo("Color", std::to_string(selectedColor).c_str())) {
-                    for (int i = modelsColors[selectedModel].x; i < modelsColors[selectedModel].y; ++i) {
-                        bool sel = (selectedColor == i); 
-                        if (ImGui::Selectable(std::to_string(i).c_str(), sel)) {
-                            selectedColor = i;
-                            frameCount = 0; // reset accumulation on selection change
-                        }
-                        if (sel) ImGui::SetItemDefaultFocus();
-                    }
-                    ImGui::EndCombo();
-                }
-
-                if (selectedColor != -1){
-                    vec4& C = colors[selectedColor];
-                    vec4& SC = specularColors[selectedColor];
-                    vec4& GLS = glassLightSettings[selectedColor];
-                    ImGui::Text(std::to_string(selectedColor).c_str());
-                    changedC |= ColorEdit3("Color", C);
-                    changedC |= ImGui::SliderFloat("Smoothness", &C.w, 0.0f, 1.0f);
-                    changedSC |= ColorEdit3("Specular Color", SC);
-                    changedSC |= ImGui::SliderFloat("Specualar Probability", &SC.w, 0.0f, 1.0f);
-                    changedGLS |= ImGui::SliderFloat("Transparency", &GLS.x, 0.0f, 1.0f);
-                    changedGLS |= ImGui::SliderFloat("Index of Refraction", &GLS.y, 0.0f, 3.0f);
-                    changedGLS |= ImGui::SliderFloat("Emission Strength", &GLS.z, 0.0f, 10.0f);
-                    colors[selectedColor] = C;
-                    specularColors[selectedColor] = SC;
-                    glassLightSettings[selectedColor] = GLS;
-                }
-
-                if (changedPRS) {
-                    R = radians(rotDeg);
-
-                    modelTransforms[selectedModel] = composeTransform(P, R, S);
-                    modelInvTransforms[selectedModel] = inverse(modelTransforms[selectedModel]);
-
-                    ssboModelTransformations.update(selectedModel, modelTransforms[selectedModel]);
-                    ssboModelInvTransformations.update(selectedModel, modelInvTransforms[selectedModel]);
-
-                    frameCount = 0; // nuke accumulation so the new transform converges cleanly
-                }
-                // All materials for this model share the same contiguous range:
-                const int start = modelsColors[selectedModel][0];   // inclusive
-                const int end   = modelsColors[selectedModel][1];   // exclusive
-                const GLsizeiptr count = end - start;
-                const GLsizeiptr byteOff = (GLsizeiptr)start * sizeof(vec4);
-                const GLsizeiptr byteSize = count * sizeof(vec4);
-
-                if (changedC) {
-                    ssboColors.update(start, end, colors.data() + start);
-                    frameCount = 0;
-                }
-
-                if (changedSC) {
-                    ssboSpecularColors.update(start, end, specularColors.data() + start);
-                    frameCount = 0;
-                }
-
-                if (changedGLS) {
-                    ssboGlassLightSettings.update(start, end, glassLightSettings.data() + start);
-                    frameCount = 0;
-                }
-            }
-        }
-
-        ImGui::Text("Frame: %d", frameCount * samples);
-        ImGui::End();
-    }
-
-    if (ui_resetAccum) {
-        frameCount = 0;
-    }
+    ImGuiRender(dt);
 
     glActiveTexture(GL_TEXTURE0 + 5); // choose a slot
     glBindTexture(GL_TEXTURE_2D, skyTex);
@@ -547,6 +404,159 @@ void Scene::updateFrame() {
 
     glfwSwapBuffers(window.getWindow());
     glfwPollEvents();
+}
+
+void Scene::ImGuiRender(float dt) {
+
+    bool ui_resetAccum = false;
+
+    ImGui::Begin("Controls");
+    ImGui::Text("Renderer");
+    ImGui::Separator();
+
+    bool check = lock;
+    ImGui::Checkbox("Lock", &lock);
+    if (check && !lock) {
+        vec2 center = vec2(float(width)/2, float(height)/2);
+        glfwSetCursorPos(window.getWindow(), center.x, center.y);
+    }
+
+    ui_resetAccum |= ColorEdit3("Sun Color", sunColor);
+    ui_resetAccum |= DragFloat3("Sun Direction", sunDir);
+    sunDir = normalize(sunDir);
+
+    ui_resetAccum |= ImGui::SliderFloat("Sun Strength", &sunStrength, 0, 300);
+
+    ImGui::SliderInt("Samples", &samples, 1, 25);
+    ui_resetAccum |= ImGui::SliderInt("Antialiasing", &aa, 1, 5);
+    ui_resetAccum |= ImGui::SliderInt("Bounces", &bounceLim, 1, 16);
+
+    ui_resetAccum |= ImGui::Checkbox("Debug View" , &debugView);
+    if (debugView) {
+        ui_resetAccum |= ImGui::SliderInt("Triangle Threshhold", &triTh, 0, 1000);
+        ui_resetAccum |= ImGui::SliderInt("AABB Threshhold", &aabbTh, 0, 1000);
+    }
+
+    if (ImGui::Button("Reset accumulation")) ui_resetAccum = true;
+
+    ImGui::Separator();
+    ImGui::Text("Models");
+
+    const bool hasModels = !modelLabels.empty();
+    if (!hasModels) {
+        ImGui::TextDisabled("(no models)");
+    } else {
+        // Current label
+        const char* preview = (selectedModel >= 0) ? modelLabels[selectedModel].c_str() : "(select)";
+        if (ImGui::BeginCombo("Model", preview)) {
+            for (int i = 0; i < (int)modelLabels.size(); ++i) {
+                bool sel = (selectedModel == i);
+                if (ImGui::Selectable(modelLabels[i].c_str(), sel)) {
+                    selectedModel = i;
+                }
+                if (sel) ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+
+        if (selectedModel >= 0) {
+            bool changedPRS = false;
+            bool changedC = false;
+            bool changedSC = false;
+            bool changedGLS = false;
+
+            // Local aliases
+            vec3& P = modelPos[selectedModel];
+            vec3& R = modelRot[selectedModel];   // radians
+            vec3& S = modelScale[selectedModel];
+
+            // Rotation UI in degrees (convert to/from radians for nicer UX)
+            vec3 rotDeg = degrees(R);
+            changedPRS |= DragFloat3("Position", P, 3.0f);                     // world units
+            changedPRS |= DragFloat3("Scale",    S, 1.0f, 0.0f, 1e36);
+            changedPRS |= DragFloat3("Rotation (deg)", rotDeg, 0.2f);
+
+            if (ImGui::BeginCombo("Color", std::to_string(selectedColor).c_str())) {
+                for (int i = modelsColors[selectedModel].x; i < modelsColors[selectedModel].y; ++i) {
+                    bool sel = (selectedColor == i);
+                    if (ImGui::Selectable(std::to_string(i).c_str(), sel)) {
+                        selectedColor = i;
+                    }
+                    if (sel) ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
+            }
+
+            if (selectedColor != -1){
+                vec4& C = colors[selectedColor];
+                vec4& SC = specularColors[selectedColor];
+                vec4& GLS = glassLightSettings[selectedColor];
+                ImGui::Text(std::to_string(selectedColor).c_str());
+                changedC |= ColorEdit3("Color", C);
+                changedC |= ImGui::SliderFloat("Smoothness", &C.w, 0.0f, 1.0f);
+                changedSC |= ColorEdit3("Specular Color", SC);
+                changedSC |= ImGui::SliderFloat("Specualar Probability", &SC.w, 0.0f, 1.0f);
+                changedGLS |= ImGui::SliderFloat("Transparency", &GLS.x, 0.0f, 1.0f);
+                changedGLS |= ImGui::SliderFloat("Index of Refraction", &GLS.y, 0.0f, 3.0f);
+                changedGLS |= ImGui::SliderFloat("Emission Strength", &GLS.z, 0.0f, 10.0f);
+                colors[selectedColor] = C;
+                specularColors[selectedColor] = SC;
+                glassLightSettings[selectedColor] = GLS;
+            }
+
+            if (changedPRS) {
+                R = radians(rotDeg);
+
+                modelTransforms[selectedModel] = composeTransform(P, R, S);
+                modelInvTransforms[selectedModel] = inverse(modelTransforms[selectedModel]);
+
+                ssboModelTransformations.update(selectedModel, modelTransforms[selectedModel]);
+                ssboModelInvTransformations.update(selectedModel, modelInvTransforms[selectedModel]);
+
+                ui_resetAccum = true;
+            }
+            // All materials for this model share the same contiguous range:
+            const int start = modelsColors[selectedModel][0];   // inclusive
+            const int end   = modelsColors[selectedModel][1];   // exclusive
+
+            if (changedC) {
+                ssboColors.update(start, end, colors.data() + start);
+                ui_resetAccum = true;
+            }
+
+            if (changedSC) {
+                ssboSpecularColors.update(start, end, specularColors.data() + start);
+                ui_resetAccum = true;
+            }
+
+            if (changedGLS) {
+                ssboGlassLightSettings.update(start, end, glassLightSettings.data() + start);
+                ui_resetAccum = true;
+            }
+        }
+    }
+
+    ImGui::Separator();
+
+    ImGui::Text("Samples: %d", sampleCount);
+    ImGui::Text("Frame: %d", frameCount);
+
+    ImGui::Separator();
+
+    ImGui::Text("FPS: %.2f", 1.0f / dt);
+    ImGui::Text("Frame Time (ms): %.2f", dt*1000.0f);
+
+    ImGui::Separator();
+
+    ImGui::Text("Width: %d", width);
+    ImGui::Text("Height: %d", height);
+
+    ImGui::End();
+
+    if (ui_resetAccum) {
+        frameCount = 0;
+        sampleCount = 0;
+    }
 }
 
 int Scene::numTriBelow(int index) {

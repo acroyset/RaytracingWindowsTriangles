@@ -48,11 +48,9 @@ int main() {
 
     Timer t;
 
-    Model bull("models/bull.obj");
-    scene.addModel(bull, vec3(-150, 50, 0), vec3(100), vec3(1, 0, 0), 1, vec3(1), 0.1);
-    scene.addModel(bull, vec3(-75, 37.5, 0), vec3(75), vec3(0, 1, 0), 1, vec3(1), 0.1);
-    scene.addModel(bull, vec3(-25, 25, 0), vec3(50), vec3(0, 0, 1), 1, vec3(1), 0.1);
-    scene.addModel(bull, vec3(25, 12.5, 0), vec3(25), vec3(1, 1, 0), 1, vec3(1), 0.1);
+    Model bull("models/dragon800K.obj");
+    scene.addModel(bull, vec3(-100, 50, 0), vec3(100), vec3(1, 0, 0), 1, vec3(1), 0.05);
+    scene.addModel(bull, vec3(100, 50, 0), vec3(100), vec3(0, 0, 0), 1, vec3(1), 0.05);
     scene.addModel("models/cube/cube.obj", vec3(0, -20, 0), vec3(300, 20, 300), vec3(0.9), 0.3);
     //scene.addModel("models/dragon800K.obj", vec3(0, 70.498, 0), vec3(100), vec3(0.01), 0.99, vec3(0.15), 0.4);
     //scene.addModel("models/sphere.obj", vec3(200, 50, 0), vec3(50), vec3(1, 0.7, 0.3), 0, vec3(0), 0, 0, 1, 2);
