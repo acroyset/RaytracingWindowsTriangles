@@ -12,11 +12,12 @@ A physically-based path tracer running entirely on the GPU, capable of rendering
 
 ## 🎨 Gallery
 
-### Dragon Family (Color Variations)
-*Multiple dragon renders showcasing different material properties and lighting setups*
+### Bull Family
+*Multiple bull renders showcasing different material properties*
 
 <div align="center">
-  <img width="2560" height="1440" alt="Base Profile Screenshot 2025 07 25 - 22 14 32 19" src="https://github.com/user-attachments/assets/82968f3c-ffc6-4009-89db-c15fcb04d6b9" />
+  <img width="2560" height="1440" alt="Base Profile Screenshot 2026 02 06 - 20 35 16 43" src="https://github.com/user-attachments/assets/27498800-eb68-4f8b-b8b5-be11c08f135d" />
+
 </div>
 
 ### Cathedral Interior
@@ -232,9 +233,8 @@ float specularProb = 0.5;           // 50% specular lobes
 
 #### Glass (Dielectric)
 ```cpp
-float transparency = 0.9;
+float transparency = 1.0;
 float ior = 1.5;                    // glass index of refraction
-vec3 tint = vec3(0.9, 1.0, 0.95);  // slight green tint
 ```
 
 #### Emissive (Light Source)
@@ -261,9 +261,9 @@ The renderer automatically parses `.mtl` files referenced in OBJ models:
 
 | Scene | Triangles | BVH Nodes | FPS (RTX 4070 Super) | Build Time |
 |-------|-----------|-----------|----------------|------------|
-| Stanford Bunny | 144K | 71K | 120 | 0.8s |
-| Dragon | 3.6M | 1.8M | 45 | 12s |
-| Sponza Palace | 500K | 250K | 30 | 3s |
+| Bull Family | 1.5M | 900K | 50 | 7.5s |
+| 4 Dragons | 3.6M | 1.8M | 45 | 12s |
+| Sponza Palace | 1.3M | 500K | 30 | 3s |
 | Bugatti Veyron | 1.5M | 750K | 55 | 8s |
 
 *Settings: 2560×1440, 1 sample/frame, 3×3 AA, 16 bounces*
