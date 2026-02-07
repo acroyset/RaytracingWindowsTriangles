@@ -190,16 +190,17 @@ int main() {
 ### Controls
 
 #### Camera
-| Key | Action |
-|-----|--------|
+| Key       | Action                  |
+|-----------|-------------------------|
 | `W` / `S` | Move forward / backward |
-| `A` / `D` | Move left / right |
-| `Q` / `E` | Move down / up |
-| `Mouse` | Look around |
-| `Shift` | Sprint (2x speed) |
-| `L` | Lock cursor |
-| `U` | Unlock cursor |
-| `Esc` | Exit application |
+| `A` / `D` | Move left / right       |
+| `Q` / `E` | Move down / up          |
+| `Mouse`   | Look around             |
+| `Shift`   | Sprint (2x speed)       |
+| `L`       | Lock cursor             |
+| `U`       | Unlock cursor           |
+| `H`       | Turn HUD on             |
+| `Esc`     | Exit application        |
 
 #### UI Controls
 - **Model Selection**: Dropdown to select active model
