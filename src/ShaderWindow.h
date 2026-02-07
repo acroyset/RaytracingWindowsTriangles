@@ -145,7 +145,6 @@ class ShaderWindow {
     float timeSinceStart = 0;
     float deltaTime = 0;
 
-
     static void framebufferSizeCallback(GLFWwindow* /*w*/, int width, int height) {
         glViewport(0, 0, width, height);
     }
@@ -274,11 +273,14 @@ class ShaderWindow {
         return false;
     }
 
-    [[nodiscard]] bool keyReleased(const int key) const {
-        if (glfwGetKey(window, key) == GLFW_RELEASE) {
-            return true;
-        }
-        return false;
+    [[nodiscard]] vec2 getMousePos() const {
+        double xpos, ypos;
+        glfwGetCursorPos(window, &xpos, &ypos);
+        return {xpos, ypos};
+    }
+
+    void setMousePos(vec2 pos) const {
+        glfwSetCursorPos(window, pos.x, pos.y);
     }
 
     void setupFramebuffers() {
@@ -334,8 +336,6 @@ class ShaderWindow {
     }
 
     [[nodiscard]] GLFWwindow* getWindow() const {return window;}
-
-    [[nodiscard]] GLuint getShaderProgram() const {return shaderProgram;}
 };
 
 

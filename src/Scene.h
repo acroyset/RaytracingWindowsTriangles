@@ -90,6 +90,8 @@ class Scene {
     int aa;
     int bounceLim;
 
+    bool hud = true;
+
     Uniform<int> uNumModels;
     Uniform<vec3> uCameraPos;
     Uniform<vec3> uCameraForward;
@@ -121,25 +123,26 @@ class Scene {
         ImGui::DestroyContext();
     }
 
-    void createUniforms();
-
     void addModel(const std::string &filename, vec3 position, vec3 scale, vec3 color, float smoothness, vec3 specularColor = vec3(-1), float specularProb = 1, float transparency = 0, float ior = 1, float emission = 0);
 
     void addModel(Model& model, vec3 position, vec3 scale, vec3 color, float smoothness, vec3 specularColor = vec3(-1), float specularProb = 1, float transparency = 0, float ior = 1, float emission = 0);
-
-    void set_ssbo();
 
     [[nodiscard]] int getNumBVHNodes() const;
 
     [[nodiscard]] int getNumTris() const;
 
+    void createUniforms();
+
     void setUniforms(bool moved) const;
 
-    bool updateCamera(GLFWwindow* window, float speed, float sensitivity, float dt);
+    void set_ssbo();
+
+    bool inputHandling(float speed, float sensitivity, float dt);
 
     void updateFrame();
 
     void ImGuiRender(float dt);
+
 
     int numTriBelow(int index);
 

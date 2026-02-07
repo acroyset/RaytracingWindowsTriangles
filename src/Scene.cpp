@@ -110,6 +110,7 @@ GLuint LoadEnvLatLongTextureAuto(const char* path) {
     return tex;
 }
 
+
 Scene::Scene() {
     samples = 1;
     aa = 1;
@@ -119,12 +120,13 @@ Scene::Scene() {
     height = 1440;
 
     frameCount = 0;
+    sampleCount = 0;
 
     lock = false;
 }
 
 Scene::Scene(const int samples, const int aa, const int bounceLim)
-    : samples(samples), aa(aa), bounceLim(bounceLim), frameCount(0){
+    : samples(samples), aa(aa), bounceLim(bounceLim), frameCount(0), sampleCount(0){
 
     window.setFeedbackMode(true);
     unsigned int width = window.size().x;
@@ -151,28 +153,6 @@ Scene::Scene(const int samples, const int aa, const int bounceLim)
     createUniforms();
 
     skyTex = LoadEnvLatLongTextureAuto("sky.png");
-}
-
-void Scene::createUniforms() {
-    uNumModels = window.createUniform<int>("numModels");
-    uCameraPos = window.createUniform<vec3>("cameraPos");
-    uCameraForward = window.createUniform<vec3>("camForward");
-    uCameraUp = window.createUniform<vec3>("camUp");
-    uCameraRight = window.createUniform<vec3>("camRight");
-    uResolution = window.createUniform<uvec2>("resolution");
-    uFrameCount = window.createUniform<int>("frameCount");
-    uNumNodes = window.createUniform<int>("numNodes");
-    uSamples = window.createUniform<int>("samples");
-    uAA = window.createUniform<int>("aa");
-    uBounceLim = window.createUniform<int>("bounceLim");
-    uSkyColor = window.createUniform<vec3>("skyColor");
-    uSunDir = window.createUniform<vec3>("sunDir");
-    uSunColor = window.createUniform<vec3>("sunColor");
-    uDebugView = window.createUniform<int>("debugView");
-    uTriThreshold = window.createUniform<int>("triTh");
-    uAABBThreshold =  window.createUniform<int>("aabbTh");
-    uEnvLatLong = window.createUniform<int>("uEnvLatLong");
-    uEnvYaw = window.createUniform<float>("uEnvYaw");
 }
 
 void Scene::addModel(const std::string& filename, const vec3 position, const vec3 scale, const vec3 color, const float smoothness, const vec3 specularColor, const float specularProb, const float transparency, const float ior, const float emission) {
@@ -257,32 +237,19 @@ void Scene::addModel(
     modelRot.emplace_back(0.0f, 0.0f, 0.0f);
     modelScale.emplace_back(scale);
 
-    // a friendly label (filename stem or anything you want)
     size_t slash = model.filename.find_last_of("/\\");
     std::string stem = (slash == std::string::npos) ? model.filename : model.filename.substr(slash + 1);
-    modelLabels.emplace_back(stem);
 
-    int Ccount = int(colors.size()) - Coffset;      // how many entries were added for this model
+    int count = 0;
+    for (const std::string& i : modelLabels) {
+        if (i == stem) count++;
+    }
+
+    std::string name = stem + (count != 0 ? " " + std::to_string(count) : "");
+    modelLabels.emplace_back(name);
+
+    int Ccount = int(colors.size()) - Coffset;
     modelsColors.emplace_back(Coffset, Coffset + Ccount);
-
-}
-
-void Scene::set_ssbo() {
-
-    ssboVertices.set(vertices, 0);
-    ssboTriangles.set(triangles, 1);
-    ssboColors.set(colors, 2, true);
-    ssboSpecularColors.set(specularColors, 3, true);
-    ssboGlassLightSettings.set(glassLightSettings, 4, true);
-    ssboBoundingBoxMin.set(boundingBoxMin, 5);
-    ssboBoundingBoxMax.set(boundingBoxMax, 6);
-    ssboChildA.set(childA, 7);
-    ssboChildB.set(childB, 8);
-    ssboModels.set(models, 9);
-    ssboNormalsList.set(normalsList, 10);
-    ssboNormals.set(normals, 11);
-    ssboModelTransformations.set(modelTransforms, 12, true);
-    ssboModelInvTransformations.set(modelInvTransforms, 13, true);
 
 }
 
@@ -292,6 +259,28 @@ int Scene::getNumBVHNodes() const {
 
 int Scene::getNumTris() const {
     return int(triangles.size());
+}
+
+void Scene::createUniforms() {
+    uNumModels = window.createUniform<int>("numModels");
+    uCameraPos = window.createUniform<vec3>("cameraPos");
+    uCameraForward = window.createUniform<vec3>("camForward");
+    uCameraUp = window.createUniform<vec3>("camUp");
+    uCameraRight = window.createUniform<vec3>("camRight");
+    uResolution = window.createUniform<uvec2>("resolution");
+    uFrameCount = window.createUniform<int>("frameCount");
+    uNumNodes = window.createUniform<int>("numNodes");
+    uSamples = window.createUniform<int>("samples");
+    uAA = window.createUniform<int>("aa");
+    uBounceLim = window.createUniform<int>("bounceLim");
+    uSkyColor = window.createUniform<vec3>("skyColor");
+    uSunDir = window.createUniform<vec3>("sunDir");
+    uSunColor = window.createUniform<vec3>("sunColor");
+    uDebugView = window.createUniform<int>("debugView");
+    uTriThreshold = window.createUniform<int>("triTh");
+    uAABBThreshold =  window.createUniform<int>("aabbTh");
+    uEnvLatLong = window.createUniform<int>("uEnvLatLong");
+    uEnvYaw = window.createUniform<float>("uEnvYaw");
 }
 
 void Scene::setUniforms(bool moved) const {
@@ -315,51 +304,56 @@ void Scene::setUniforms(bool moved) const {
     uAABBThreshold.set(aabbTh);
 }
 
-bool Scene::updateCamera(GLFWwindow* window, float speed, float sensitivity, float dt) {
-    double xpos, ypos;
+void Scene::set_ssbo() {
+
+    ssboVertices.set(vertices, 0);
+    ssboTriangles.set(triangles, 1);
+    ssboColors.set(colors, 2, true);
+    ssboSpecularColors.set(specularColors, 3, true);
+    ssboGlassLightSettings.set(glassLightSettings, 4, true);
+    ssboBoundingBoxMin.set(boundingBoxMin, 5);
+    ssboBoundingBoxMax.set(boundingBoxMax, 6);
+    ssboChildA.set(childA, 7);
+    ssboChildB.set(childB, 8);
+    ssboModels.set(models, 9);
+    ssboNormalsList.set(normalsList, 10);
+    ssboNormals.set(normals, 11);
+    ssboModelTransformations.set(modelTransforms, 12, true);
+    ssboModelInvTransformations.set(modelInvTransforms, 13, true);
+
+}
+
+bool Scene::inputHandling(float speed, float sensitivity, float dt) {
     bool moved = false;
-    glfwGetCursorPos(window, &xpos, &ypos);
+    vec2 mousePos = window.getMousePos();
     vec2 center = vec2(float(width)/2, float(height)/2);
-    vec2 delta = vec2(xpos - center.x, -(ypos - center.y));
+    vec2 delta = vec2(mousePos.x - center.x, -(mousePos.y - center.y));
     if (delta.x*delta.x + delta.y*delta.y > 0 and !lock) {
         delta *= 2.0f/float(height) * sensitivity;
         camForward += delta.x * camRight + delta.y * camUp;
         camForward = normalize(camForward);
         moved = true;
         setBasisVectors(camForward, camUp, camRight);
-        glfwSetCursorPos(window, center.x, center.y);
+        window.setMousePos(center);
     }
 
     vec3 change = vec3(0, 0, 0);
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        change += camForward;
-    }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        change -= camForward;
-    }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        change -= camRight;
-    }
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        change += camRight;
-    }
-    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-        change += camUp;
-    }
-    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-        change -= camUp;
-    }
-    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) {
-        lock = true;
-    }
-    if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS) {
+    if (window.keyPressed(GLFW_KEY_W)) change += camForward;
+    if (window.keyPressed(GLFW_KEY_S)) change -= camForward;
+    if (window.keyPressed(GLFW_KEY_A)) change -= camRight;
+    if (window.keyPressed(GLFW_KEY_D)) change += camRight;
+    if (window.keyPressed(GLFW_KEY_E)) change += camUp;
+    if (window.keyPressed(GLFW_KEY_Q)) change -= camUp;
+
+    if (window.keyPressed(GLFW_KEY_L)) lock = true;
+    if (window.keyPressed(GLFW_KEY_U)) {
         lock = false;
-        glfwSetCursorPos(window, center.x, center.y);
+        window.setMousePos(center);
     }
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
-       glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
-        speed *= 2;
-       }
+    if (window.keyPressed(GLFW_KEY_H)) hud = true;
+
+    if (window.keyPressed(GLFW_KEY_LEFT_SHIFT) || window.keyPressed(GLFW_KEY_RIGHT_SHIFT)) speed *= 2;
+
     if (pow(change.x, 2) + pow(change.y, 2) + pow(change.z, 2) > 0 and !lock) {
         change = normalize(change);
         cameraPos += change*speed*dt;
@@ -371,13 +365,15 @@ bool Scene::updateCamera(GLFWwindow* window, float speed, float sensitivity, flo
 void Scene::updateFrame() {
     window.start();
 
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
+    if (hud) {
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+    }
 
     float dt = window.getDeltaTime();
 
-    const bool moved = updateCamera(window.getWindow(), 500, 2, dt);
+    const bool moved = inputHandling(500, 2, dt);
     if (moved) {
         frameCount = 0;
         sampleCount = 0;
@@ -389,7 +385,7 @@ void Scene::updateFrame() {
     sampleCount += samples;
 
     // --- Controls window ---
-    ImGuiRender(dt);
+    if (hud) ImGuiRender(dt);
 
     glActiveTexture(GL_TEXTURE0 + 5); // choose a slot
     glBindTexture(GL_TEXTURE_2D, skyTex);
@@ -398,8 +394,10 @@ void Scene::updateFrame() {
 
     window.render();
 
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    if (hud) {
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    }
 
 
     glfwSwapBuffers(window.getWindow());
@@ -414,12 +412,7 @@ void Scene::ImGuiRender(float dt) {
     ImGui::Text("Renderer");
     ImGui::Separator();
 
-    bool check = lock;
     ImGui::Checkbox("Lock", &lock);
-    if (check && !lock) {
-        vec2 center = vec2(float(width)/2, float(height)/2);
-        glfwSetCursorPos(window.getWindow(), center.x, center.y);
-    }
 
     ui_resetAccum |= ColorEdit3("Sun Color", sunColor);
     ui_resetAccum |= DragFloat3("Sun Direction", sunDir);
@@ -431,21 +424,14 @@ void Scene::ImGuiRender(float dt) {
     ui_resetAccum |= ImGui::SliderInt("Antialiasing", &aa, 1, 5);
     ui_resetAccum |= ImGui::SliderInt("Bounces", &bounceLim, 1, 16);
 
-    ui_resetAccum |= ImGui::Checkbox("Debug View" , &debugView);
-    if (debugView) {
-        ui_resetAccum |= ImGui::SliderInt("Triangle Threshhold", &triTh, 0, 1000);
-        ui_resetAccum |= ImGui::SliderInt("AABB Threshhold", &aabbTh, 0, 1000);
-    }
-
-    if (ImGui::Button("Reset accumulation")) ui_resetAccum = true;
-
     ImGui::Separator();
     ImGui::Text("Models");
 
     const bool hasModels = !modelLabels.empty();
     if (!hasModels) {
         ImGui::TextDisabled("(no models)");
-    } else {
+    }
+    else {
         // Current label
         const char* preview = (selectedModel >= 0) ? modelLabels[selectedModel].c_str() : "(select)";
         if (ImGui::BeginCombo("Model", preview)) {
@@ -453,6 +439,7 @@ void Scene::ImGuiRender(float dt) {
                 bool sel = (selectedModel == i);
                 if (ImGui::Selectable(modelLabels[i].c_str(), sel)) {
                     selectedModel = i;
+                    selectedColor = -1;
                 }
                 if (sel) ImGui::SetItemDefaultFocus();
             }
@@ -551,6 +538,21 @@ void Scene::ImGuiRender(float dt) {
     ImGui::Text("Width: %d", width);
     ImGui::Text("Height: %d", height);
 
+    ui_resetAccum |= ImGui::Checkbox("Debug View" , &debugView);
+    if (debugView) {
+        ui_resetAccum |= ImGui::SliderInt("Triangle Threshhold", &triTh, 1, 500);
+        ui_resetAccum |= ImGui::SliderInt("AABB Threshhold", &aabbTh, 1, 1000);
+    }
+
+    ImGui::Separator();
+
+    ImGui::Text("Position: %.2f, %.2f, %.2f", cameraPos.x, cameraPos.y, cameraPos.z);
+    ImGui::Text("Forward: %.2f, %.2f, %.2f", camForward.x, camForward.y, camForward.z);
+
+    if (ImGui::Button("Reset accumulation")) ui_resetAccum = true;
+    if (ImGui::Button("HUD Off")) hud = false;
+
+
     ImGui::End();
 
     if (ui_resetAccum) {
@@ -558,6 +560,7 @@ void Scene::ImGuiRender(float dt) {
         sampleCount = 0;
     }
 }
+
 
 int Scene::numTriBelow(int index) {
     int childA = this->childA[index];
@@ -617,27 +620,5 @@ void Scene::displayBVH(int index, std::string prefix) {
         displayBVH(childB, prefix);
         return;
     }
-    int triStart = -childA;
     std::cout << prefix << "Triangles: " << numTris << std::endl;
-    return;
-    prefix += "   ";
-    for (int i = triStart; i < numTris+triStart; i++) {
-        vec3 v1 = vertices[triangles[i*3+0].x];
-        vec3 v2 = vertices[triangles[i*3+1].x];
-        vec3 v3 = vertices[triangles[i*3+2].x];
-        bool check =
-            v1.x >= bboxMin.x && v1.x <= bboxMax.x &&
-            v2.x >= bboxMin.x && v2.x <= bboxMax.x &&
-            v3.x >= bboxMin.x && v3.x <= bboxMax.x &&
-            v1.y >= bboxMin.y && v1.y <= bboxMax.y &&
-            v2.y >= bboxMin.y && v2.y <= bboxMax.y &&
-            v3.y >= bboxMin.y && v3.y <= bboxMax.y &&
-            v1.z >= bboxMin.z && v1.z <= bboxMax.z &&
-            v2.z >= bboxMin.z && v2.z <= bboxMax.z &&
-            v3.z >= bboxMin.z && v3.z <= bboxMax.z;
-        std::cout << prefix << (check ? "In" : "--Out--") << " ";
-        std::cout << v1.x << " " << v1.y << " " << v1.z << "  -  ";
-        std::cout << v2.x << " " << v2.y << " " << v2.z << "  -  ";
-        std::cout << v3.x << " " << v3.y << " " << v3.z << std::endl;
-    }
 }

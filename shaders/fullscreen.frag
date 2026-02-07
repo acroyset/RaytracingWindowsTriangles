@@ -115,29 +115,29 @@ vec2 seamSafeUV(vec2 uv){
 }
 
 /* ========================= Intersections ========================= */
-bool rayTriangleIntersect(vec3 ro, vec3 rd, vec3 v0, vec3 v1, vec3 v2, out float t, out float u, out float v){
+bool rayTriangleIntersect(vec3 rayOrigin, vec3 rayDir, vec3 v0, vec3 v1, vec3 v2, out float t, out float u, out float v){
     const float EPS = 1e-10;
     vec3 e1 = v1 - v0;
     vec3 e2 = v2 - v0;
-    vec3 p  = cross(rd, e2);
+    vec3 p  = cross(rayDir, e2);
     float det = dot(e1, p);
     if (abs(det) < EPS) return false;
     float invDet = 1.0/det;
-    vec3 tv = ro - v0;
+    vec3 tv = rayOrigin - v0;
     u = dot(tv, p) * invDet; if (u < 0.0 || u > 1.0) return false;
     vec3 q = cross(tv, e1);
-    v = dot(rd, q) * invDet; if (v < 0.0 || (u+v) > 1.0) return false;
+    v = dot(rayDir, q) * invDet; if (v < 0.0 || (u+v) > 1.0) return false;
     t = dot(e2, q) * invDet;
     return t > 0.0005;
 }
-float intersectAABB(vec3 ro, vec3 invrd, vec3 bmin, vec3 bmax){
-    vec3 t0 = (bmin - ro) * invrd;
-    vec3 t1 = (bmax - ro) * invrd;
+float intersectAABB(vec3 rayOrigin, vec3 invRayDir, vec3 bmin, vec3 bmax){
+    vec3 t0 = (bmin - rayOrigin) * invRayDir;
+    vec3 t1 = (bmax - rayOrigin) * invRayDir;
     vec3 tn = min(t0,t1);
     vec3 tf = max(t0,t1);
     float tmin = max(max(tn.x, tn.y), tn.z);
     float tmax = min(min(tf.x, tf.y), tf.z);
-    return (tmax >= max(tmin,0.0)) ? tmin : 1e30;
+    return (tmax >= max(tmin,0.0)) ? tmin : 1e35;
 }
 
 /* ======= NORMALS (LOCAL -> WORLD) ======= */
@@ -235,25 +235,25 @@ bool updateColor(inout vec3 color, int mat_i, bool isSpecular, bool diffuseOnly)
 /* ========================= BVH TRAVERSAL (RAY -> LOCAL) ========================= */
 
 /* Transform world ray (origin,dir) by inverse(M) to local; compute invdir. */
-void worldToLocalRay(vec3 roW, vec3 rdW, mat4 invM, out vec3 roL, out vec3 rdL, out vec3 invrdL){
-    roL   = (invM * vec4(roW, 1.0)).xyz;
-    rdL   = (invM * vec4(rdW, 0.0)).xyz; // linear part only
-    invrdL = 1.0 / rdL;
+void worldToLocalRay(vec3 rayOriginWorld, vec3 rayDirWorld, mat4 invM, out vec3 rayOriginLocal, out vec3 rayDirLocal, out vec3 invRayDirLocal){
+    rayOriginLocal = (invM * vec4(rayOriginWorld, 1.0)).xyz;
+    rayDirLocal    = (invM * vec4(rayDirWorld, 0.0)).xyz; // linear part only
+    invRayDirLocal = 1.0 / rayDirLocal;
 }
 
 /* Traverse one model’s BVH entirely in LOCAL space.
    Returns the best WORLD distance and indices via out params. */
 void traverseBVH_local(
     int nodeOffset,
-    vec3 roW, vec3 rdW,
+    vec3 rayOriginWorld, vec3 rayDirWorld,
     mat4 M, mat4 invM,
     inout float best_t_world,
     inout float best_u, inout float best_v,
     inout int triTest, inout int aabbTest,
     inout int best_tri_i, inout int best_model_i,
     int modelIndex){
-    vec3 roL, rdL, invrdL;
-    worldToLocalRay(roW, rdW, invM, roL, rdL, invrdL);
+    vec3 rayOriginLocal, rayDirLocal, invRayDirLocal;
+    worldToLocalRay(rayOriginWorld, rayDirWorld, invM, rayOriginLocal, rayDirLocal, invRayDirLocal);
 
     int sp = 0;
     stack_[sp++] = nodeOffset;
@@ -273,12 +273,12 @@ void traverseBVH_local(
                 vec3 v1 = vertices[tri.y].xyz;
                 vec3 v2 = vertices[tri.z].xyz;
                 float tL, u, v;
-                if (!rayTriangleIntersect(roL, rdL, v0, v1, v2, tL, u, v)) continue;
+                if (!rayTriangleIntersect(rayOriginLocal, rayDirLocal, v0, v1, v2, tL, u, v)) continue;
 
                 // local hit -> world hit distance
-                vec3 hitL = roL + tL*rdL;
+                vec3 hitL = rayOriginLocal + tL*rayDirLocal;
                 vec3 hitW = (M * vec4(hitL, 1.0)).xyz;
-                float tW = length(hitW - roW);
+                float tW = length(hitW - rayOriginWorld);
 
                 if (tW < best_t_world){
                     best_t_world = tW;
@@ -294,8 +294,8 @@ void traverseBVH_local(
             vec3 Bmax = boundingBoxMax[B].xyz;
 
             aabbTest += 2;
-            float dA = intersectAABB(roL, invrdL, Amin, Amax);
-            float dB = intersectAABB(roL, invrdL, Bmin, Bmax);
+            float dA = intersectAABB(rayOriginLocal, invRayDirLocal, Amin, Amax);
+            float dB = intersectAABB(rayOriginLocal, invRayDirLocal, Bmin, Bmax);
 
             bool nearA = (dA <= dB);
             float dNear = nearA ? dA : dB;
@@ -304,11 +304,12 @@ void traverseBVH_local(
             int   iFar  = nearA ? B  : A;
 
             // prune by converting local distance approx to world scale
-            float scaleApprox = length((invM * vec4(rdW,0.0)).xyz);
+            float scaleApprox = length((invM * vec4(rayDirWorld,0.0)).xyz);
             float worldNear   = dNear * scaleApprox;
+            float worldFar    = dFar  * scaleApprox;
 
             if (worldNear < best_t_world) stack_[sp++] = iNear;
-            if (dFar < 1e29)              stack_[sp++] = iFar;
+            if (worldFar < best_t_world && dFar < 1e29) stack_[sp++] = iFar;
 
             if (sp > MAX_STACK_SIZE) break;
         }
@@ -317,7 +318,7 @@ void traverseBVH_local(
 
 /* Find best triangle across all models; all traversal is in LOCAL; returns WORLD t. */
 float findBestTri_world(
-    vec3 roW, vec3 rdW,
+    vec3 rayOriginWorld, vec3 rayDirWorld,
     out int best_tri_i, out int best_model_i,
     out int triTest, out int aabbTest,
     out float best_u, out float best_v, out float best_w){
@@ -329,7 +330,7 @@ float findBestTri_world(
     for (int i=0;i<numModels;i++){
         mat4 M    = modelTransformations[i];
         mat4 invM = modelInvTransformations[i];
-        traverseBVH_local(models[i], roW, rdW, M, invM,
+        traverseBVH_local(models[i], rayOriginWorld, rayDirWorld, M, invM,
         best_tW, best_u, best_v,
         triTest, aabbTest,
         best_tri_i, best_model_i,
@@ -368,10 +369,10 @@ bool russianRoulet(inout vec3 color, inout uint state){
 bool hitTriangleUpdateWorld(
     int triIndex, int modelIndex, float tWorld,
     float u, float v, float w,
-    inout vec3 posW, inout vec3 dirW, inout vec3 invDirW,
+    inout vec3 posW, inout vec3 dirWorld, inout vec3 invDirWorld,
     inout vec3 color, inout uint state){
     // advance to world hit
-    posW += dirW * tWorld;
+    posW += dirWorld * tWorld;
 
     int material_i = triangles[triIndex].w;
 
@@ -379,7 +380,7 @@ bool hitTriangleUpdateWorld(
     vec3 nL = calculateNormalLocal(triIndex, u, v, w);
     mat4 M  = modelTransformations[modelIndex];
     vec3 nW = toWorldNormal(nL, M);
-    if (dot(nW, dirW) > 0.0) nW = -nW;
+    if (dot(nW, dirWorld) > 0.0) nW = -nW;
 
     float specP   = specularColors[material_i].w;
     bool  diffOnly = (specP == -1.0);
@@ -391,8 +392,8 @@ bool hitTriangleUpdateWorld(
     float trans    = glassLightSettings[material_i].x;
     float ior      = glassLightSettings[material_i].y;
 
-    dirW   = calculateNewDirection(nW, dirW, sm, specP, trans, ior, state, color);
-    invDirW = 1.0/dirW;
+    dirWorld   = calculateNewDirection(nW, dirWorld, sm, specP, trans, ior, state, color);
+    invDirWorld = 1.0/dirWorld;
     return false;
 }
 
@@ -420,12 +421,14 @@ vec3 trace(vec3 pos, vec3 dir, inout uint state){
     for (int i=0;i<bounceLim;i++){
         int triTest, aabbTest, tri_i, model_i;
         float bu, bv, bw;
+
         float tW = findBestTri_world(pos, dir, tri_i, model_i, triTest, aabbTest, bu, bv, bw);
 
-        if (debugView){ // debug
-            vec3 dbg = vec3(float(triTest)/float(triTh), 0.0, float(aabbTest)/float(aabbTh));
-            if (triTest>triTh) dbg=vec3(1); else if (aabbTest>aabbTh) dbg=vec3(0,1,0);
-            return dbg;
+        if (debugView) {
+
+            vec3 heatmap = triTest > triTh || aabbTest > aabbTh ? vec3(1) : vec3(float(triTest)/float(triTh), 0.0, float(aabbTest)/float(aabbTh));
+
+            return heatmap;
         }
 
         if (tri_i != -1){
