@@ -51,12 +51,6 @@ inline bool ColorEdit3(const char* label, vec4& v) {
     return out;
 }
 
-static void setDefault2DParams() {
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);        // horiz repeat
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // clamp vertically
-}
 GLuint LoadEnvLatLongTextureAuto(const char* path) {
     stbi_set_flip_vertically_on_load(false); // equirect usually not flipped
 
@@ -80,7 +74,7 @@ GLuint LoadEnvLatLongTextureAuto(const char* path) {
             return 0;
         }
         GLenum srcFmt = (n == 4) ? GL_RGBA : GL_RGB;
-        GLint  dstFmt = (n == 4) ? GL_RGBA16F : GL_RGB16F; // linear HDR
+        GLint  dstFmt = (n == 4) ? GL_RGBA16F : GL_RGB16F;
         glTexImage2D(GL_TEXTURE_2D, 0, dstFmt, w, h, 0, srcFmt, GL_FLOAT, data);
         stbi_image_free(data);
     } else {
@@ -93,18 +87,16 @@ GLuint LoadEnvLatLongTextureAuto(const char* path) {
             return 0;
         }
         GLenum srcFmt = (n == 4) ? GL_RGBA : GL_RGB;
-        // sRGB internal formats → sampling returns LINEAR color automatically
         GLint  dstFmt = (n == 4) ? GL_SRGB8_ALPHA8 : GL_SRGB8;
         glTexImage2D(GL_TEXTURE_2D, 0, dstFmt, w, h, 0, srcFmt, GL_UNSIGNED_BYTE, data);
         stbi_image_free(data);
     }
 
-
-
-    setDefault2DParams();
     glGenerateMipmap(GL_TEXTURE_2D);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);        // horiz repeat
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // clamp vertically
 
     glBindTexture(GL_TEXTURE_2D, 0);
     return tex;
@@ -174,21 +166,29 @@ void Scene::addModel(
     float emission) {
 
     if (specularColor == vec3(-1)) {specularColor = color; specularProb = 1;}
+    int Toffset = int(triangles.size())/3;
     int Voffset = int(vertices.size());
-    int Toffset = int(triangles.size());
+    int TXoffset = int(texCoords.size());
+    int Noffset = int(normals.size());
     int BBoffset = int(boundingBoxMin.size());
     int Coffset = int(colors.size());
-    int Noffset = int(normalsList.size());
 
     models.emplace_back(BBoffset);
 
+    for (ivec4 triangle : model.triangles) {
+        triangle += vec4(Voffset, TXoffset, Noffset, Coffset);
+        triangles.emplace_back(triangle);
+    }
     for (vec3 vertex : model.vertices) {
         vertices.emplace_back(vertex, 0);
     }
-    for (ivec4 triangle : model.triangles) {
-        triangle += vec4(Voffset, Voffset, Voffset, Coffset);
-        triangles.emplace_back(triangle);
+    for (vec2 texCoord : model.texCoords) {
+        texCoords.emplace_back(texCoord);
     }
+    for (vec3 normal : model.normals) {
+        normals.emplace_back(normal, 0);
+    }
+
     for (int i = 0; i < model.boundingBoxMin.size(); i++) {
         vec3 bboxMin = model.boundingBoxMin[i];
         vec3 bboxMax = model.boundingBoxMax[i];
@@ -201,13 +201,6 @@ void Scene::addModel(
         boundingBoxMax.emplace_back(bboxMax, 0);
         this->childA.push_back(childA+offsetA);
         this->childB.push_back(childB+offsetB);
-    }
-    for (auto & i : model.normalsList) {
-        normalsList.emplace_back(i, 0);
-    }
-    for (ivec3 normal : model.normals) {
-        normal += ivec3(Noffset, Noffset, Noffset);
-        normals.emplace_back(normal, 0);
     }
 
     if (model.colors.empty()) {
@@ -258,7 +251,7 @@ int Scene::getNumBVHNodes() const {
 }
 
 int Scene::getNumTris() const {
-    return int(triangles.size());
+    return int(triangles.size()/3);
 }
 
 void Scene::createUniforms() {
@@ -306,18 +299,18 @@ void Scene::setUniforms(bool moved) const {
 
 void Scene::set_ssbo() {
 
-    ssboVertices.set(vertices, 0);
-    ssboTriangles.set(triangles, 1);
-    ssboColors.set(colors, 2, true);
-    ssboSpecularColors.set(specularColors, 3, true);
-    ssboGlassLightSettings.set(glassLightSettings, 4, true);
-    ssboBoundingBoxMin.set(boundingBoxMin, 5);
-    ssboBoundingBoxMax.set(boundingBoxMax, 6);
-    ssboChildA.set(childA, 7);
-    ssboChildB.set(childB, 8);
-    ssboModels.set(models, 9);
-    ssboNormalsList.set(normalsList, 10);
-    ssboNormals.set(normals, 11);
+    ssboTriangles.set(triangles, 0);
+    ssboVertices.set(vertices, 1);
+    ssboTexCoords.set(texCoords, 2);
+    ssboNormals.set(normals, 3);
+    ssboColors.set(colors, 4, true);
+    ssboSpecularColors.set(specularColors, 5, true);
+    ssboGlassLightSettings.set(glassLightSettings, 6, true);
+    ssboBoundingBoxMin.set(boundingBoxMin, 7);
+    ssboBoundingBoxMax.set(boundingBoxMax, 8);
+    ssboChildA.set(childA, 9);
+    ssboChildB.set(childB, 10);
+    ssboModels.set(models, 11);
     ssboModelTransformations.set(modelTransforms, 12, true);
     ssboModelInvTransformations.set(modelInvTransforms, 13, true);
 
@@ -387,9 +380,9 @@ void Scene::updateFrame() {
     // --- Controls window ---
     if (hud) ImGuiRender(dt);
 
-    glActiveTexture(GL_TEXTURE0 + 5); // choose a slot
+    glActiveTexture(GL_TEXTURE0 + 1); // choose a slot
     glBindTexture(GL_TEXTURE_2D, skyTex);
-    uEnvLatLong.set(5);
+    uEnvLatLong.set(1);
     uEnvYaw.set(0.0f);
 
     window.render();

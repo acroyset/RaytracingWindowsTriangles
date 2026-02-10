@@ -213,13 +213,15 @@ void loadMTL(
     flushMaterial();
 }
 
+
 Model::Model() = default;
 
 void Model::parse(
-    const std::string& nfilename,
-    std::vector<glm::vec3>& vertices,
+const std::string& nfilename,
     std::vector<glm::ivec3>& triangles,
-    std::vector<glm::vec3>& normalsList,
+    std::vector<glm::vec3>& vertices,
+    std::vector<glm::vec2>& texCoords,
+    std::vector<glm::vec3>& normals,
     std::vector<int>& tempTriMatIndex,
     std::vector<glm::vec4>& colors,
     std::vector<glm::vec4>& specularColors,
@@ -246,12 +248,13 @@ void Model::parse(
     // Reserve space
     size_t estimatedVertices = fileSize / 50;
     size_t estimatedTriangles = fileSize / 80;
-    vertices.reserve(estimatedVertices);
     triangles.reserve(estimatedTriangles * 3);
-    normalsList.reserve(estimatedVertices);
+    vertices.reserve(estimatedVertices);
+    texCoords.reserve(estimatedVertices);
+    normals.reserve(estimatedVertices);
 
     // Process in chunks to avoid massive memory allocation
-    constexpr size_t CHUNK_SIZE = 64 * 1024 * 1024; // 64MB chunks
+    constexpr size_t CHUNK_SIZE = 256 * 1024 * 1024; // 256MB chunks
     std::vector<char> buffer(CHUNK_SIZE + 1);
     std::string leftover; // Handle lines split across chunks
 
@@ -300,7 +303,19 @@ void Model::parse(
                 z = fast_strtof(ptr, &ptr);
 
                 vertices.emplace_back(x, y, z);
-            }
+            } // vertices
+            else if (*ptr == 'v' && *(ptr + 1) == 't' && *(ptr + 2) == ' ') {
+                ptr += 3; // Skip "vt "
+
+                // Fast float parsing
+                float x, y;
+                x = fast_strtof(ptr, &ptr);
+                while (*ptr == ' ' || *ptr == '\t') ptr++; // Skip whitespace
+                y = fast_strtof(ptr, &ptr);
+                while (*ptr == ' ' || *ptr == '\t') ptr++; // Skip whitespace
+
+            texCoords.emplace_back(x, y);
+        } // texCoords
             else if (*ptr == 'v' && *(ptr + 1) == 'n' && *(ptr + 2) == ' ') {
                 ptr += 3; // Skip "vn "
 
@@ -312,16 +327,14 @@ void Model::parse(
                 while (*ptr == ' ' || *ptr == '\t') ptr++; // Skip whitespace
                 z = fast_strtof(ptr, &ptr);
 
-                normalsList.emplace_back(x, y, z);
-            }
+                normals.emplace_back(x, y, z);
+            } // normals
             else if (*ptr == 'f' && *(ptr + 1) == ' ') {
                 ptr += 2; // Skip "f "
-
-                std::array<glm::ivec3, 4> faceVertices{};
                 int vertexCount = 0;
 
                 // Parse face vertices
-                while (ptr < end && *ptr != '\n' && *ptr != '\r' && vertexCount < 4) {
+                while (ptr < end && *ptr != '\n' && *ptr != '\r') {
                     while (*ptr == ' ' || *ptr == '\t') ptr++; // Skip whitespace
                     if (*ptr == '\n' || *ptr == '\r') break;
 
@@ -340,33 +353,23 @@ void Model::parse(
                         }
                     }
 
-                    faceVertices[vertexCount] = glm::ivec3(v, vt, vn);
+                    triangles.emplace_back(v, vt, vn);
                     vertexCount++;
+
+                    if (vertexCount >= 4) {
+                        triangles.push_back(triangles[triangles.size() - vertexCount]);
+                        triangles.push_back(triangles[triangles.size() - 3]);
+                        tempTriMatIndex.push_back(currentMaterial);
+                    }
 
                     // Skip to next vertex or end of line
                     while (ptr < end && *ptr != ' ' && *ptr != '\t' && *ptr != '\n' && *ptr != '\r') {
                         ptr++;
                     }
                 }
+                tempTriMatIndex.push_back(currentMaterial);
 
-                // Convert to triangles (triangle fan)
-                if (vertexCount >= 3) {
-                    // base triangle
-                    triangles.emplace_back(faceVertices[0]);
-                    triangles.emplace_back(faceVertices[1]);
-                    triangles.emplace_back(faceVertices[2]);
-                    // record material for this emitted tri
-                    tempTriMatIndex.push_back(currentMaterial >= 0 ? currentMaterial : 0);
-
-                    // handle quads/n-gons
-                    for (int i = 3; i < vertexCount; i++) {
-                        triangles.emplace_back(faceVertices[0]);
-                        triangles.emplace_back(faceVertices[i-1]);
-                        triangles.emplace_back(faceVertices[i]);
-                        tempTriMatIndex.push_back(currentMaterial >= 0 ? currentMaterial : 0);
-                    }
-                }
-            }
+            } // faces
             else if (*ptr=='m' && (ptr+6) < end && std::memcmp(ptr, "mtllib", 6)==0) {
                 // advance to end of token and one space
                 while (ptr<end && *ptr!=' ') ptr++;
@@ -424,10 +427,10 @@ void Model::parse(
     // Convert negative indices and adjust for 0-based indexing
     for (glm::ivec3& i : triangles) {
         if (i.x < 0) i.x += int(vertices.size()) + 1;
-        if (i.y < 0) i.y += int(vertices.size()) + 1;
-        if (i.z < 0) i.z += int(normalsList.size()) + 1;
-        i.x--;
+        if (i.y < 0) i.y += int(texCoords.size()) + 1;
+        if (i.z < 0) i.z += int(normals.size()) + 1;
 
+        i.x--;
         i.y--;
         i.z--;
 
@@ -442,38 +445,43 @@ void Model::parse(
 
 Model::Model(const std::string &filename) {
     this->filename = filename;
-    std::vector<glm::vec3> tempVertices;
     std::vector<glm::ivec3> tempTriangles;
+    std::vector<glm::vec3> tempVertices;
+    std::vector<glm::vec2> tempTexCoords;
     std::vector<glm::vec3> tempNormals;
     std::vector<glm::vec4> tempColors;
     std::vector<glm::vec4> tempSpecularColors;
     std::vector<glm::vec4> tempGlassLightSettings;
     std::vector<int> tempTriMatIndex;
 
-    std::cout << "Parsing " << filename << "..." << std::endl;
-    parse(filename, tempVertices, tempTriangles, tempNormals, tempTriMatIndex, tempColors, tempSpecularColors, tempGlassLightSettings);
-
     std::cout << filename << std::endl;
-    std::cout << "Vertices: " << tempVertices.size() << std::endl;
-    std::cout << "Triangles: " << tempTriangles.size()/3 << std::endl;
+    std::cout << "   Parsing..." << std::endl;
+    parse(filename, tempTriangles, tempVertices, tempTexCoords, tempNormals, tempTriMatIndex, tempColors, tempSpecularColors, tempGlassLightSettings);
+
+    std::cout << "   Triangles: " << tempTriangles.size()/3 << std::endl;
+    std::cout << "   Vertices: " << tempVertices.size() << std::endl;
+    std::cout << "   TexCoords: " << tempTexCoords.size() << std::endl;
+    std::cout << "   Normals: " << tempNormals.size() << std::endl;
 
     int triStart = 0;
     int numTris = int(tempTriangles.size())/3;
 
-    std::cout << "Copying vertex data..." << std::endl;
     for (glm::vec3 tempVertice : tempVertices) {
         vertices.emplace_back(tempVertice);
     }
 
-    std::cout << "Copying normal data..." << std::endl;
-    for (glm::vec3 tempNormal : tempNormals) {
-        normalsList.emplace_back(tempNormal);
+    for (glm::vec2 tempTexCoord : tempTexCoords) {
+        texCoords.emplace_back(tempTexCoord);
     }
 
-    std::cout << "Copying triangle data..." << std::endl;
+    for (glm::vec3 tempNormal : tempNormals) {
+        normals.emplace_back(tempNormal);
+    }
+
     for (int i = 0; i < numTris; ++i) {
-        triangles.emplace_back(tempTriangles[i*3+0].x, tempTriangles[i*3+1].x, tempTriangles[i*3+2].x, tempTriMatIndex[i]);
-        normals.emplace_back(tempTriangles[i*3+0].z, tempTriangles[i*3+1].z, tempTriangles[i*3+2].z);
+        triangles.emplace_back(tempTriangles[i*3+0].x, tempTriangles[i*3+0].y, tempTriangles[i*3+0].z, tempTriMatIndex[i]);
+        triangles.emplace_back(tempTriangles[i*3+1].x, tempTriangles[i*3+1].y, tempTriangles[i*3+1].z, tempTriMatIndex[i]);
+        triangles.emplace_back(tempTriangles[i*3+2].x, tempTriangles[i*3+2].y, tempTriangles[i*3+2].z, tempTriMatIndex[i]);
     }
 
     for (glm::vec4 tempColor : tempColors) {
@@ -490,9 +498,9 @@ Model::Model(const std::string &filename) {
 
     int testPerAxis = 3;
 
-    std::cout << "Starting BVH construction..." << std::endl;
+    std::cout << "   Starting BVH construction..." << std::endl;
     createBVH(47, testPerAxis, triStart, numTris);
-    std::cout << "BVH construction complete!" << std::endl;
+    std::cout << "   BVH construction complete!" << std::endl;
 }
 
 void Model::createBVH(const int depth, const int numTestsPerAxis, int triStart, int numTris) {
@@ -523,16 +531,18 @@ void Model::createBVH(const int depth, const int numTestsPerAxis, int triStart, 
 }
 
 void Model::precomputeTriangleData() {
-    triangleCenters.resize(triangles.size());
-    triangleMin.resize(triangles.size());
-    triangleMax.resize(triangles.size());
+    triangleCenters.resize(triangles.size()/3);
+    triangleMin.resize(triangles.size()/3);
+    triangleMax.resize(triangles.size()/3);
 
-    for (size_t i = 0; i < triangles.size(); ++i) {
-        const glm::ivec3& tri = triangles[i];
+    for (size_t i = 0; i < triangles.size()/3; ++i) {
+        const glm::ivec3& tri1 = triangles[3*i+0];
+        const glm::ivec3& tri2 = triangles[3*i+1];
+        const glm::ivec3& tri3 = triangles[3*i+2];
 
-        const glm::vec3& v1 = vertices[tri.x];
-        const glm::vec3& v2 = vertices[tri.y];
-        const glm::vec3& v3 = vertices[tri.z];
+        const glm::vec3& v1 = vertices[tri1.x];
+        const glm::vec3& v2 = vertices[tri2.x];
+        const glm::vec3& v3 = vertices[tri3.x];
 
         triangleCenters[i] = (v1 + v2 + v3) / 3.0f;
         triangleMin[i] = glm::min(glm::min(v1, v2), v3);
@@ -645,8 +655,9 @@ void Model::split(int numTestsPerAxis, glm::vec3 bboxMin, int& childA, glm::vec3
             numA++;
             startB ++;
             int swap = startA + numA - 1;
-            std::swap(triangles[i], triangles[swap]);
-            std::swap(normals[i], normals[swap]);
+            std::swap(triangles[i*3+0], triangles[swap*3+0]);
+            std::swap(triangles[i*3+1], triangles[swap*3+1]);
+            std::swap(triangles[i*3+2], triangles[swap*3+2]);
             std::swap(triangleCenters[i], triangleCenters[swap]);
             std::swap(triangleMin[i], triangleMin[swap]);
             std::swap(triangleMax[i], triangleMax[swap]);

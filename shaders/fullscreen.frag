@@ -3,18 +3,18 @@ out vec4 FragColor;
 
 in vec2 fragCoord; // [0,1]
 
-layout(std430, binding = 0) buffer ssboVertices { vec4 vertices[]; };
-layout(std430, binding = 1) buffer ssboTriangles { ivec4 triangles[]; };
-layout(std430, binding = 2) buffer ssboColors { vec4 colors[]; };
-layout(std430, binding = 3) buffer ssboSpecularColors { vec4 specularColors[]; };
-layout(std430, binding = 4) buffer ssboGlassLightSettings { vec4 glassLightSettings[]; };
-layout(std430, binding = 5) buffer ssboBoundingBoxMin { vec4 boundingBoxMin[]; };
-layout(std430, binding = 6) buffer ssboBoundingBoxMax { vec4 boundingBoxMax[]; };
-layout(std430, binding = 7) buffer ssboChildA { int vChildA[]; };
-layout(std430, binding = 8) buffer ssboChildB { int vChildB[]; };
-layout(std430, binding = 9) buffer ssboModels { int models[]; };
-layout(std430, binding = 10) buffer ssboNormalsList { vec4 normalsList[]; };
-layout(std430, binding = 11) buffer ssboNormals { ivec4 normals[]; };
+layout(std430, binding = 0) buffer ssboTriangles { ivec4 triangles[]; };
+layout(std430, binding = 1) buffer ssboVertices { vec4 vertices[]; };
+layout(std430, binding = 2) buffer ssboTexCoords { vec2 texCoords[]; };
+layout(std430, binding = 3) buffer ssboNormals { vec4 normals[]; };
+layout(std430, binding = 4) buffer ssboColors { vec4 colors[]; };
+layout(std430, binding = 5) buffer ssboSpecularColors { vec4 specularColors[]; };
+layout(std430, binding = 6) buffer ssboGlassLightSettings { vec4 glassLightSettings[]; };
+layout(std430, binding = 7) buffer ssboBoundingBoxMin { vec4 boundingBoxMin[]; };
+layout(std430, binding = 8) buffer ssboBoundingBoxMax { vec4 boundingBoxMax[]; };
+layout(std430, binding = 9) buffer ssboChildA { int vChildA[]; };
+layout(std430, binding = 10) buffer ssboChildB { int vChildB[]; };
+layout(std430, binding = 11) buffer ssboModels { int models[]; };
 layout(std430, binding = 12) buffer ssboModelTransformations { mat4 modelTransformations[]; };
 layout(std430, binding = 13) buffer ssboModelInvTransformations { mat4 modelInvTransformations[]; };
 
@@ -45,7 +45,7 @@ uniform int aabbTh;
 const float PI = 3.14159265359;
 
 const int MAX_STACK_SIZE = 48;
-int   stack_[MAX_STACK_SIZE];
+int   stack[MAX_STACK_SIZE];
 float iorStack[16];
 int   iorSize = 1;
 
@@ -142,17 +142,18 @@ float intersectAABB(vec3 rayOrigin, vec3 invRayDir, vec3 bmin, vec3 bmax){
 
 /* ======= NORMALS (LOCAL -> WORLD) ======= */
 vec3 calculateNormalLocal(int triIndex, float u, float v, float w){
-    ivec4 nidx = normals[triIndex];
-    if (nidx.x != -1 && nidx.y != -1 && nidx.z != -1){
-        vec3 na = normalsList[nidx.x].xyz;
-        vec3 nb = normalsList[nidx.y].xyz;
-        vec3 nc = normalsList[nidx.z].xyz;
+    ivec4 tri1 = triangles[3*triIndex+0];
+    ivec4 tri2 = triangles[3*triIndex+1];
+    ivec4 tri3 = triangles[3*triIndex+2];
+    if (tri1.z != -1 && tri2.z != -1 && tri3.z != -1){
+        vec3 na = normals[tri1.z].xyz;
+        vec3 nb = normals[tri2.z].xyz;
+        vec3 nc = normals[tri3.z].xyz;
         return normalize(na*w + nb*u + nc*v);
     }
-    ivec4 tri = triangles[triIndex];
-    vec3 v0 = vertices[tri.x].xyz;
-    vec3 v1 = vertices[tri.y].xyz;
-    vec3 v2 = vertices[tri.z].xyz;
+    vec3 v0 = vertices[tri1.x].xyz;
+    vec3 v1 = vertices[tri2.x].xyz;
+    vec3 v2 = vertices[tri3.x].xyz;
     return normalize(cross(v1-v0, v2-v0));
 }
 vec3 toWorldNormal(vec3 nLocal, mat4 M){
@@ -252,14 +253,15 @@ void traverseBVH_local(
     inout int triTest, inout int aabbTest,
     inout int best_tri_i, inout int best_model_i,
     int modelIndex){
+
     vec3 rayOriginLocal, rayDirLocal, invRayDirLocal;
     worldToLocalRay(rayOriginWorld, rayDirWorld, invM, rayOriginLocal, rayDirLocal, invRayDirLocal);
 
     int sp = 0;
-    stack_[sp++] = nodeOffset;
+    stack[sp++] = nodeOffset;
 
     while (sp > 0){
-        int node = stack_[--sp];
+        int node = stack[--sp];
         int A = vChildA[node];
         int B = vChildB[node];
 
@@ -268,10 +270,12 @@ void traverseBVH_local(
             int triCount = -B;
             for (int j = triStart; j < triStart+triCount; ++j){
                 triTest++;
-                ivec4 tri = triangles[j];
-                vec3 v0 = vertices[tri.x].xyz;
-                vec3 v1 = vertices[tri.y].xyz;
-                vec3 v2 = vertices[tri.z].xyz;
+                ivec4 tri1 = triangles[j*3+0];
+                ivec4 tri2 = triangles[j*3+1];
+                ivec4 tri3 = triangles[j*3+2];
+                vec3 v0 = vertices[tri1.x].xyz;
+                vec3 v1 = vertices[tri2.x].xyz;
+                vec3 v2 = vertices[tri3.x].xyz;
                 float tL, u, v;
                 if (!rayTriangleIntersect(rayOriginLocal, rayDirLocal, v0, v1, v2, tL, u, v)) continue;
 
@@ -308,8 +312,8 @@ void traverseBVH_local(
             float worldNear   = dNear * scaleApprox;
             float worldFar    = dFar  * scaleApprox;
 
-            if (worldNear < best_t_world) stack_[sp++] = iNear;
-            if (worldFar < best_t_world && dFar < 1e29) stack_[sp++] = iFar;
+            if (worldNear < best_t_world) stack[sp++] = iNear;
+            if (worldFar < best_t_world && dFar < 1e29) stack[sp++] = iFar;
 
             if (sp > MAX_STACK_SIZE) break;
         }
@@ -374,7 +378,7 @@ bool hitTriangleUpdateWorld(
     // advance to world hit
     posW += dirWorld * tWorld;
 
-    int material_i = triangles[triIndex].w;
+    int material_i = triangles[triIndex*3].w;
 
     // local normal -> world normal
     vec3 nL = calculateNormalLocal(triIndex, u, v, w);

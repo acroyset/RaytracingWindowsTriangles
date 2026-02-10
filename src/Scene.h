@@ -24,10 +24,10 @@
 class Scene {
     ShaderWindow window{};
 
-    std::vector<vec4> vertices;
     std::vector<ivec4> triangles;
-    std::vector<ivec4> normals;
-    std::vector<vec4> normalsList;
+    std::vector<vec4> vertices;
+    std::vector<vec2> texCoords;
+    std::vector<vec4> normals;
     std::vector<vec4> colors;
     std::vector<vec4> specularColors;
     std::vector<vec4> glassLightSettings;
@@ -58,12 +58,14 @@ class Scene {
     bool lock;
 
     vec3 skyColor = vec3(0.5,0.7,0.9);
-    vec3 sunDir = normalize(vec3(0.28, 0.33, 0.2));
-    float sunStrength = 100;
-    vec3 sunColor = vec3(1, .7, .3);
+    vec3 sunDir = normalize(vec3(0.867, 0.498, 0.01));
+    float sunStrength = 200;
+    vec3 sunColor = vec3(1, 0.93, 0.31);
 
-    SSBO<vec4> ssboVertices;
     SSBO<ivec4> ssboTriangles;
+    SSBO<vec4> ssboVertices;
+    SSBO<vec2> ssboTexCoords;
+    SSBO<vec4> ssboNormals;
     SSBO<vec4> ssboColors;
     SSBO<vec4> ssboSpecularColors;
     SSBO<vec4> ssboGlassLightSettings;
@@ -72,8 +74,6 @@ class Scene {
     SSBO<int> ssboChildA;
     SSBO<int> ssboChildB;
     SSBO<int> ssboModels;
-    SSBO<vec4> ssboNormalsList;
-    SSBO<ivec4> ssboNormals;
     SSBO<mat4> ssboModelTransformations;
     SSBO<mat4> ssboModelInvTransformations;
 

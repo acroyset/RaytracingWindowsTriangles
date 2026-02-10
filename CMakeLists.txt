@@ -18,6 +18,7 @@ add_executable(RaytracingWindowsTriangles
         src/Scene.cpp
         src/Model.cpp
         src/Model.h
+        src/Texture.h
 )
 target_include_directories(RaytracingWindowsTriangles PRIVATE
         external/glad/include
