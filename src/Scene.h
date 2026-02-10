@@ -110,9 +110,10 @@ class Scene {
     Uniform<int> uTriThreshold;
     Uniform<int> uAABBThreshold;
 
-    GLuint skyTex = 0;
-    Uniform<int> uEnvLatLong{};
+    Texture skyTexture;
     Uniform<float> uEnvYaw{};
+
+    std::vector<Texture> textures;
 
     Scene();
     Scene(int samples, int aa, int bounceLim);

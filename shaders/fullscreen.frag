@@ -31,11 +31,13 @@ uniform int   aa;
 uniform int   bounceLim;
 uniform sampler2D previousFrame;
 
+uniform sampler2D textures[64];
+
 uniform vec3  skyColor;
 uniform vec3  sunDir;
 uniform vec3  sunColor;
 
-uniform sampler2D uEnvLatLong;
+uniform sampler2D skyTex;
 uniform float     uEnvYaw;
 
 uniform bool debugView;
@@ -109,9 +111,15 @@ vec2 dirToLatLongUV(vec3 d){
 }
 vec2 seamSafeUV(vec2 uv){
     uv.x -= floor(uv.x);
-    vec2 texel = 1.0/vec2(textureSize(uEnvLatLong,0));
+    vec2 texel = 1.0/vec2(textureSize(skyTex,0));
     uv = clamp(uv, texel, 1.0-texel);
     return uv;
+}
+
+void getTriangle(int triIndex, out ivec4 t1, out ivec4 t2, out ivec4 t3){
+    t1 = triangles[3*triIndex+0];
+    t2 = triangles[3*triIndex+1];
+    t3 = triangles[3*triIndex+2];
 }
 
 /* ========================= Intersections ========================= */
@@ -142,9 +150,8 @@ float intersectAABB(vec3 rayOrigin, vec3 invRayDir, vec3 bmin, vec3 bmax){
 
 /* ======= NORMALS (LOCAL -> WORLD) ======= */
 vec3 calculateNormalLocal(int triIndex, float u, float v, float w){
-    ivec4 tri1 = triangles[3*triIndex+0];
-    ivec4 tri2 = triangles[3*triIndex+1];
-    ivec4 tri3 = triangles[3*triIndex+2];
+    ivec4 tri1, tri2, tri3;
+    getTriangle(triIndex, tri1, tri2, tri3);
     if (tri1.z != -1 && tri2.z != -1 && tri3.z != -1){
         vec3 na = normals[tri1.z].xyz;
         vec3 nb = normals[tri2.z].xyz;
@@ -165,7 +172,7 @@ vec3 toWorldNormal(vec3 nLocal, mat4 M){
 vec3 sampleSky(vec3 dir){
     dir = rotY(uEnvYaw) * normalize(dir);
     vec2 uv = seamSafeUV(dirToLatLongUV(dir));
-    return 1.3 * texture(uEnvLatLong, uv).rgb;
+    return 1.3 * texture(skyTex, uv).rgb;
 }
 vec3 getEnviormentLight(vec3 dir){
     vec3 sky = sampleSky(dir);
@@ -224,10 +231,23 @@ vec3 calculateNewDirection(vec3 normal, vec3 dir, float smoothness, float specul
     return calculateRefractionDir(normal, dir, smoothness, ior, specularProb, state, color);
     return calculateOpaqueDir(normal, dir, smoothness, state);
 }
+vec3 getTextureColor(int id, int triIndex, float u, float v, float w){
+    ivec4 tri1, tri2, tri3;
+    getTriangle(triIndex, tri1, tri2, tri3);
+
+    vec2 t1 = texCoords[tri1.y];
+    vec2 t2 = texCoords[tri2.y];
+    vec2 t3 = texCoords[tri3.y];
+    vec2 texCoord = t1*w + t2*u + t3*v;
+
+    texCoord *= 16;
+    return texture(textures[id], texCoord).xyz;
+}
 
 /* ========================= Material / Hit ========================= */
-bool updateColor(inout vec3 color, int mat_i, bool isSpecular, bool diffuseOnly){
-    vec3 selected = (isSpecular && !diffuseOnly) ? specularColors[mat_i].xyz : colors[mat_i].xyz;
+bool updateColor(inout vec3 color, int mat_i, bool isSpecular, bool diffuseOnly, bool useTexture, int textureID, int triIndex, float u, float v, float w){
+    vec3 diffuseColor = useTexture ? getTextureColor(textureID, triIndex, u, v, w) : colors[mat_i].xyz;
+    vec3 selected = (isSpecular && !diffuseOnly) ? specularColors[mat_i].xyz : diffuseColor;
     color *= selected;
     if (glassLightSettings[mat_i].z > 0.0) { color *= glassLightSettings[mat_i].z; return true; }
     return false;
@@ -270,9 +290,8 @@ void traverseBVH_local(
             int triCount = -B;
             for (int j = triStart; j < triStart+triCount; ++j){
                 triTest++;
-                ivec4 tri1 = triangles[j*3+0];
-                ivec4 tri2 = triangles[j*3+1];
-                ivec4 tri3 = triangles[j*3+2];
+                ivec4 tri1, tri2, tri3;
+                getTriangle(j, tri1, tri2, tri3);
                 vec3 v0 = vertices[tri1.x].xyz;
                 vec3 v1 = vertices[tri2.x].xyz;
                 vec3 v2 = vertices[tri3.x].xyz;
@@ -375,10 +394,13 @@ bool hitTriangleUpdateWorld(
     float u, float v, float w,
     inout vec3 posW, inout vec3 dirWorld, inout vec3 invDirWorld,
     inout vec3 color, inout uint state){
+
     // advance to world hit
     posW += dirWorld * tWorld;
 
-    int material_i = triangles[triIndex*3].w;
+    int material_i = triangles[triIndex*3+0].w;
+    bool useTexture = triangles[triIndex*3+1].w == 1.0;
+    int textureID = triangles[triIndex*3+2].w;
 
     // local normal -> world normal
     vec3 nL = calculateNormalLocal(triIndex, u, v, w);
@@ -390,11 +412,11 @@ bool hitTriangleUpdateWorld(
     bool  diffOnly = (specP == -1.0);
     bool  isSpec   = randomValue(state) <= specP;
 
-    if (updateColor(color, material_i, isSpec, diffOnly)) return true;
+    if (updateColor(color, material_i, isSpec, diffOnly, useTexture, textureID, triIndex, u, v, w)) return true;
 
-    float sm   = (isSpec || diffOnly) ? colors[material_i].w : 0.0;
-    float trans    = glassLightSettings[material_i].x;
-    float ior      = glassLightSettings[material_i].y;
+    float sm    = (isSpec || diffOnly) ? colors[material_i].w : 0.0;
+    float trans = glassLightSettings[material_i].x;
+    float ior   = glassLightSettings[material_i].y;
 
     dirWorld   = calculateNewDirection(nW, dirWorld, sm, specP, trans, ior, state, color);
     invDirWorld = 1.0/dirWorld;

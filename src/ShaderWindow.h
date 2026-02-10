@@ -1,6 +1,7 @@
 //
 // Created by acroy on 11/9/2025.
 //
+#pragma once
 
 #if defined(_WIN32) || defined(_WIN64)
     #define PLATFORM_WINDOWS
@@ -20,6 +21,8 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+
+#include "Texture.h"
 #include "Uniform.h"
 
 using namespace glm;
@@ -145,6 +148,9 @@ class ShaderWindow {
     float timeSinceStart = 0;
     float deltaTime = 0;
 
+    int nextTextureUnit = 1;  // Start at 1, 0 is feedback buffer
+    int maxTextureUnits = 0;
+
     static void framebufferSizeCallback(GLFWwindow* /*w*/, int width, int height) {
         glViewport(0, 0, width, height);
     }
@@ -210,6 +216,8 @@ class ShaderWindow {
 
         timeSinceStart = static_cast<float>(glfwGetTime());
         previousTime = timeSinceStart;
+
+        glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &maxTextureUnits);
     }
 
     ~ShaderWindow() {
@@ -264,6 +272,18 @@ class ShaderWindow {
     template<typename T>
     Uniform<T> createUniform(const std::string& name) const {
         return Uniform<T>(shaderProgram, name);
+    }
+
+    Texture createTexture(const std::string& name) {
+        if (nextTextureUnit >= maxTextureUnits) std::cerr << "Texture units exceeded" << std::endl;
+
+        return {shaderProgram, name.c_str(), nextTextureUnit++};
+    }
+
+    Texture createTexture(const std::string& name, const std::string& path) {
+        if (nextTextureUnit >= maxTextureUnits) std::cerr << "Texture units exceeded" << std::endl;
+
+        return {shaderProgram, name.c_str(), nextTextureUnit++, path.c_str()};
     }
 
     [[nodiscard]] bool keyPressed(const int key) const {

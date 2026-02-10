@@ -480,8 +480,8 @@ Model::Model(const std::string &filename) {
 
     for (int i = 0; i < numTris; ++i) {
         triangles.emplace_back(tempTriangles[i*3+0].x, tempTriangles[i*3+0].y, tempTriangles[i*3+0].z, tempTriMatIndex[i]);
-        triangles.emplace_back(tempTriangles[i*3+1].x, tempTriangles[i*3+1].y, tempTriangles[i*3+1].z, tempTriMatIndex[i]);
-        triangles.emplace_back(tempTriangles[i*3+2].x, tempTriangles[i*3+2].y, tempTriangles[i*3+2].z, tempTriMatIndex[i]);
+        triangles.emplace_back(tempTriangles[i*3+1].x, tempTriangles[i*3+1].y, tempTriangles[i*3+1].z, 0);
+        triangles.emplace_back(tempTriangles[i*3+2].x, tempTriangles[i*3+2].y, tempTriangles[i*3+2].z, 0);
     }
 
     for (glm::vec4 tempColor : tempColors) {

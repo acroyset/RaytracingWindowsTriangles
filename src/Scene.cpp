@@ -144,7 +144,7 @@ Scene::Scene(const int samples, const int aa, const int bounceLim)
 
     createUniforms();
 
-    skyTex = LoadEnvLatLongTextureAuto("sky.png");
+    skyTexture = window.createTexture("skyTex", "sky.png");
 }
 
 void Scene::addModel(const std::string& filename, const vec3 position, const vec3 scale, const vec3 color, const float smoothness, const vec3 specularColor, const float specularProb, const float transparency, const float ior, const float emission) {
@@ -165,6 +165,15 @@ void Scene::addModel(
     const float ior,
     float emission) {
 
+    std::string texturePath = "wood.png";
+    bool useTexture = !model.texCoords.empty() && !texturePath.empty();
+    int textureID = int(textures.size());
+    if (useTexture) {
+        textures.emplace_back(window.createTexture("textures[" + std::to_string(textureID) + "]", texturePath));
+        textures.back().setWrap(TextureWrap::REPEAT, TextureWrap::REPEAT);
+    }
+
+
     if (specularColor == vec3(-1)) {specularColor = color; specularProb = 1;}
     int Toffset = int(triangles.size())/3;
     int Voffset = int(vertices.size());
@@ -175,10 +184,20 @@ void Scene::addModel(
 
     models.emplace_back(BBoffset);
 
-    for (ivec4 triangle : model.triangles) {
-        triangle += vec4(Voffset, TXoffset, Noffset, Coffset);
-        triangles.emplace_back(triangle);
+    for (int i = 0; i < model.triangles.size()/3; i++) {
+        ivec4 triangle1 = model.triangles[i*3+0];
+        ivec4 triangle2 = model.triangles[i*3+1];
+        ivec4 triangle3 = model.triangles[i*3+2];
+
+        triangle1 += vec4(Voffset, TXoffset, Noffset, Coffset);
+        triangle2 += vec4(Voffset, TXoffset, Noffset, useTexture);
+        triangle3 += vec4(Voffset, TXoffset, Noffset, useTexture ? textureID : 0);
+
+        triangles.emplace_back(triangle1);
+        triangles.emplace_back(triangle2);
+        triangles.emplace_back(triangle3);
     }
+
     for (vec3 vertex : model.vertices) {
         vertices.emplace_back(vertex, 0);
     }
@@ -272,7 +291,6 @@ void Scene::createUniforms() {
     uDebugView = window.createUniform<int>("debugView");
     uTriThreshold = window.createUniform<int>("triTh");
     uAABBThreshold =  window.createUniform<int>("aabbTh");
-    uEnvLatLong = window.createUniform<int>("uEnvLatLong");
     uEnvYaw = window.createUniform<float>("uEnvYaw");
 }
 
@@ -295,6 +313,13 @@ void Scene::setUniforms(bool moved) const {
     uDebugView.set(debugView);
     uTriThreshold.set(triTh);
     uAABBThreshold.set(aabbTh);
+    uEnvYaw.set(0.0f);
+
+    skyTexture.bind();
+
+    for (const Texture &tex : textures) {
+        tex.bind();
+    }
 }
 
 void Scene::set_ssbo() {
@@ -379,11 +404,6 @@ void Scene::updateFrame() {
 
     // --- Controls window ---
     if (hud) ImGuiRender(dt);
-
-    glActiveTexture(GL_TEXTURE0 + 1); // choose a slot
-    glBindTexture(GL_TEXTURE_2D, skyTex);
-    uEnvLatLong.set(1);
-    uEnvYaw.set(0.0f);
 
     window.render();
 
