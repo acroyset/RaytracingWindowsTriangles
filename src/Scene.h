@@ -34,8 +34,6 @@ class Scene {
 
     std::vector<mat4> modelTransforms;
     std::vector<mat4> modelInvTransforms;
-    int selectedModel = -1;
-    int selectedColor = -1;
 
     std::vector<vec3> modelPos;
     std::vector<vec3> modelRot;   // radians (x,y,z)
@@ -57,10 +55,28 @@ class Scene {
 
     bool lock;
 
+    int frameCount;
+    int sampleCount;
+    int samples;
+    int aa;
+    int bounceLim;
+
     vec3 skyColor = vec3(0.5,0.7,0.9);
     vec3 sunDir = normalize(vec3(0.867, 0.498, 0.01));
     float sunStrength = 200;
     vec3 sunColor = vec3(1, 0.93, 0.31);
+
+    bool debugView = false;
+    int triTh = 10;
+    int aabbTh = 150;
+
+    int selectedModel = -1;
+    int selectedColor = -1;
+
+    bool hud = true;
+
+    float fps = 0;
+    float smoothing = 0.9;
 
     SSBO<ivec4> ssboTriangles;
     SSBO<vec4> ssboVertices;
@@ -76,21 +92,6 @@ class Scene {
     SSBO<int> ssboModels;
     SSBO<mat4> ssboModelTransformations;
     SSBO<mat4> ssboModelInvTransformations;
-
-    bool debugView = false;
-    int triTh = 75;
-    int aabbTh = 400;
-
-    public:
-
-    int frameCount;
-    int sampleCount;
-    int width, height;
-    int samples;
-    int aa;
-    int bounceLim;
-
-    bool hud = true;
 
     Uniform<int> uNumModels;
     Uniform<vec3> uCameraPos;
@@ -109,11 +110,16 @@ class Scene {
     Uniform<int> uDebugView;
     Uniform<int> uTriThreshold;
     Uniform<int> uAABBThreshold;
+    Uniform<float> uTextureScales;
 
     Texture skyTexture;
     Uniform<float> uEnvYaw{};
 
     std::vector<Texture> textures;
+    std::array<float, 64> textureScales{};
+    int selectedTextureScale = -1;
+
+    public:
 
     Scene();
     Scene(int samples, int aa, int bounceLim);
@@ -125,8 +131,10 @@ class Scene {
     }
 
     void addModel(const std::string &filename, vec3 position, vec3 scale, vec3 color, float smoothness, vec3 specularColor = vec3(-1), float specularProb = 1, float transparency = 0, float ior = 1, float emission = 0);
+    void addModel(const std::string &filename, vec3 position, vec3 scale, const std::string &textureFilename, float smoothness, vec3 specularColor = vec3(-1), float specularProb = 1, float transparency = 0, float ior = 1, float emission = 0);
+    void addModel(Model& model, vec3 position, vec3 scale, const std::string &textureFilename, float smoothness, vec3 specularColor = vec3(-1), float specularProb = 1, float transparency = 0, float ior = 1, float emission = 0);
 
-    void addModel(Model& model, vec3 position, vec3 scale, vec3 color, float smoothness, vec3 specularColor = vec3(-1), float specularProb = 1, float transparency = 0, float ior = 1, float emission = 0);
+    void addModel(Model& model, vec3 position, vec3 scale, vec3 color, float smoothness, vec3 specularColor = vec3(-1), float specularProb = 1, float transparency = 0, float ior = 1, float emission = 0, const std::string& textureFilename = "");
 
     [[nodiscard]] int getNumBVHNodes() const;
 
@@ -142,7 +150,7 @@ class Scene {
 
     void updateFrame();
 
-    void ImGuiRender(float dt);
+    void ImGuiRender();
 
 
     int numTriBelow(int index);
@@ -153,8 +161,14 @@ class Scene {
 
     void displayBVH(int index, std::string prefix);
 
-    bool open() {
+    bool open() const {
         return window.open();
+    }
+
+    void updateFPS(const float dt)
+    {
+        float current = 1.0f / dt;
+        fps = smoothing * fps + (1.0f - smoothing) * current;
     }
 };
 

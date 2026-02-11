@@ -1,4 +1,4 @@
-#version 430 core
+
 out vec4 FragColor;
 
 in vec2 fragCoord; // [0,1]
@@ -32,6 +32,7 @@ uniform int   bounceLim;
 uniform sampler2D previousFrame;
 
 uniform sampler2D textures[64];
+uniform float textureScales[64];
 
 uniform vec3  skyColor;
 uniform vec3  sunDir;
@@ -51,7 +52,63 @@ int   stack[MAX_STACK_SIZE];
 float iorStack[16];
 int   iorSize = 1;
 
-/* ========================= RNG ========================= */
+struct Triangle{
+    vec3 v1, v2, v3;
+    vec2 t1, t2, t3;
+    vec3 n1, n2, n3;
+    int matID;
+    bool useTexture;
+    int textureID;
+    bool useNormals;
+};
+
+Triangle createTri(int triIndex){
+    Triangle tri;
+
+    ivec4 idx1 = triangles[triIndex*3+0];
+    ivec4 idx2 = triangles[triIndex*3+1];
+    ivec4 idx3 = triangles[triIndex*3+2];
+
+    tri.matID = int(idx1.w);
+    tri.useTexture = idx2.w == 1.0;
+    tri.textureID = int(idx3.w);
+    tri.useNormals = idx1.z != -1 && idx2.z != -1 && idx3.z != -1;
+
+    tri.v1 = vertices[idx1.x].xyz;
+    tri.v2 = vertices[idx2.x].xyz;
+    tri.v3 = vertices[idx3.x].xyz;
+
+    if (tri.useTexture){
+        tri.t1 = texCoords[idx1.y];
+        tri.t2 = texCoords[idx2.y];
+        tri.t3 = texCoords[idx3.y];
+    }
+
+    if (tri.useNormals){
+        tri.n1 = normals[idx1.z].xyz;
+        tri.n2 = normals[idx2.z].xyz;
+        tri.n3 = normals[idx3.z].xyz;
+    }
+
+    return tri;
+}
+
+struct HitInfo{
+    bool hit;
+    Triangle tri;
+    int triID;
+    int modelID;
+    float t;
+    float u, v, w;
+};
+
+struct Ray{
+    vec3 pos;
+    vec3 dir;
+    vec3 invDir;
+};
+
+// RNG
 float randomValue(inout uint state){
     state = state * 747796405u + 2891336453u;
     uint result = ((state >> ((state >> 28) + 4u)) ^ state) * 277803737u;
@@ -92,7 +149,7 @@ uint pixelFrameSeed(uvec2 pix, uint frame) {
     return hash_u32(v);
 }
 
-/* ========================= Helpers ========================= */
+// Helpers
 float schlick(float cos_theta, float n1, float n2) {
     if (abs(n1-n2) < 1e-3) return 0.0;
     float r0 = (n1-n2)/(n1+n2); r0 *= r0;
@@ -122,25 +179,25 @@ void getTriangle(int triIndex, out ivec4 t1, out ivec4 t2, out ivec4 t3){
     t3 = triangles[3*triIndex+2];
 }
 
-/* ========================= Intersections ========================= */
-bool rayTriangleIntersect(vec3 rayOrigin, vec3 rayDir, vec3 v0, vec3 v1, vec3 v2, out float t, out float u, out float v){
+// Intersections
+bool rayTriangleIntersect(Ray ray, vec3 v0, vec3 v1, vec3 v2, out float t, out float u, out float v){
     const float EPS = 1e-10;
     vec3 e1 = v1 - v0;
     vec3 e2 = v2 - v0;
-    vec3 p  = cross(rayDir, e2);
+    vec3 p  = cross(ray.dir, e2);
     float det = dot(e1, p);
     if (abs(det) < EPS) return false;
     float invDet = 1.0/det;
-    vec3 tv = rayOrigin - v0;
+    vec3 tv = ray.pos - v0;
     u = dot(tv, p) * invDet; if (u < 0.0 || u > 1.0) return false;
     vec3 q = cross(tv, e1);
-    v = dot(rayDir, q) * invDet; if (v < 0.0 || (u+v) > 1.0) return false;
+    v = dot(ray.dir, q) * invDet; if (v < 0.0 || (u+v) > 1.0) return false;
     t = dot(e2, q) * invDet;
     return t > 0.0005;
 }
-float intersectAABB(vec3 rayOrigin, vec3 invRayDir, vec3 bmin, vec3 bmax){
-    vec3 t0 = (bmin - rayOrigin) * invRayDir;
-    vec3 t1 = (bmax - rayOrigin) * invRayDir;
+float intersectAABB(Ray ray, vec3 bmin, vec3 bmax){
+    vec3 t0 = (bmin - ray.pos) * ray.invDir;
+    vec3 t1 = (bmax - ray.pos) * ray.invDir;
     vec3 tn = min(t0,t1);
     vec3 tf = max(t0,t1);
     float tmin = max(max(tn.x, tn.y), tn.z);
@@ -148,27 +205,19 @@ float intersectAABB(vec3 rayOrigin, vec3 invRayDir, vec3 bmin, vec3 bmax){
     return (tmax >= max(tmin,0.0)) ? tmin : 1e35;
 }
 
-/* ======= NORMALS (LOCAL -> WORLD) ======= */
-vec3 calculateNormalLocal(int triIndex, float u, float v, float w){
-    ivec4 tri1, tri2, tri3;
-    getTriangle(triIndex, tri1, tri2, tri3);
-    if (tri1.z != -1 && tri2.z != -1 && tri3.z != -1){
-        vec3 na = normals[tri1.z].xyz;
-        vec3 nb = normals[tri2.z].xyz;
-        vec3 nc = normals[tri3.z].xyz;
-        return normalize(na*w + nb*u + nc*v);
+// NORMALS (LOCAL -> WORLD)
+vec3 calculateNormalLocal(Triangle tri, float u, float v, float w){
+    if (tri.useNormals){
+        return normalize(tri.n1*w + tri.n2*u + tri.n3*v);
     }
-    vec3 v0 = vertices[tri1.x].xyz;
-    vec3 v1 = vertices[tri2.x].xyz;
-    vec3 v2 = vertices[tri3.x].xyz;
-    return normalize(cross(v1-v0, v2-v0));
+    return normalize(cross(tri.v2-tri.v1, tri.v3-tri.v1));
 }
-vec3 toWorldNormal(vec3 nLocal, mat4 M){
-    mat3 N = transpose(inverse(mat3(M)));
-    return normalize(N * nLocal);
+vec3 toWorldNormal(vec3 nLocal, mat4 invMat) {
+    mat3 normalMat = transpose(mat3(invMat));
+    return normalize(normalMat * nLocal);
 }
 
-/* ========================= Environment ========================= */
+// Environment
 vec3 sampleSky(vec3 dir){
     dir = rotY(uEnvYaw) * normalize(dir);
     vec2 uv = seamSafeUV(dirToLatLongUV(dir));
@@ -180,7 +229,7 @@ vec3 getEnviormentLight(vec3 dir){
     return sky + sunColor * s;
 }
 
-/* ========================= BRDF / Directions ========================= */
+// BRDF / Directions
 vec3 calculateRandDir(vec3 n, inout uint st){ return normalize(randPointSphere(st) + n); }
 vec3 calculateReflectDir(vec3 n, vec3 d){ return d - n*2.0*dot(d,n); }
 vec3 calculateOpaqueDir(vec3 n, vec3 d, float sm, inout uint st){
@@ -231,51 +280,98 @@ vec3 calculateNewDirection(vec3 normal, vec3 dir, float smoothness, float specul
     return calculateRefractionDir(normal, dir, smoothness, ior, specularProb, state, color);
     return calculateOpaqueDir(normal, dir, smoothness, state);
 }
-vec3 getTextureColor(int id, int triIndex, float u, float v, float w){
-    ivec4 tri1, tri2, tri3;
-    getTriangle(triIndex, tri1, tri2, tri3);
 
-    vec2 t1 = texCoords[tri1.y];
-    vec2 t2 = texCoords[tri2.y];
-    vec2 t3 = texCoords[tri3.y];
-    vec2 texCoord = t1*w + t2*u + t3*v;
+// Material / Hit
 
-    texCoord *= 16;
-    return texture(textures[id], texCoord).xyz;
+vec2 getTexutreUV(HitInfo hitInfo, mat4 mat){
+    Triangle tri = hitInfo.tri;
+
+    float eps = 1e-6;
+    bool tileMoreWhenScaledUp = true;
+
+    vec2 uv = tri.t1*hitInfo.w + tri.t2*hitInfo.u + tri.t3*hitInfo.v;
+
+    // 2) Build triangle tangent/bitangent from geometry + UVs (object/local space)
+    vec3 e1 = tri.v2 - tri.v1;
+    vec3 e2 = tri.v3 - tri.v1;
+
+    vec2 duv1 = tri.t2 - tri.t1;
+    vec2 duv2 = tri.t3 - tri.t1;
+
+    float det = duv1.x * duv2.y - duv1.y * duv2.x;
+    if (abs(det) < eps) return uv;
+
+    float r = 1.0f / det;
+    vec3 T = (e1 * duv2.y - e2 * duv1.y) * r; // +U direction
+    vec3 B = (e2 * duv1.x - e1 * duv2.x) * r; // +V direction
+
+    float tLen = length(T);
+    float bLen = length(B);
+    if (tLen < eps || bLen < eps) return uv;
+
+    vec3 Tn = T / tLen;
+    vec3 Bn = B / bLen;
+
+    // 3) Measure stretch along U/V directions using the linear part of the model matrix
+    mat3 M = mat3(mat); // drops translation
+
+    float sU = length(M * Tn);
+    float sV = length(M * Bn);
+
+    // Guard against numerical issues
+    sU = (sU < eps) ? 1.0f : sU;
+    sV = (sV < eps) ? 1.0f : sV;
+
+    // 4) Apply scaling to UVs
+    vec2 scaleUV = vec2(sU, sV);
+
+    if (tileMoreWhenScaledUp) {
+        // scale object up => UV grows => more tiling
+        return uv * scaleUV;
+    } else {
+        // scale object up => UV shrinks => texture stretches with object
+        return uv / scaleUV;
+    }
+}
+vec3 getTextureColor(HitInfo hitInfo, mat4 mat){
+    vec2 texCoord = getTexutreUV(hitInfo, mat);
+
+    texCoord *= textureScales[hitInfo.tri.textureID];
+
+    return texture(textures[hitInfo.tri.textureID], texCoord).xyz;
 }
 
-/* ========================= Material / Hit ========================= */
-bool updateColor(inout vec3 color, int mat_i, bool isSpecular, bool diffuseOnly, bool useTexture, int textureID, int triIndex, float u, float v, float w){
-    vec3 diffuseColor = useTexture ? getTextureColor(textureID, triIndex, u, v, w) : colors[mat_i].xyz;
-    vec3 selected = (isSpecular && !diffuseOnly) ? specularColors[mat_i].xyz : diffuseColor;
+bool updateColor(HitInfo hitInfo, inout vec3 color, bool isSpecular, bool diffuseOnly, mat4 mat){
+    int matID = hitInfo.tri.matID;
+
+    vec3 diffuseColor = hitInfo.tri.useTexture ? getTextureColor(hitInfo, mat) : colors[matID].xyz;
+
+    vec3 selected = (isSpecular && !diffuseOnly) ? specularColors[matID].xyz : diffuseColor;
+
     color *= selected;
-    if (glassLightSettings[mat_i].z > 0.0) { color *= glassLightSettings[mat_i].z; return true; }
+
+    if (glassLightSettings[matID].z > 0.0) { color *= glassLightSettings[matID].z; return true; }
+
     return false;
 }
 
-/* ========================= BVH TRAVERSAL (RAY -> LOCAL) ========================= */
-
-/* Transform world ray (origin,dir) by inverse(M) to local; compute invdir. */
-void worldToLocalRay(vec3 rayOriginWorld, vec3 rayDirWorld, mat4 invM, out vec3 rayOriginLocal, out vec3 rayDirLocal, out vec3 invRayDirLocal){
-    rayOriginLocal = (invM * vec4(rayOriginWorld, 1.0)).xyz;
-    rayDirLocal    = (invM * vec4(rayDirWorld, 0.0)).xyz; // linear part only
-    invRayDirLocal = 1.0 / rayDirLocal;
+// Transform world ray (origin,dir) by inverse(M) to local; compute invdir.
+void worldToLocalRay(Ray ray, mat4 invM, out Ray rayLocal){
+    rayLocal.pos    = (invM * vec4(ray.pos, 1.0)).xyz;
+    rayLocal.dir    = (invM * vec4(ray.dir, 0.0)).xyz; // linear part only
+    rayLocal.invDir = 1.0 / rayLocal.dir;
 }
 
-/* Traverse one model’s BVH entirely in LOCAL space.
-   Returns the best WORLD distance and indices via out params. */
-void traverseBVH_local(
-    int nodeOffset,
-    vec3 rayOriginWorld, vec3 rayDirWorld,
-    mat4 M, mat4 invM,
-    inout float best_t_world,
-    inout float best_u, inout float best_v,
-    inout int triTest, inout int aabbTest,
-    inout int best_tri_i, inout int best_model_i,
-    int modelIndex){
+// Traverse one model’s BVH entirely in LOCAL space. Returns the best WORLD distance and indices via out params.
+HitInfo traverseBVH_local(int nodeOffset, Ray ray, mat4 M, mat4 invM, inout int triTest, inout int aabbTest){
 
-    vec3 rayOriginLocal, rayDirLocal, invRayDirLocal;
-    worldToLocalRay(rayOriginWorld, rayDirWorld, invM, rayOriginLocal, rayDirLocal, invRayDirLocal);
+    HitInfo hitInfo;
+    hitInfo.hit = false;
+
+    float bestT = 1e30;
+
+    Ray rayLocal;
+    worldToLocalRay(ray, invM, rayLocal);
 
     int sp = 0;
     stack[sp++] = nodeOffset;
@@ -296,18 +392,22 @@ void traverseBVH_local(
                 vec3 v1 = vertices[tri2.x].xyz;
                 vec3 v2 = vertices[tri3.x].xyz;
                 float tL, u, v;
-                if (!rayTriangleIntersect(rayOriginLocal, rayDirLocal, v0, v1, v2, tL, u, v)) continue;
+                if (!rayTriangleIntersect(rayLocal, v0, v1, v2, tL, u, v)) continue;
 
                 // local hit -> world hit distance
-                vec3 hitL = rayOriginLocal + tL*rayDirLocal;
+                vec3 hitL = rayLocal.pos + tL*rayLocal.dir;
                 vec3 hitW = (M * vec4(hitL, 1.0)).xyz;
-                float tW = length(hitW - rayOriginWorld);
+                float tW = length(hitW - ray.pos);
 
-                if (tW < best_t_world){
-                    best_t_world = tW;
-                    best_tri_i   = j;
-                    best_model_i = modelIndex;
-                    best_u = u; best_v = v;
+                if (tL < bestT){
+                    hitInfo.hit = true;
+                    hitInfo.triID = j;
+                    hitInfo.t = tW;
+                    hitInfo.u = u;
+                    hitInfo.v = v;
+                    hitInfo.w = 1-u-v;
+
+                    bestT = tL;
                 }
             }
         } else {
@@ -317,8 +417,8 @@ void traverseBVH_local(
             vec3 Bmax = boundingBoxMax[B].xyz;
 
             aabbTest += 2;
-            float dA = intersectAABB(rayOriginLocal, invRayDirLocal, Amin, Amax);
-            float dB = intersectAABB(rayOriginLocal, invRayDirLocal, Bmin, Bmax);
+            float dA = intersectAABB(rayLocal, Amin, Amax);
+            float dB = intersectAABB(rayLocal, Bmin, Bmax);
 
             bool nearA = (dA <= dB);
             float dNear = nearA ? dA : dB;
@@ -326,44 +426,45 @@ void traverseBVH_local(
             int   iNear = nearA ? A  : B;
             int   iFar  = nearA ? B  : A;
 
-            // prune by converting local distance approx to world scale
-            float scaleApprox = length((invM * vec4(rayDirWorld,0.0)).xyz);
-            float worldNear   = dNear * scaleApprox;
-            float worldFar    = dFar  * scaleApprox;
-
-            if (worldNear < best_t_world) stack[sp++] = iNear;
-            if (worldFar < best_t_world && dFar < 1e29) stack[sp++] = iFar;
+            if (dFar < bestT && dFar < 1e29) stack[sp++] = iFar;
+            if (dNear < bestT)               stack[sp++] = iNear;
 
             if (sp > MAX_STACK_SIZE) break;
         }
     }
+
+    return hitInfo;
 }
 
-/* Find best triangle across all models; all traversal is in LOCAL; returns WORLD t. */
-float findBestTri_world(
-    vec3 rayOriginWorld, vec3 rayDirWorld,
-    out int best_tri_i, out int best_model_i,
-    out int triTest, out int aabbTest,
-    out float best_u, out float best_v, out float best_w){
-    best_tri_i = -1;
-    best_model_i = -1;
+// Find best triangle across all models; all traversal is in LOCAL; returns HitInfo.
+HitInfo findBestTri_world(Ray ray, out int triTest, out int aabbTest){
+
+    HitInfo hitInfo;
+    hitInfo.hit = false;
+    hitInfo.t = 1e30;
+
     triTest = 0; aabbTest = 0;
-    float best_tW = 1e30;
 
     for (int i=0;i<numModels;i++){
         mat4 M    = modelTransformations[i];
         mat4 invM = modelInvTransformations[i];
-        traverseBVH_local(models[i], rayOriginWorld, rayDirWorld, M, invM,
-        best_tW, best_u, best_v,
-        triTest, aabbTest,
-        best_tri_i, best_model_i,
-        i);
+        HitInfo hit = traverseBVH_local(
+            models[i], ray, M, invM,
+            triTest, aabbTest
+        );
+
+        if (hit.hit && hit.t < hitInfo.t){
+            hitInfo = hit;
+            hitInfo.modelID = i;
+        }
     }
-    best_w = 1.0 - best_u - best_v;
-    return best_tW;
+
+    hitInfo.tri = createTri(hitInfo.triID);
+
+    return hitInfo;
 }
 
-/* ========================= Camera / Path ========================= */
+// Camera / Path
 vec3 calculateInitialDir(int aaCycle, vec2 screenCoord){
     float xi = float(aaCycle % aa);
     float yi = float(aaCycle) / float(aa);
@@ -379,7 +480,7 @@ vec3 calculateInitialDir(int aaCycle, vec2 screenCoord){
     return normalize(d);
 }
 
-/* ========================= Russian Roulette ========================= */
+// Russian Roulette
 bool russianRoulet(inout vec3 color, inout uint state){
     float p = min(max(max(color.r,color.g),color.b)*5.0, 1.0);
     if (randomValue(state) >= p) return true;
@@ -387,68 +488,66 @@ bool russianRoulet(inout vec3 color, inout uint state){
     return false;
 }
 
-/* ========================= Trace / Shading ========================= */
+// Trace / Shading
+bool hitTriangleUpdateWorld(HitInfo hitInfo, inout Ray ray, inout vec3 color, inout uint state){
 
-bool hitTriangleUpdateWorld(
-    int triIndex, int modelIndex, float tWorld,
-    float u, float v, float w,
-    inout vec3 posW, inout vec3 dirWorld, inout vec3 invDirWorld,
-    inout vec3 color, inout uint state){
+    float u = hitInfo.u;
+    float v = hitInfo.v;
+    float w = hitInfo.w;
+
+    mat4 mat     = modelTransformations[hitInfo.modelID];
+    mat4 invMat  = modelInvTransformations[hitInfo.modelID];
+
+    Triangle tri = hitInfo.tri;
 
     // advance to world hit
-    posW += dirWorld * tWorld;
-
-    int material_i = triangles[triIndex*3+0].w;
-    bool useTexture = triangles[triIndex*3+1].w == 1.0;
-    int textureID = triangles[triIndex*3+2].w;
+    ray.pos += ray.dir * hitInfo.t;
 
     // local normal -> world normal
-    vec3 nL = calculateNormalLocal(triIndex, u, v, w);
-    mat4 M  = modelTransformations[modelIndex];
-    vec3 nW = toWorldNormal(nL, M);
-    if (dot(nW, dirWorld) > 0.0) nW = -nW;
+    vec3 nL = calculateNormalLocal(tri, u, v, w);
+    vec3 nW = toWorldNormal(nL, invMat);
 
-    float specP   = specularColors[material_i].w;
+    if (dot(nW, ray.dir) > 0.0) nW = -nW;
+
+    float specP   = specularColors[tri.matID].w;
     bool  diffOnly = (specP == -1.0);
     bool  isSpec   = randomValue(state) <= specP;
 
-    if (updateColor(color, material_i, isSpec, diffOnly, useTexture, textureID, triIndex, u, v, w)) return true;
+    if (updateColor(hitInfo, color, isSpec, diffOnly, mat)) return true;
 
-    float sm    = (isSpec || diffOnly) ? colors[material_i].w : 0.0;
-    float trans = glassLightSettings[material_i].x;
-    float ior   = glassLightSettings[material_i].y;
+    float sm    = (isSpec || diffOnly) ? colors[tri.matID].w : 0.0;
+    float trans = glassLightSettings[tri.matID].x;
+    float ior   = glassLightSettings[tri.matID].y;
 
-    dirWorld   = calculateNewDirection(nW, dirWorld, sm, specP, trans, ior, state, color);
-    invDirWorld = 1.0/dirWorld;
+    ray.dir   = calculateNewDirection(nW, ray.dir, sm, specP, trans, ior, state, color);
+    ray.invDir = 1.0/ray.dir;
     return false;
 }
 
-bool hitFloorUpdate(inout vec3 pos, inout vec3 dir, inout vec3 invDir, inout vec3 color, inout uint state){
+bool hitFloorUpdate(inout Ray ray, inout vec3 color, inout uint state){
     float floorY = -1000.0;
-    float t = (floorY - pos.y)/dir.y;
+    float t = (floorY - ray.pos.y)/ray.dir.y;
     if (t > 0.01 && t < 1e7){
-        pos += dir*t;
+        ray.pos += ray.dir*t;
         vec3 n = vec3(0,1,0);
         color *= vec3(0.9);
-        dir = calculateNewDirection(n, dir, 0.0, 0.0, 0.0, 1.0, state, color);
-        invDir = 1.0/dir;
+        ray.dir = calculateNewDirection(n, ray.dir, 0.0, 0.0, 0.0, 1.0, state, color);
+        ray.invDir = 1.0/ray.dir;
     } else {
-        color *= getEnviormentLight(dir);
+        color *= getEnviormentLight(ray.dir);
         return true;
     }
     return false;
 }
 
-vec3 trace(vec3 pos, vec3 dir, inout uint state){
+vec3 trace(Ray ray, inout uint state){
     iorStack[0] = 1.0; iorSize = 1;
-    vec3 invDir = 1.0/dir;
     vec3 color  = vec3(1.0);
 
     for (int i=0;i<bounceLim;i++){
-        int triTest, aabbTest, tri_i, model_i;
-        float bu, bv, bw;
+        int triTest, aabbTest;
 
-        float tW = findBestTri_world(pos, dir, tri_i, model_i, triTest, aabbTest, bu, bv, bw);
+        HitInfo hitInfo = findBestTri_world(ray, triTest, aabbTest);
 
         if (debugView) {
 
@@ -457,12 +556,12 @@ vec3 trace(vec3 pos, vec3 dir, inout uint state){
             return heatmap;
         }
 
-        if (tri_i != -1){
-            if (hitTriangleUpdateWorld(tri_i, model_i, tW, bu, bv, bw, pos, dir, invDir, color, state)) break;
-        } else if (dir.y < 0.0){
-            if (hitFloorUpdate(pos, dir, invDir, color, state)) break;
+        if (hitInfo.hit){
+            if (hitTriangleUpdateWorld(hitInfo, ray, color, state)) break;
+        } else if (ray.dir.y < 0.0){
+            if (hitFloorUpdate(ray, color, state)) break;
         } else {
-            color *= getEnviormentLight(dir);
+            color *= getEnviormentLight(ray.dir);
             break;
         }
 
@@ -472,7 +571,7 @@ vec3 trace(vec3 pos, vec3 dir, inout uint state){
     return color;
 }
 
-/* ========================= Main ========================= */
+// Main
 void main(){
     float aspect = float(resolution.x)/float(resolution.y);
     vec2  screen = vec2((2.0*fragCoord.x-1.0)*aspect, 2.0*fragCoord.y-1.0);
@@ -484,9 +583,12 @@ void main(){
     int aaCycle = frameCount % (aa*aa);
 
     for (int s=0; s<samples; ++s){
-        vec3 ro = cameraPos;
-        vec3 rd = calculateInitialDir(aaCycle, screen);
-        total += trace(ro, rd, state);
+        Ray ray;
+        ray.pos = cameraPos;
+        ray.dir = calculateInitialDir(aaCycle, screen);
+        ray.invDir = 1/ray.dir;
+
+        total += trace(ray, state);
         aaCycle = (aaCycle+1) % (aa*aa);
     }
 

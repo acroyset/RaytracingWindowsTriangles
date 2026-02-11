@@ -14,9 +14,7 @@ void setBasisVectors(const vec3& forward, vec3& up, vec3& right) {
     up = normalize(cross(right, forward));
 }
 
-mat4 composeTransform(const vec3& position,
-                           const vec3& rotation, // Euler angles in radians
-                           const vec3& scale) {
+mat4 composeTransform(const vec3& position, const vec3& rotation, const vec3& scale) {
     mat4 I(1.0f);
 
     // Scale
@@ -35,8 +33,7 @@ mat4 composeTransform(const vec3& position,
     return T * R * S;
 }
 
-inline bool DragFloat3(const char* label, vec3& v,
-                       float speed = 0.01f, float min = 0.0f, float max = 0.0f) {
+inline bool DragFloat3(const char* label, vec3& v, float speed = 0.01f, float min = 0.0f, float max = 0.0f) {
     return ImGui::DragFloat3(label, value_ptr(v), speed, min, max);
 }
 inline bool ColorEdit3(const char* label, vec3& v) {
@@ -108,23 +105,18 @@ Scene::Scene() {
     aa = 1;
     bounceLim = 8;
 
-    width = 2560;
-    height = 1440;
-
     frameCount = 0;
     sampleCount = 0;
 
     lock = false;
+
+    textureScales.fill(1.0f);
 }
 
 Scene::Scene(const int samples, const int aa, const int bounceLim)
     : samples(samples), aa(aa), bounceLim(bounceLim), frameCount(0), sampleCount(0){
 
     window.setFeedbackMode(true);
-    unsigned int width = window.size().x;
-    unsigned int height = window.size().y;
-    this->width = width;
-    this->height = height;
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -144,32 +136,31 @@ Scene::Scene(const int samples, const int aa, const int bounceLim)
 
     createUniforms();
 
-    skyTexture = window.createTexture("skyTex", "sky.png");
+    skyTexture = window.createTexture("skyTex", "assets/textures/sky.png");
+
+    textureScales.fill(1.0f);
 }
 
 void Scene::addModel(const std::string& filename, const vec3 position, const vec3 scale, const vec3 color, const float smoothness, const vec3 specularColor, const float specularProb, const float transparency, const float ior, const float emission) {
     Model model(filename);
 
-    addModel(model, position, scale, color, smoothness, specularColor, specularProb, transparency, ior, emission);
+    addModel(model, position, scale, color, smoothness, specularColor, specularProb, transparency, ior, emission, "");
+}
+void Scene::addModel(const std::string& filename, const vec3 position, const vec3 scale, const std::string &textureFilename, const float smoothness, const vec3 specularColor, const float specularProb, const float transparency, const float ior, const float emission) {
+    Model model(filename);
+
+    addModel(model, position, scale, vec3(0), smoothness, specularColor, specularProb, transparency, ior, emission, textureFilename);
 }
 
-void Scene::addModel(
-    Model& model,
-    vec3 position,
-    vec3 scale,
-    vec3 color,
-    float smoothness,
-    vec3 specularColor,
-    float specularProb,
-    const float transparency,
-    const float ior,
-    float emission) {
+void Scene::addModel(Model& model, const vec3 position, const vec3 scale, const std::string &textureFilename, const float smoothness, const vec3 specularColor, const float specularProb, const float transparency, const float ior, const float emission) {
+    addModel(model, position, scale, vec3(0), smoothness, specularColor, specularProb, transparency, ior, emission, textureFilename);
+}
+void Scene::addModel(Model& model, vec3 position, vec3 scale, vec3 color, float smoothness, vec3 specularColor, float specularProb, const float transparency, const float ior, float emission, const std::string& textureFilename) {
 
-    std::string texturePath = "wood.png";
-    bool useTexture = !model.texCoords.empty() && !texturePath.empty();
+    bool useTexture = !model.texCoords.empty() && !textureFilename.empty();
     int textureID = int(textures.size());
     if (useTexture) {
-        textures.emplace_back(window.createTexture("textures[" + std::to_string(textureID) + "]", texturePath));
+        textures.emplace_back(window.createTexture("textures[" + std::to_string(textureID) + "]", textureFilename));
         textures.back().setWrap(TextureWrap::REPEAT, TextureWrap::REPEAT);
     }
 
@@ -251,6 +242,7 @@ void Scene::addModel(
 
     size_t slash = model.filename.find_last_of("/\\");
     std::string stem = (slash == std::string::npos) ? model.filename : model.filename.substr(slash + 1);
+    stem = stem.erase(stem.find_last_of('.'), std::string::npos);
 
     int count = 0;
     for (const std::string& i : modelLabels) {
@@ -292,21 +284,24 @@ void Scene::createUniforms() {
     uTriThreshold = window.createUniform<int>("triTh");
     uAABBThreshold =  window.createUniform<int>("aabbTh");
     uEnvYaw = window.createUniform<float>("uEnvYaw");
+    uTextureScales = window.createUniform<float>("textureScales");
 }
 
 void Scene::setUniforms(bool moved) const {
+
+    bool lowSettings = moved && fps < 60.0f;
 
     uNumModels.set(int(models.size()));
     uCameraPos.set(cameraPos);
     uCameraForward.set(camForward);
     uCameraUp.set(camUp);
     uCameraRight.set(camRight);
-    uResolution.set({width, height});
+    uResolution.set(window.size());
     uFrameCount.set(frameCount);
     uNumNodes.set(getNumBVHNodes());
-    uSamples.set(moved ? 1 : samples);
+    uSamples.set(lowSettings ? 1 : samples);
     uAA.set(aa);
-    uBounceLim.set(moved ? 3 : bounceLim);
+    uBounceLim.set(lowSettings ? 3 : bounceLim);
     uSkyColor.set(skyColor);
     uSunDir.set(sunDir);
     uSunColor.set(sunColor*sunStrength);
@@ -314,6 +309,7 @@ void Scene::setUniforms(bool moved) const {
     uTriThreshold.set(triTh);
     uAABBThreshold.set(aabbTh);
     uEnvYaw.set(0.0f);
+    uTextureScales.setArray(textureScales.data(), 64);
 
     skyTexture.bind();
 
@@ -344,10 +340,10 @@ void Scene::set_ssbo() {
 bool Scene::inputHandling(float speed, float sensitivity, float dt) {
     bool moved = false;
     vec2 mousePos = window.getMousePos();
-    vec2 center = vec2(float(width)/2, float(height)/2);
+    vec2 center = vec2(window.size())/2.0f;
     vec2 delta = vec2(mousePos.x - center.x, -(mousePos.y - center.y));
     if (delta.x*delta.x + delta.y*delta.y > 0 and !lock) {
-        delta *= 2.0f/float(height) * sensitivity;
+        delta *= 2.0f/float(window.size().y) * sensitivity;
         camForward += delta.x * camRight + delta.y * camUp;
         camForward = normalize(camForward);
         moved = true;
@@ -390,6 +386,7 @@ void Scene::updateFrame() {
     }
 
     float dt = window.getDeltaTime();
+    updateFPS(dt);
 
     const bool moved = inputHandling(500, 2, dt);
     if (moved) {
@@ -403,7 +400,7 @@ void Scene::updateFrame() {
     sampleCount += samples;
 
     // --- Controls window ---
-    if (hud) ImGuiRender(dt);
+    if (hud) ImGuiRender();
 
     window.render();
 
@@ -417,7 +414,7 @@ void Scene::updateFrame() {
     glfwPollEvents();
 }
 
-void Scene::ImGuiRender(float dt) {
+void Scene::ImGuiRender() {
 
     bool ui_resetAccum = false;
 
@@ -537,24 +534,38 @@ void Scene::ImGuiRender(float dt) {
     }
 
     ImGui::Separator();
+    ImGui::Text("Texture Scales");
+
+    // If you want to show only used texture IDs, you can clamp this to textures.size()
+    int maxId = 63;
+    if (!textures.empty()) maxId = std::min(63, (int)textures.size() - 1);
+
+    // Choose which texture scale to edit
+    ImGui::SliderInt("Texture ID", &selectedTextureScale, 0, maxId);
+
+    // Edit that one
+    float& s = textureScales[selectedTextureScale];
+    ui_resetAccum |= ImGui::DragFloat("Scale", &s, 0.005f, 0.0f, 2.0f, "%.4f");
+
+    ImGui::Separator();
 
     ImGui::Text("Samples: %d", sampleCount);
     ImGui::Text("Frame: %d", frameCount);
 
     ImGui::Separator();
 
-    ImGui::Text("FPS: %.2f", 1.0f / dt);
-    ImGui::Text("Frame Time (ms): %.2f", dt*1000.0f);
+    ImGui::Text("FPS: %.2f", fps);
+    ImGui::Text("Frame Time (ms): %.2f", 1/fps*1000.0f);
 
     ImGui::Separator();
 
-    ImGui::Text("Width: %d", width);
-    ImGui::Text("Height: %d", height);
+    ImGui::Text("Width: %d", window.size().x);
+    ImGui::Text("Height: %d", window.size().y);
 
     ui_resetAccum |= ImGui::Checkbox("Debug View" , &debugView);
     if (debugView) {
-        ui_resetAccum |= ImGui::SliderInt("Triangle Threshhold", &triTh, 1, 500);
-        ui_resetAccum |= ImGui::SliderInt("AABB Threshhold", &aabbTh, 1, 1000);
+        ui_resetAccum |= ImGui::SliderInt("Triangle Threshhold", &triTh, 1, 100);
+        ui_resetAccum |= ImGui::SliderInt("AABB Threshhold", &aabbTh, 1, 500);
     }
 
     ImGui::Separator();

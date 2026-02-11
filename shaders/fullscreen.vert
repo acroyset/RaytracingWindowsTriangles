@@ -1,4 +1,4 @@
-#version 430 core
+
 layout(location = 0) in vec2 aPos;
 
 out vec2 fragCoord; // Pass to fragment shader
