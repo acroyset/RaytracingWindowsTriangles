@@ -353,14 +353,15 @@ const std::string& nfilename,
                         }
                     }
 
-                    triangles.emplace_back(v, vt, vn);
                     vertexCount++;
 
                     if (vertexCount >= 4) {
-                        triangles.push_back(triangles[triangles.size() - vertexCount]);
-                        triangles.push_back(triangles[triangles.size() - 3]);
+                        triangles.push_back(triangles[triangles.size() - vertexCount + 1]);
+                        triangles.push_back(triangles[triangles.size() - 2]);
                         tempTriMatIndex.push_back(currentMaterial);
                     }
+
+                    triangles.emplace_back(v, vt, vn);
 
                     // Skip to next vertex or end of line
                     while (ptr < end && *ptr != ' ' && *ptr != '\t' && *ptr != '\n' && *ptr != '\r') {
@@ -479,6 +480,8 @@ Model::Model(const std::string &filename) {
     }
 
     for (int i = 0; i < numTris; ++i) {
+
+        std::cout << tempTriangles[i*3+0].x << " " << tempTriangles[i*3+1].x << " " << tempTriangles[i*3+2].x << std::endl;
         triangles.emplace_back(tempTriangles[i*3+0].x, tempTriangles[i*3+0].y, tempTriangles[i*3+0].z, tempTriMatIndex[i]);
         triangles.emplace_back(tempTriangles[i*3+1].x, tempTriangles[i*3+1].y, tempTriangles[i*3+1].z, 0);
         triangles.emplace_back(tempTriangles[i*3+2].x, tempTriangles[i*3+2].y, tempTriangles[i*3+2].z, 0);

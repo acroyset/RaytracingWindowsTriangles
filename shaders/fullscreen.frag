@@ -334,9 +334,16 @@ vec2 getTexutreUV(HitInfo hitInfo, mat4 mat){
     }
 }
 vec3 getTextureColor(HitInfo hitInfo, mat4 mat){
-    vec2 texCoord = getTexutreUV(hitInfo, mat);
+    float scale = textureScales[hitInfo.tri.textureID];
 
-    texCoord *= textureScales[hitInfo.tri.textureID];
+    vec2 texCoord;
+    if (scale == 0){
+        texCoord = hitInfo.tri.t1*hitInfo.w + hitInfo.tri.t2*hitInfo.u + hitInfo.tri.t3*hitInfo.v;
+    } else {
+        texCoord = getTexutreUV(hitInfo, mat);
+
+        texCoord *= scale;
+    }
 
     return texture(textures[hitInfo.tri.textureID], texCoord).xyz;
 }
