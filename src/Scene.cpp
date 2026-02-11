@@ -110,7 +110,7 @@ Scene::Scene() {
 
     lock = false;
 
-    textureScales.fill(1.0f);
+    textureScales.fill(0.0f);
 }
 
 Scene::Scene(const int samples, const int aa, const int bounceLim)
@@ -138,7 +138,7 @@ Scene::Scene(const int samples, const int aa, const int bounceLim)
 
     skyTexture = window.createTexture("skyTex", "assets/textures/sky.png");
 
-    textureScales.fill(1.0f);
+    textureScales.fill(0.0f);
 }
 
 void Scene::addModel(const std::string& filename, const vec3 position, const vec3 scale, const vec3 color, const float smoothness, const vec3 specularColor, const float specularProb, const float transparency, const float ior, const float emission) {
@@ -449,7 +449,7 @@ void Scene::ImGuiRender() {
                 bool sel = (selectedModel == i);
                 if (ImGui::Selectable(modelLabels[i].c_str(), sel)) {
                     selectedModel = i;
-                    selectedColor = -1;
+                    selectedColor = modelsColors[i].x;
                 }
                 if (sel) ImGui::SetItemDefaultFocus();
             }

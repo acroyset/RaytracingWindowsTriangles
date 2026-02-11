@@ -70,8 +70,8 @@ class Scene {
     int triTh = 10;
     int aabbTh = 150;
 
-    int selectedModel = -1;
-    int selectedColor = -1;
+    int selectedModel = 0;
+    int selectedColor = 0;
 
     bool hud = true;
 
@@ -117,7 +117,7 @@ class Scene {
 
     std::vector<Texture> textures;
     std::array<float, 64> textureScales{};
-    int selectedTextureScale = -1;
+    int selectedTextureScale = 0;
 
     public:
 

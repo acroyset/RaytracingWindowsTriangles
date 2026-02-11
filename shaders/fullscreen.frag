@@ -339,6 +339,7 @@ vec3 getTextureColor(HitInfo hitInfo, mat4 mat){
     vec2 texCoord;
     if (scale == 0){
         texCoord = hitInfo.tri.t1*hitInfo.w + hitInfo.tri.t2*hitInfo.u + hitInfo.tri.t3*hitInfo.v;
+        texCoord.y = 1.0 - texCoord.y;
     } else {
         texCoord = getTexutreUV(hitInfo, mat);
 

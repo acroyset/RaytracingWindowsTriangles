@@ -48,16 +48,10 @@ int main() {
 
     Timer t;
 
-    //Model bull("assets/models/bull.obj");
-    //scene.addModel(bull, vec3(-100, 50, 0), vec3(100), vec3(1, 0, 0), 1, vec3(1), 0.1);
-    //scene.addModel(bull, vec3(100, 50, 0), vec3(100), vec3(0, 0, 0), 1, vec3(1), 0.1);
-    scene.addModel("assets/models/cube/cube.obj", vec3(0, -20, 0), vec3(300, 20, 300), "assets/textures/cube.png", 1, vec3(1), 0.1);
-    //scene.addModel("models/dragon800K.obj", vec3(0, 70.498, 0), vec3(100), vec3(0.01), 0.99, vec3(0.15), 0.4);
-    //scene.addModel("models/sphere.obj", vec3(200, 50, 0), vec3(50), vec3(1, 0.7, 0.3), 0, vec3(0), 0, 0, 1, 2);
-
-    //scene.addModel("models/quad.txt", vec3(0,4999, 0), vec3(1000), vec3(0.95), 0, vec3(0), 0, 0, 1, 20);
-    //scene.addModel("models/cubeInternal.txt", vec3(0,2000, 0), vec3(3000), vec3(0.95), 0);
-    //scene.addModel(dragon, vec3(0,762.30, 0), vec3(2500), vec3(0.01), 0.99, vec3(0.95), 0.15);
+    Model bull("assets/models/bull.obj");
+    scene.addModel(bull, vec3(-100, 50, 0), vec3(100), vec3(1, 0, 0), 1, vec3(1), 0.1);
+    scene.addModel(bull, vec3(100, 50, 0), vec3(100), vec3(0, 0, 0), 1, vec3(1), 0.1);
+    scene.addModel("assets/models/cube.obj", vec3(0, -20, 0), vec3(300, 20, 300), "assets/textures/marble.png", 1, vec3(1), 0.1);
 
 
     float duration = t.reset();
