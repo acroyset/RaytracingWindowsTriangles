@@ -10,15 +10,23 @@
 #define GLFW_INCLUDE_NONE  // Prevent GLFW from including OpenGL headers
 #include <glad/glad.h>      // Include glad FIRST
 #include <GLFW/glfw3.h>     // Then GLFW
-#include "ShaderWindow.h"
-#include "Uniform.h"
+#include "Rendering/ShaderWindow.h"
+#include "Rendering/Uniform.h"
 #include <glm/gtc/type_ptr.hpp>
 
 #define GLAD_GL_IMPLEMENTATION
+#include <map>
+
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include "SSBO.h"
+#include "Rendering/SSBO.h"
+
+enum DebugMode {
+    Normals,
+    Heatmap,
+    Depth
+};
 
 
 class Scene {
@@ -35,25 +43,30 @@ class Scene {
     std::vector<mat4> modelTransforms;
     std::vector<mat4> modelInvTransforms;
 
+    std::vector<int> models;
     std::vector<vec3> modelPos;
     std::vector<vec3> modelRot;   // radians (x,y,z)
     std::vector<vec3> modelScale;
+
     std::vector<std::string> modelLabels;
+    std::vector<ivec2> modelsColors;
+    std::vector<int> modelsTextureID;
 
     std::vector<vec4> boundingBoxMin;
     std::vector<vec4> boundingBoxMax;
     std::vector<int> childA;
     std::vector<int> childB;
 
-    std::vector<int> models;
-    std::vector<ivec2> modelsColors;
 
     vec3 cameraPos{};
     vec3 camForward{};
     vec3 camUp{};
     vec3 camRight{};
+    float fovDeg = 60;
 
     bool lock;
+    float sensitivity = 0.03;
+    float speed = 500;
 
     int frameCount;
     int sampleCount;
@@ -67,8 +80,10 @@ class Scene {
     vec3 sunColor = vec3(1, 0.93, 0.31);
 
     bool debugView = false;
-    int triTh = 10;
-    int aabbTh = 150;
+    DebugMode debugMode = Normals;
+    int triTh = 5;
+    int aabbTh = 100;
+    float depthScale = 1500;
 
     int selectedModel = 0;
     int selectedColor = 0;
@@ -94,30 +109,44 @@ class Scene {
     SSBO<mat4> ssboModelInvTransformations;
 
     Uniform<int> uNumModels;
+
     Uniform<vec3> uCameraPos;
     Uniform<vec3> uCameraForward;
     Uniform<vec3> uCameraUp;
     Uniform<vec3> uCameraRight;
+    Uniform<float> uFovDeg;
+
     Uniform<uvec2> uResolution;
     Uniform<int> uFrameCount;
+    Uniform<float> uTimeSinceStart;
+
     Uniform<int> uNumNodes;
     Uniform<int> uSamples;
     Uniform<int> uAA;
     Uniform<int> uBounceLim;
+
     Uniform<vec3> uSkyColor;
     Uniform<vec3> uSunDir;
     Uniform<vec3> uSunColor;
+
     Uniform<int> uDebugView;
+    Uniform<int> uDebugMode;
     Uniform<int> uTriThreshold;
     Uniform<int> uAABBThreshold;
+    Uniform<float> uDepthScale;
+
     Uniform<float> uTextureScales;
+
 
     Texture skyTexture;
     Uniform<float> uEnvYaw{};
 
     std::vector<Texture> textures;
     std::array<float, 64> textureScales{};
-    int selectedTextureScale = 0;
+    int selectedTexture = 0;
+    std::vector<std::string> textureLabels;
+
+    std::map<GLuint, bool> trackedKeysPressed{{GLFW_KEY_L , false}, {GLFW_KEY_H , false}};
 
     public:
 
@@ -142,7 +171,7 @@ class Scene {
 
     void createUniforms();
 
-    void setUniforms(bool moved) const;
+    void setUniforms() const;
 
     void set_ssbo();
 
@@ -161,7 +190,7 @@ class Scene {
 
     void displayBVH(int index, std::string prefix);
 
-    bool open() const {
+    [[nodiscard]] bool open() const {
         return window.open();
     }
 

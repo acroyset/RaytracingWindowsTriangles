@@ -54,6 +54,7 @@ A physically-based path tracer running entirely on the GPU, capable of rendering
 
 ### 🎨 Rendering Features
 - **Physically-Based Materials**: Support for diffuse, specular, metallic, glass, and emissive materials
+- **Textures**: Supports png files, uses .obj uv coords
 - **Global Illumination**: Full indirect lighting simulation via path tracing
 - **Refractions & Reflections**: Accurate glass and mirror materials with Fresnel equations
 - **HDR Environment Maps**: Equirectangular environment map support for realistic lighting
@@ -198,9 +199,8 @@ int main() {
 | `Q` / `E` | Move down / up          |
 | `Mouse`   | Look around             |
 | `Shift`   | Sprint (2x speed)       |
-| `L`       | Lock cursor             |
-| `U`       | Unlock cursor           |
-| `H`       | Turn HUD on             |
+| `L`       | Lock / Unlock cursor    |
+| `H`       | Toggle HUD              |
 | `Esc`     | Exit application        |
 
 #### UI Controls
@@ -319,7 +319,6 @@ bool rayTriangleIntersect(vec3 ro, vec3 rd, vec3 v0, vec3 v1, vec3 v2,
 
 ## 🐛 Known Limitations
 
-- **No Texture Mapping**: Currently only supports per-vertex colors and solid materials
 - **Single-Level BVH**: No TLAS/BLAS hierarchy for instancing
 - **CPU BVH Build**: Scene loading can be slow for very large models
 - **No Denoising**: Pure path tracing without ML denoising
@@ -328,7 +327,6 @@ bool rayTriangleIntersect(vec3 ro, vec3 rd, vec3 v0, vec3 v1, vec3 v2,
 
 ## 🗺️ Roadmap
 
-- [ ] Texture mapping (diffuse, normal, roughness)
 - [ ] Two-level BVH for instancing
 - [ ] GPU BVH construction
 - [ ] OptiX/DXR acceleration

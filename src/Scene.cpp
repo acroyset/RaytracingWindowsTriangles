@@ -162,10 +162,22 @@ void Scene::addModel(Model& model, vec3 position, vec3 scale, vec3 color, float 
     if (useTexture) {
         textures.emplace_back(window.createTexture("textures[" + std::to_string(textureID) + "]", textureFilename));
         textures.back().setWrap(TextureWrap::REPEAT, TextureWrap::REPEAT);
+        const std::string& name = textureFilename;
+        std::string label = name;
+        int count = 0;
+        for (const std::string& i : textureLabels) {
+            if (i == label) {
+                count++;
+                label = name + (count != 0 ? " " + std::to_string(count) : "");
+            }
+        }
+
+        textureLabels.emplace_back(label);
     }
+    modelsTextureID.emplace_back(useTexture ? textureID : -1);
 
+    if (specularColor == vec3(-1)) specularProb = -1.0f;
 
-    if (specularColor == vec3(-1)) {specularColor = color; specularProb = 1;}
     int Toffset = int(triangles.size())/3;
     int Voffset = int(vertices.size());
     int TXoffset = int(texCoords.size());
@@ -240,17 +252,17 @@ void Scene::addModel(Model& model, vec3 position, vec3 scale, vec3 color, float 
     modelRot.emplace_back(0.0f, 0.0f, 0.0f);
     modelScale.emplace_back(scale);
 
-    size_t slash = model.filename.find_last_of("/\\");
-    std::string stem = (slash == std::string::npos) ? model.filename : model.filename.substr(slash + 1);
-    stem = stem.erase(stem.find_last_of('.'), std::string::npos);
-
+    std::string name = model.filename;
+    std::string label = name;
     int count = 0;
     for (const std::string& i : modelLabels) {
-        if (i == stem) count++;
+        if (i == label) {
+            count++;
+            label = name + (count != 0 ? " " + std::to_string(count) : "");
+        }
     }
 
-    std::string name = stem + (count != 0 ? " " + std::to_string(count) : "");
-    modelLabels.emplace_back(name);
+    modelLabels.emplace_back(label);
 
     int Ccount = int(colors.size()) - Coffset;
     modelsColors.emplace_back(Coffset, Coffset + Ccount);
@@ -267,51 +279,70 @@ int Scene::getNumTris() const {
 
 void Scene::createUniforms() {
     uNumModels = window.createUniform<int>("numModels");
-    uCameraPos = window.createUniform<vec3>("cameraPos");
+
+    uCameraPos =     window.createUniform<vec3>("cameraPos");
     uCameraForward = window.createUniform<vec3>("camForward");
-    uCameraUp = window.createUniform<vec3>("camUp");
-    uCameraRight = window.createUniform<vec3>("camRight");
-    uResolution = window.createUniform<uvec2>("resolution");
-    uFrameCount = window.createUniform<int>("frameCount");
-    uNumNodes = window.createUniform<int>("numNodes");
-    uSamples = window.createUniform<int>("samples");
-    uAA = window.createUniform<int>("aa");
+    uCameraUp =      window.createUniform<vec3>("camUp");
+    uCameraRight =   window.createUniform<vec3>("camRight");
+    uFovDeg =        window.createUniform<float>("fovDeg");
+
+    uResolution =     window.createUniform<uvec2>("resolution");
+    uFrameCount =     window.createUniform<int>("frameCount");
+    uTimeSinceStart = window.createUniform<float>("timeSinceStart");
+
+    uNumNodes =  window.createUniform<int>("numNodes");
+    uSamples =   window.createUniform<int>("samples");
+    uAA =        window.createUniform<int>("aa");
     uBounceLim = window.createUniform<int>("bounceLim");
+
     uSkyColor = window.createUniform<vec3>("skyColor");
-    uSunDir = window.createUniform<vec3>("sunDir");
+    uSunDir =   window.createUniform<vec3>("sunDir");
     uSunColor = window.createUniform<vec3>("sunColor");
-    uDebugView = window.createUniform<int>("debugView");
-    uTriThreshold = window.createUniform<int>("triTh");
+
+    uDebugView =      window.createUniform<int>("debugView");
+    uDebugMode =      window.createUniform<int>("debugMode");
+    uTriThreshold =   window.createUniform<int>("triTh");
     uAABBThreshold =  window.createUniform<int>("aabbTh");
-    uEnvYaw = window.createUniform<float>("uEnvYaw");
+    uDepthScale =     window.createUniform<float>("depthScale");
+
     uTextureScales = window.createUniform<float>("textureScales");
+
+    uEnvYaw = window.createUniform<float>("uEnvYaw");
 }
 
-void Scene::setUniforms(bool moved) const {
-
-    bool lowSettings = moved && fps < 60.0f;
+void Scene::setUniforms() const {
 
     uNumModels.set(int(models.size()));
+
     uCameraPos.set(cameraPos);
     uCameraForward.set(camForward);
     uCameraUp.set(camUp);
     uCameraRight.set(camRight);
+    uFovDeg.set(fovDeg);
+
     uResolution.set(window.size());
     uFrameCount.set(frameCount);
+    uTimeSinceStart.set(window.getTimeSinceStart());
+
     uNumNodes.set(getNumBVHNodes());
-    uSamples.set(lowSettings ? 1 : samples);
+    uSamples.set(samples);
     uAA.set(aa);
-    uBounceLim.set(lowSettings ? 3 : bounceLim);
+    uBounceLim.set(bounceLim);
+
     uSkyColor.set(skyColor);
     uSunDir.set(sunDir);
     uSunColor.set(sunColor*sunStrength);
+
     uDebugView.set(debugView);
+    uDebugMode.set(debugMode);
     uTriThreshold.set(triTh);
     uAABBThreshold.set(aabbTh);
-    uEnvYaw.set(0.0f);
+    uDepthScale.set(depthScale);
+
     uTextureScales.setArray(textureScales.data(), 64);
 
     skyTexture.bind();
+    uEnvYaw.set(0.0f);
 
     for (const Texture &tex : textures) {
         tex.bind();
@@ -338,6 +369,8 @@ void Scene::set_ssbo() {
 }
 
 bool Scene::inputHandling(float speed, float sensitivity, float dt) {
+    sensitivity *= fovDeg;
+
     bool moved = false;
     vec2 mousePos = window.getMousePos();
     vec2 center = vec2(window.size())/2.0f;
@@ -359,12 +392,19 @@ bool Scene::inputHandling(float speed, float sensitivity, float dt) {
     if (window.keyPressed(GLFW_KEY_E)) change += camUp;
     if (window.keyPressed(GLFW_KEY_Q)) change -= camUp;
 
-    if (window.keyPressed(GLFW_KEY_L)) lock = true;
-    if (window.keyPressed(GLFW_KEY_U)) {
-        lock = false;
-        window.setMousePos(center);
-    }
-    if (window.keyPressed(GLFW_KEY_H)) hud = true;
+    if (window.keyPressed(GLFW_KEY_L)) {
+        if (!trackedKeysPressed[GLFW_KEY_L]) {
+            lock = !lock;
+            if (!lock) window.setMousePos(center);
+        }
+
+        trackedKeysPressed[GLFW_KEY_L] = true;
+    } else trackedKeysPressed[GLFW_KEY_L] = false;
+    if (window.keyPressed(GLFW_KEY_H)) {
+        if (!trackedKeysPressed[GLFW_KEY_H]) hud = !hud;
+
+        trackedKeysPressed[GLFW_KEY_H] = true;
+    } else trackedKeysPressed[GLFW_KEY_H] = false;
 
     if (window.keyPressed(GLFW_KEY_LEFT_SHIFT) || window.keyPressed(GLFW_KEY_RIGHT_SHIFT)) speed *= 2;
 
@@ -388,13 +428,13 @@ void Scene::updateFrame() {
     float dt = window.getDeltaTime();
     updateFPS(dt);
 
-    const bool moved = inputHandling(500, 2, dt);
+    const bool moved = inputHandling(speed, sensitivity, dt);
     if (moved) {
         frameCount = 0;
         sampleCount = 0;
     }
 
-    setUniforms(moved);
+    setUniforms();
 
     frameCount++;
     sampleCount += samples;
@@ -418,166 +458,248 @@ void Scene::ImGuiRender() {
 
     bool ui_resetAccum = false;
 
-    ImGui::Begin("Controls");
-    ImGui::Text("Renderer");
-    ImGui::Separator();
+    // scene
+    {
+        ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Once);
+        ImGui::SetNextWindowSize(ImVec2(500, 550), ImGuiCond_Once);
+        ImGui::Begin("Scene");
 
-    ImGui::Checkbox("Lock", &lock);
+        ui_resetAccum |= ColorEdit3("Sun Color", sunColor);
+        ui_resetAccum |= DragFloat3("Sun Direction", sunDir);
+        sunDir = normalize(sunDir);
 
-    ui_resetAccum |= ColorEdit3("Sun Color", sunColor);
-    ui_resetAccum |= DragFloat3("Sun Direction", sunDir);
-    sunDir = normalize(sunDir);
+        ui_resetAccum |= ImGui::SliderFloat("Sun Strength", &sunStrength, 0, 300);
 
-    ui_resetAccum |= ImGui::SliderFloat("Sun Strength", &sunStrength, 0, 300);
+        ImGui::Separator();
+        ImGui::Text("Models");
 
-    ImGui::SliderInt("Samples", &samples, 1, 25);
-    ui_resetAccum |= ImGui::SliderInt("Antialiasing", &aa, 1, 5);
-    ui_resetAccum |= ImGui::SliderInt("Bounces", &bounceLim, 1, 16);
-
-    ImGui::Separator();
-    ImGui::Text("Models");
-
-    const bool hasModels = !modelLabels.empty();
-    if (!hasModels) {
-        ImGui::TextDisabled("(no models)");
-    }
-    else {
-        // Current label
-        const char* preview = (selectedModel >= 0) ? modelLabels[selectedModel].c_str() : "(select)";
-        if (ImGui::BeginCombo("Model", preview)) {
-            for (int i = 0; i < (int)modelLabels.size(); ++i) {
-                bool sel = (selectedModel == i);
-                if (ImGui::Selectable(modelLabels[i].c_str(), sel)) {
-                    selectedModel = i;
-                    selectedColor = modelsColors[i].x;
-                }
-                if (sel) ImGui::SetItemDefaultFocus();
-            }
-            ImGui::EndCombo();
+        const bool hasModels = !modelLabels.empty();
+        if (!hasModels) {
+            ImGui::TextDisabled("(no models)");
         }
-
-        if (selectedModel >= 0) {
-            bool changedPRS = false;
-            bool changedC = false;
-            bool changedSC = false;
-            bool changedGLS = false;
-
-            // Local aliases
-            vec3& P = modelPos[selectedModel];
-            vec3& R = modelRot[selectedModel];   // radians
-            vec3& S = modelScale[selectedModel];
-
-            // Rotation UI in degrees (convert to/from radians for nicer UX)
-            vec3 rotDeg = degrees(R);
-            changedPRS |= DragFloat3("Position", P, 3.0f);                     // world units
-            changedPRS |= DragFloat3("Scale",    S, 1.0f, 0.0f, 1e36);
-            changedPRS |= DragFloat3("Rotation (deg)", rotDeg, 0.2f);
-
-            if (ImGui::BeginCombo("Color", std::to_string(selectedColor).c_str())) {
-                for (int i = modelsColors[selectedModel].x; i < modelsColors[selectedModel].y; ++i) {
-                    bool sel = (selectedColor == i);
-                    if (ImGui::Selectable(std::to_string(i).c_str(), sel)) {
-                        selectedColor = i;
+        else {
+            // Current label
+            const char* preview = (selectedModel >= 0) ? modelLabels[selectedModel].c_str() : "(select)";
+            if (ImGui::BeginCombo("Model", preview)) {
+                for (int i = 0; i < (int)modelLabels.size(); ++i) {
+                    bool sel = (selectedModel == i);
+                    if (ImGui::Selectable(modelLabels[i].c_str(), sel)) {
+                        selectedModel = i;
+                        selectedColor = modelsColors[i].x;
                     }
                     if (sel) ImGui::SetItemDefaultFocus();
                 }
                 ImGui::EndCombo();
             }
 
-            if (selectedColor != -1){
-                vec4& C = colors[selectedColor];
-                vec4& SC = specularColors[selectedColor];
-                vec4& GLS = glassLightSettings[selectedColor];
-                ImGui::Text(std::to_string(selectedColor).c_str());
-                changedC |= ColorEdit3("Color", C);
-                changedC |= ImGui::SliderFloat("Smoothness", &C.w, 0.0f, 1.0f);
-                changedSC |= ColorEdit3("Specular Color", SC);
-                changedSC |= ImGui::SliderFloat("Specualar Probability", &SC.w, 0.0f, 1.0f);
-                changedGLS |= ImGui::SliderFloat("Transparency", &GLS.x, 0.0f, 1.0f);
-                changedGLS |= ImGui::SliderFloat("Index of Refraction", &GLS.y, 0.0f, 3.0f);
-                changedGLS |= ImGui::SliderFloat("Emission Strength", &GLS.z, 0.0f, 10.0f);
-                colors[selectedColor] = C;
-                specularColors[selectedColor] = SC;
-                glassLightSettings[selectedColor] = GLS;
-            }
+            if (selectedModel >= 0) {
+                ImGui::Indent();
+                bool changedPRS = false;
+                bool changedC = false;
+                bool changedSC = false;
+                bool changedGLS = false;
 
-            if (changedPRS) {
-                R = radians(rotDeg);
+                // Local aliases
+                vec3& P = modelPos[selectedModel];
+                vec3& R = modelRot[selectedModel];   // radians
+                vec3& S = modelScale[selectedModel];
 
-                modelTransforms[selectedModel] = composeTransform(P, R, S);
-                modelInvTransforms[selectedModel] = inverse(modelTransforms[selectedModel]);
+                ImGui::Text("Transformations");
 
-                ssboModelTransformations.update(selectedModel, modelTransforms[selectedModel]);
-                ssboModelInvTransformations.update(selectedModel, modelInvTransforms[selectedModel]);
+                // Rotation UI in degrees (convert to/from radians for nicer UX)
+                vec3 rotDeg = degrees(R);
+                changedPRS |= DragFloat3("Position", P, 3.0f);                     // world units
+                changedPRS |= DragFloat3("Scale",    S, 1.0f, 0.0f, 1e36);
+                changedPRS |= DragFloat3("Rotation (deg)", rotDeg, 0.2f);
 
-                ui_resetAccum = true;
-            }
-            // All materials for this model share the same contiguous range:
-            const int start = modelsColors[selectedModel][0];   // inclusive
-            const int end   = modelsColors[selectedModel][1];   // exclusive
+                ImGui::Separator();
 
-            if (changedC) {
-                ssboColors.update(start, end, colors.data() + start);
-                ui_resetAccum = true;
-            }
+                std::string previewC = "Material " + std::to_string(selectedColor);
+                if (ImGui::BeginCombo("##Material", previewC.c_str())) {
+                    for (int i = modelsColors[selectedModel].x; i < modelsColors[selectedModel].y; ++i) {
+                        bool sel = (selectedColor == i);
+                        previewC = "Material " + std::to_string(i);
+                        if (ImGui::Selectable(previewC.c_str(), sel)) {
+                            selectedColor = i;
+                        }
+                        if (sel) ImGui::SetItemDefaultFocus();
+                    }
+                    ImGui::EndCombo();
+                }
 
-            if (changedSC) {
-                ssboSpecularColors.update(start, end, specularColors.data() + start);
-                ui_resetAccum = true;
-            }
+                if (selectedColor != -1){
+                    ImGui::Indent();
+                    vec4& C = colors[selectedColor];
+                    vec4& SC = specularColors[selectedColor];
+                    vec4& GLS = glassLightSettings[selectedColor];
 
-            if (changedGLS) {
-                ssboGlassLightSettings.update(start, end, glassLightSettings.data() + start);
-                ui_resetAccum = true;
+                    ImGui::Text("Colors");
+
+                    if (modelsTextureID[selectedModel] == -1) changedC |= ColorEdit3("Diffuse Color", C);
+                    changedSC |= ColorEdit3("Specular Color", SC);
+
+                    ImGui::Text("Material Properties");
+
+                    changedC |= ImGui::SliderFloat("Smoothness", &C.w, 0.0f, 1.0f);
+                    changedSC |= ImGui::SliderFloat("Specular Probability", &SC.w, 0.0f, 1.0f);
+                    changedGLS |= ImGui::SliderFloat("Transparency", &GLS.x, 0.0f, 1.0f);
+                    if (GLS.x > 0) changedGLS |= ImGui::SliderFloat("Index of Refraction", &GLS.y, 0.0f, 3.0f);
+                    changedGLS |= ImGui::SliderFloat("Emission Strength", &GLS.z, 0.0f, 10.0f);
+                    colors[selectedColor] = C;
+                    specularColors[selectedColor] = SC;
+                    glassLightSettings[selectedColor] = GLS;
+                    ImGui::Unindent();
+                }
+
+                int textureID = modelsTextureID[selectedModel];
+                if (textureID != -1) {
+                    ImGui::Separator();
+                    ImGui::Text("Texture");
+                    ImGui::Text(textureLabels[textureID].c_str());
+                    ImGui::Text("ID: %i", textureID);
+
+                    float s = textureScales[textureID];
+                    bool wrapTexture = s > 0;;
+                    if (ImGui::Checkbox("Wrap Texture", &wrapTexture)) {
+                        if (wrapTexture) {
+                            textureScales[textureID] = 0.001;
+                        } else {
+                            textureScales[textureID] = 0;
+                        }
+                        ui_resetAccum = true;
+                    }
+
+                    if (wrapTexture) {
+                        if (ImGui::DragFloat("Scale", &s, 0.005f, 0.0001f, 2.0f, "%.4f")) {
+                            textureScales[textureID] = s;
+                            ui_resetAccum = true;
+                        }
+                    }
+                }
+                ImGui::Unindent();
+
+                if (changedPRS) {
+                    R = radians(rotDeg);
+
+                    modelTransforms[selectedModel] = composeTransform(P, R, S);
+                    modelInvTransforms[selectedModel] = inverse(modelTransforms[selectedModel]);
+
+                    ssboModelTransformations.update(selectedModel, modelTransforms[selectedModel]);
+                    ssboModelInvTransformations.update(selectedModel, modelInvTransforms[selectedModel]);
+
+                    ui_resetAccum = true;
+                }
+                // All materials for this model share the same contiguous range:
+                const int start = modelsColors[selectedModel][0];   // inclusive
+                const int end   = modelsColors[selectedModel][1];   // exclusive
+
+                if (changedC) {
+                    ssboColors.update(start, end, colors.data() + start);
+                    ui_resetAccum = true;
+                }
+
+                if (changedSC) {
+                    ssboSpecularColors.update(start, end, specularColors.data() + start);
+                    ui_resetAccum = true;
+                }
+
+                if (changedGLS) {
+                    ssboGlassLightSettings.update(start, end, glassLightSettings.data() + start);
+                    ui_resetAccum = true;
+                }
             }
         }
+
+        ImGui::Separator();
+
+        if (ImGui::Button("Reset accumulation")) ui_resetAccum = true;
+
+        ImGui::End();
     }
 
-    ImGui::Separator();
-    ImGui::Text("Texture Scales");
+    // settings
+    {
+        ImGui::SetNextWindowPos(ImVec2(520, 10), ImGuiCond_Once);
+        ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_Once);
+        ImGui::Begin("Settings");
 
-    // If you want to show only used texture IDs, you can clamp this to textures.size()
-    int maxId = 63;
-    if (!textures.empty()) maxId = std::min(63, (int)textures.size() - 1);
+        ImGui::Checkbox("Lock", &lock);
 
-    // Choose which texture scale to edit
-    ImGui::SliderInt("Texture ID", &selectedTextureScale, 0, maxId);
+        ImGui::SliderInt("Samples", &samples, 1, 25);
+        ui_resetAccum |= ImGui::SliderInt("Antialiasing", &aa, 1, 5);
+        ui_resetAccum |= ImGui::SliderInt("Bounces", &bounceLim, 1, 16);
 
-    // Edit that one
-    float& s = textureScales[selectedTextureScale];
-    ui_resetAccum |= ImGui::DragFloat("Scale", &s, 0.005f, 0.0f, 2.0f, "%.4f");
+        ImGui::Separator();
 
-    ImGui::Separator();
+        ImGui::Text("Camera");
 
-    ImGui::Text("Samples: %d", sampleCount);
-    ImGui::Text("Frame: %d", frameCount);
+        ui_resetAccum |= ImGui::SliderFloat("FOV", &fovDeg, 20, 140);
 
-    ImGui::Separator();
+        float s = sensitivity*100;
+        if (ImGui::SliderFloat("Sensitivity", &s, 0.1, 10)) sensitivity = s/100;
 
-    ImGui::Text("FPS: %.2f", fps);
-    ImGui::Text("Frame Time (ms): %.2f", 1/fps*1000.0f);
+        ImGui::SliderFloat("Speed", &speed, 0.01, 1000);
 
-    ImGui::Separator();
+        ImGui::Separator();
 
-    ImGui::Text("Width: %d", window.size().x);
-    ImGui::Text("Height: %d", window.size().y);
+        ImGui::Text("Debug");
 
-    ui_resetAccum |= ImGui::Checkbox("Debug View" , &debugView);
-    if (debugView) {
-        ui_resetAccum |= ImGui::SliderInt("Triangle Threshhold", &triTh, 1, 100);
-        ui_resetAccum |= ImGui::SliderInt("AABB Threshhold", &aabbTh, 1, 500);
+        ui_resetAccum |= ImGui::Checkbox("##Debug View" , &debugView);
+        if (debugView) {
+
+            const char* names[] = { "Normals", "Heatmap", "Depth" };
+
+            // Use a custom getter function
+            int debugMode = this->debugMode;
+            if (ImGui::SliderInt("Debug Mode", &debugMode, 0, 2, names[debugMode])) {
+                this->debugMode = static_cast<DebugMode>(debugMode);
+                ui_resetAccum = true;
+            }
+
+            switch (debugMode) {
+                case Normals:
+                    break;
+                case Heatmap:
+                    ui_resetAccum |= ImGui::SliderInt("Triangle Threshold", &triTh, 1, 50);
+                    ui_resetAccum |= ImGui::SliderInt("AABB Threshold", &aabbTh, 1, 250);
+                    break;
+                case Depth:
+                    ui_resetAccum |= ImGui::SliderFloat("Depth Scale", &depthScale, 1, 5000);
+                default: ;
+            }
+
+        }
+
+        ImGui::End();
     }
 
-    ImGui::Separator();
+    // stats
+    {
+        ImGui::SetNextWindowPos(ImVec2(830, 10), ImGuiCond_Once);
+        ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
+        ImGui::Begin("Stats");
 
-    ImGui::Text("Position: %.2f, %.2f, %.2f", cameraPos.x, cameraPos.y, cameraPos.z);
-    ImGui::Text("Forward: %.2f, %.2f, %.2f", camForward.x, camForward.y, camForward.z);
+        ImGui::Text("Samples: %d", sampleCount);
+        ImGui::Text("Frame: %d", frameCount);
 
-    if (ImGui::Button("Reset accumulation")) ui_resetAccum = true;
-    if (ImGui::Button("HUD Off")) hud = false;
+        ImGui::Separator();
 
+        ImGui::Text("FPS: %.2f", fps);
+        ImGui::Text("Frame Time (ms): %.2f", 1/fps*1000.0f);
 
-    ImGui::End();
+        ImGui::Separator();
+
+        ImGui::Text("Width: %d", window.size().x);
+        ImGui::Text("Height: %d", window.size().y);
+
+        ImGui::Separator();
+
+        ImGui::Text("Position: %.2f, %.2f, %.2f", cameraPos.x, cameraPos.y, cameraPos.z);
+        ImGui::Text("Forward: %.2f, %.2f, %.2f", camForward.x, camForward.y, camForward.z);
+
+        ImGui::End();
+    }
+
 
     if (ui_resetAccum) {
         frameCount = 0;
