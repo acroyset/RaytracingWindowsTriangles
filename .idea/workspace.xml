@@ -36,20 +36,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cd06d447-a7c8-42f4-a8e5-4bf88ac1888b" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/Rendering/Texture.cpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/Rendering/Texture.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/imgui.ini" beforeDir="false" afterPath="$PROJECT_DIR$/imgui.ini" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/shaders/fullscreen.frag" beforeDir="false" afterPath="$PROJECT_DIR$/Shaders/fullscreen.frag" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/shaders/fullscreen.vert" beforeDir="false" afterPath="$PROJECT_DIR$/Shaders/fullscreen.vert" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/SSBO.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/SSBO.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shaders/fullscreen.frag" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/fullscreen.frag" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Rendering/Uniform.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/Uniform.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ShaderWindow.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/ShaderWindow.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ShaderWindow.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/ShaderWindow.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Texture.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Uniform.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/Uniform.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -257,7 +249,7 @@
       <workItem from="1770771406078" duration="15000" />
       <workItem from="1770771438339" duration="20000" />
       <workItem from="1770771468946" duration="17507000" />
-      <workItem from="1770853129522" duration="13188000" />
+      <workItem from="1770853129522" duration="18019000" />
     </task>
     <servers />
   </component>

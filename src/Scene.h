@@ -74,6 +74,7 @@ class Scene {
     int aa;
     int bounceLim;
 
+    bool skyActive = true;
     vec3 skyColor = vec3(0.5,0.7,0.9);
     vec3 sunDir = normalize(vec3(0.867, 0.498, 0.01));
     float sunStrength = 200;
@@ -125,11 +126,12 @@ class Scene {
     Uniform<int> uAA;
     Uniform<int> uBounceLim;
 
+    Uniform<bool> uSkyActive;
     Uniform<vec3> uSkyColor;
     Uniform<vec3> uSunDir;
     Uniform<vec3> uSunColor;
 
-    Uniform<int> uDebugView;
+    Uniform<bool> uDebugView;
     Uniform<int> uDebugMode;
     Uniform<int> uTriThreshold;
     Uniform<int> uAABBThreshold;

@@ -295,11 +295,12 @@ void Scene::createUniforms() {
     uAA =        window.createUniform<int>("aa");
     uBounceLim = window.createUniform<int>("bounceLim");
 
-    uSkyColor = window.createUniform<vec3>("skyColor");
-    uSunDir =   window.createUniform<vec3>("sunDir");
-    uSunColor = window.createUniform<vec3>("sunColor");
+    uSkyActive = window.createUniform<bool>("skyActive");
+    uSkyColor =  window.createUniform<vec3>("skyColor");
+    uSunDir =    window.createUniform<vec3>("sunDir");
+    uSunColor =  window.createUniform<vec3>("sunColor");
 
-    uDebugView =      window.createUniform<int>("debugView");
+    uDebugView =      window.createUniform<bool>("debugView");
     uDebugMode =      window.createUniform<int>("debugMode");
     uTriThreshold =   window.createUniform<int>("triTh");
     uAABBThreshold =  window.createUniform<int>("aabbTh");
@@ -329,6 +330,7 @@ void Scene::setUniforms() const {
     uAA.set(aa);
     uBounceLim.set(bounceLim);
 
+    uSkyActive.set(skyActive);
     uSkyColor.set(skyColor);
     uSunDir.set(sunDir);
     uSunColor.set(sunColor*sunStrength);
@@ -464,11 +466,14 @@ void Scene::ImGuiRender() {
         ImGui::SetNextWindowSize(ImVec2(500, 550), ImGuiCond_Once);
         ImGui::Begin("Scene");
 
-        ui_resetAccum |= ColorEdit3("Sun Color", sunColor);
-        ui_resetAccum |= DragFloat3("Sun Direction", sunDir);
-        sunDir = normalize(sunDir);
+        ui_resetAccum |= ImGui::Checkbox("Sky Active", &skyActive);
+        if (skyActive) {
+            ui_resetAccum |= ColorEdit3("Sun Color", sunColor);
+            ui_resetAccum |= DragFloat3("Sun Direction", sunDir);
+            sunDir = normalize(sunDir);
 
-        ui_resetAccum |= ImGui::SliderFloat("Sun Strength", &sunStrength, 0, 300);
+            ui_resetAccum |= ImGui::SliderFloat("Sun Strength", &sunStrength, 0, 300);
+        }
 
         ImGui::Separator();
         ImGui::Text("Models");

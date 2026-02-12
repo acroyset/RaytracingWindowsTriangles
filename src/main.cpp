@@ -49,9 +49,10 @@ int main() {
     Timer t;
 
     Model bull("assets/models/bull.obj");
+    Model dragon("assets/models/dragon800K.obj");
     Model sphere("assets/models/sphere.obj");
-    scene.addModel(bull, vec3(-100, 50, 0), vec3(100), vec3(1, 0, 0), 1, vec3(1), 0.1);
-    scene.addModel(bull, vec3(100, 50, 0), vec3(100), vec3(0, 0, 0), 1, vec3(1), 0.1);
+    scene.addModel(dragon, vec3(-100, 70, 0), vec3(100), vec3(0.5), 1, vec3(1), 0.1);
+    scene.addModel(bull, vec3(100, 50, 0), vec3(100), vec3(0), 1, vec3(1), 0.1);
     scene.addModel("assets/models/cube.obj", vec3(0, -20, 0), vec3(300, 20, 300), vec3(1), 1, vec3(1), 0.1);
     scene.addModel(sphere, vec3(-100, 20, 200), vec3(20), "assets/textures/grass.png", 0);
     scene.addModel(sphere, vec3(-33.33, 20, 200), vec3(20), "assets/textures/rock.png", 0);

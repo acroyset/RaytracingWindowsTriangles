@@ -71,6 +71,7 @@ uniform vec3  skyColor;
 uniform vec3  sunDir;
 uniform vec3  sunColor;
 
+uniform bool      skyActive;
 uniform sampler2D skyTex;
 uniform float     uEnvYaw;
 
@@ -243,6 +244,9 @@ vec3 sampleSky(vec3 dir){
     return 1.3 * texture(skyTex, uv).rgb;
 }
 vec3 getEnviormentLight(vec3 dir){
+
+    if (!skyActive) return vec3(0);
+
     vec3 sky = sampleSky(dir);
     float s  = pow(max(dot(normalize(dir), normalize(sunDir)), 0.0), 2048.0);
     return sky + sunColor * s;

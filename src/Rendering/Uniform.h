@@ -39,6 +39,12 @@ private:
 
 // ---- Implementations for supported Ts ----
 
+template<>
+inline void Uniform<bool>::set(const bool& v) const {
+    if (!valid()) return;
+    glUniform1i(location, v);
+}
+
 // float
 template<>
 inline void Uniform<float>::set(const float& v) const {

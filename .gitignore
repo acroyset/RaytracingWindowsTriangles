@@ -3,3 +3,6 @@ external
 
 # build debug
 cmake-build-debug
+
+# large models / textures
+assets
