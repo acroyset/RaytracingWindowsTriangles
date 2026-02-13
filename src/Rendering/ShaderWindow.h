@@ -26,6 +26,7 @@
 
 #include "Texture.h"
 #include "Uniform.h"
+#include "Timer.h"
 
 using namespace glm;
 
@@ -46,10 +47,10 @@ class ShaderWindow {
     int currentBuffer = 0;
     bool useFeedback = false;
 
-    const float startTime = 0;
-    float previousTime = 0;
-    float timeSinceStart = 0;
-    float deltaTime = 0;
+    Timer totalTime;
+    Timer deltaTime;
+
+    float dt = 0.0f;
 
     int nextTextureUnit = 1;  // Start at 1, 0 is feedback buffer
     int maxTextureUnits = 0;
@@ -106,8 +107,8 @@ class ShaderWindow {
     }
     void setMousePos(const vec2 pos) const {glfwSetCursorPos(window, pos.x, pos.y);}
 
-    [[nodiscard]] float getDeltaTime() const {return deltaTime;}
-    [[nodiscard]] float getTimeSinceStart() const {return timeSinceStart;}
+    [[nodiscard]] float getDeltaTime() const {return dt;}
+    [[nodiscard]] float getTimeSinceStart() const {return float(totalTime.elapsedSeconds());}
 
     [[nodiscard]] GLFWwindow* getWindow() const {return window;}
 

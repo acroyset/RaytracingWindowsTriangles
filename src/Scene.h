@@ -13,6 +13,8 @@
 #include "Rendering/ShaderWindow.h"
 #include "Rendering/Uniform.h"
 #include <glm/gtc/type_ptr.hpp>
+#include "Transformation.h"
+#include "Material.h"
 
 #define GLAD_GL_IMPLEMENTATION
 #include <map>
@@ -36,7 +38,7 @@ class Scene {
     std::vector<vec4> vertices;
     std::vector<vec2> texCoords;
     std::vector<vec4> normals;
-    std::vector<vec4> colors;
+    std::vector<vec4> diffuseColors;
     std::vector<vec4> specularColors;
     std::vector<vec4> glassLightSettings;
 
@@ -80,6 +82,10 @@ class Scene {
     float sunStrength = 200;
     vec3 sunColor = vec3(1, 0.93, 0.31);
 
+    bool floorActive = true;
+    vec4 floorDiffuseColor = vec4(1, 1, 1, 0);
+    vec4 floorSpecularColor = vec4(0, 0, 0, -1);
+
     bool debugView = false;
     DebugMode debugMode = Normals;
     int triTh = 5;
@@ -91,7 +97,9 @@ class Scene {
 
     bool hud = true;
 
-    float fps = 0;
+    float totalTime = 0;
+    float gpuTime = 0;
+    float cpuTime = 0;
     float smoothing = 0.9;
 
     SSBO<ivec4> ssboTriangles;
@@ -131,6 +139,10 @@ class Scene {
     Uniform<vec3> uSunDir;
     Uniform<vec3> uSunColor;
 
+    Uniform<bool> uFloorActive;
+    Uniform<vec4> uFloorDiffuseColor;
+    Uniform<vec4> uFloorSpecularColor;
+
     Uniform<bool> uDebugView;
     Uniform<int> uDebugMode;
     Uniform<int> uTriThreshold;
@@ -161,11 +173,9 @@ class Scene {
         ImGui::DestroyContext();
     }
 
-    void addModel(const std::string &filename, vec3 position, vec3 scale, vec3 color, float smoothness, vec3 specularColor = vec3(-1), float specularProb = 1, float transparency = 0, float ior = 1, float emission = 0);
-    void addModel(const std::string &filename, vec3 position, vec3 scale, const std::string &textureFilename, float smoothness, vec3 specularColor = vec3(-1), float specularProb = 1, float transparency = 0, float ior = 1, float emission = 0);
-    void addModel(Model& model, vec3 position, vec3 scale, const std::string &textureFilename, float smoothness, vec3 specularColor = vec3(-1), float specularProb = 1, float transparency = 0, float ior = 1, float emission = 0);
+    void addModel(const std::string &filename, const Transformation &transformation, const Material &material);
 
-    void addModel(Model& model, vec3 position, vec3 scale, vec3 color, float smoothness, vec3 specularColor = vec3(-1), float specularProb = 1, float transparency = 0, float ior = 1, float emission = 0, const std::string& textureFilename = "");
+    void addModel(Model& model, Transformation transformation, const Material& material);
 
     [[nodiscard]] int getNumBVHNodes() const;
 
@@ -196,10 +206,8 @@ class Scene {
         return window.open();
     }
 
-    void updateFPS(const float dt)
-    {
-        float current = 1.0f / dt;
-        fps = smoothing * fps + (1.0f - smoothing) * current;
+    void updateItemSmooth(float& item, const float value) const {
+        item = smoothing * item + (1.0f - smoothing) * value;
     }
 };
 

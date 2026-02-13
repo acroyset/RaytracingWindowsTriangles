@@ -13,7 +13,7 @@ struct Triangle{
     bool useNormals;
 };
 
-struct HitInfo{
+struct Hit{
     bool hit;
     Triangle tri;
     int triID;
@@ -70,6 +70,10 @@ uniform sampler2D previousFrame;
 uniform vec3  skyColor;
 uniform vec3  sunDir;
 uniform vec3  sunColor;
+
+uniform bool  floorActive;
+uniform vec4  floorDiffuseColor;
+uniform vec4  floorSpecularColor;
 
 uniform bool      skyActive;
 uniform sampler2D skyTex;
@@ -128,17 +132,6 @@ float randomValue(inout uint state){
     result = (result >> 22) ^ result;
     return float(result) * (1.0/4294967295.0);
 }
-uint randomValueU(inout uint state){
-    state = state * 747796405u + 2891336453u;
-    uint result = ((state >> ((state >> 28) + 4u)) ^ state) * 277803737u;
-    result = (result >> 22) ^ result;
-    return result;
-}
-float randomValueNormalDistribution(inout uint state){
-    float theta = 2.0*PI * randomValue(state);
-    float rho   = sqrt(-3.0 * log(max(1e-7, randomValue(state))));
-    return rho * cos(theta);
-}
 vec3 randPointSphere(inout uint state){
     for (int i=0;i<10;i++){
         vec3 p = vec3(2.0*randomValue(state)-1.0,
@@ -167,7 +160,6 @@ uint pixelFrameSeed(uvec2 pix) {
     v ^= uint(timeSinceStart * 1000000.0);
     return hash_u32(v);
 }
-
 
 // Helpers
 float schlick(float cos_theta, float n1, float n2) {
@@ -199,6 +191,21 @@ void getTriangle(int triIndex, out ivec4 t1, out ivec4 t2, out ivec4 t3){
     t3 = triangles[3*triIndex+2];
 }
 
+// Camera / Path
+vec3 calculateInitialDir(int aaCycle, vec2 screenCoord){
+    float xi = float(aaCycle % aa);
+    float yi = float(aaCycle) / float(aa);
+    float ox = (xi + 0.5)/float(aa) - 0.5;
+    float oy = (yi + 0.5)/float(aa) - 0.5;
+    ox /= float(resolution.x)/2.0;
+    oy /= float(resolution.y)/2.0;
+    vec2 coord = screenCoord + vec2(ox,oy);
+    float fovRadX = radians(fovDeg);
+    coord *= tan(0.5*fovRadX);
+    vec3 d = camForward + camRight*coord.x + camUp*coord.y;
+    return normalize(d);
+}
+
 // Intersections
 bool rayTriangleIntersect(Ray ray, vec3 v0, vec3 v1, vec3 v2, out float t, out float u, out float v){
     const float EPS = 1e-10;
@@ -226,9 +233,10 @@ float intersectAABB(Ray ray, vec3 bmin, vec3 bmax){
 }
 
 // NORMALS (LOCAL -> WORLD)
-vec3 calculateNormalLocal(Triangle tri, float u, float v, float w){
+vec3 calculateNormalLocal(Hit hit){
+    Triangle tri = hit.tri;
     if (tri.useNormals){
-        return normalize(tri.n1*w + tri.n2*u + tri.n3*v);
+        return normalize(tri.n1*hit.w + tri.n2*hit.u + tri.n3*hit.v);
     }
     return normalize(cross(tri.v2-tri.v1, tri.v3-tri.v1));
 }
@@ -241,7 +249,11 @@ vec3 toWorldNormal(vec3 nLocal, mat4 invMat) {
 vec3 sampleSky(vec3 dir){
     dir = rotY(uEnvYaw) * normalize(dir);
     vec2 uv = seamSafeUV(dirToLatLongUV(dir));
-    return 1.3 * texture(skyTex, uv).rgb;
+    if (uv.x < 0) return vec3(1, 0, 0);
+    if (uv.x > 1) return vec3(0, 1, 0);
+    if (uv.y < 0) return vec3(0, 0, 1);
+    if (uv.y > 1) return vec3(1, 0, 1);
+    return textureLod(skyTex, uv, 0).rgb;
 }
 vec3 getEnviormentLight(vec3 dir){
 
@@ -253,12 +265,12 @@ vec3 getEnviormentLight(vec3 dir){
 }
 
 // BRDF / Directions
-vec3 calculateRandDir(vec3 n, inout uint st){ return normalize(randPointSphere(st) + n); }
-vec3 calculateReflectDir(vec3 n, vec3 d){ return d - n*2.0*dot(d,n); }
-vec3 calculateOpaqueDir(vec3 n, vec3 d, float sm, inout uint st){
-    vec3 r = calculateRandDir(n, st);
-    vec3 m = calculateReflectDir(n, d);
-    return normalize(mix(r, m, sm));
+vec3 calculateRandDir(vec3 normal, inout uint state){ return normalize(randPointSphere(state) + normal); }
+vec3 calculateReflectDir(vec3 normal, vec3 dir){ return dir - normal*2.0*dot(dir,normal); }
+vec3 calculateOpaqueDir(vec3 normal, vec3 dir, float smoothness, inout uint state){
+    vec3 random = calculateRandDir(normal, state);
+    vec3 reflect = calculateReflectDir(normal, dir);
+    return normalize(mix(random, reflect, smoothness));
 }
 vec3 calculateRefractionDir(vec3 normal, vec3 dir, float smoothness, float ior, float specularProb, inout uint state, inout vec3 color){
     bool entering;
@@ -306,7 +318,7 @@ vec3 calculateNewDirection(vec3 normal, vec3 dir, float smoothness, float specul
 
 // Material / Hit
 
-vec2 getTexutreUV(HitInfo hitInfo, mat4 mat){
+vec2 getTexutreUV(Hit hitInfo, mat4 mat){
     Triangle tri = hitInfo.tri;
 
     float eps = 1e-6;
@@ -356,7 +368,7 @@ vec2 getTexutreUV(HitInfo hitInfo, mat4 mat){
         return uv / scaleUV;
     }
 }
-vec3 getTextureColor(HitInfo hitInfo, mat4 mat){
+vec3 getTextureColor(Hit hitInfo, mat4 mat){
     float scale = textureScales[hitInfo.tri.textureID];
 
     vec2 texCoord;
@@ -372,7 +384,7 @@ vec3 getTextureColor(HitInfo hitInfo, mat4 mat){
     return texture(textures[hitInfo.tri.textureID], texCoord).xyz;
 }
 
-bool updateColor(HitInfo hitInfo, inout vec3 color, bool isSpecular, bool diffuseOnly, mat4 mat){
+bool updateColor(Hit hitInfo, inout vec3 color, bool isSpecular, bool diffuseOnly, mat4 mat){
     int matID = hitInfo.tri.matID;
 
     vec3 diffuseColor = hitInfo.tri.useTexture ? getTextureColor(hitInfo, mat) : colors[matID].xyz;
@@ -396,10 +408,10 @@ Ray worldToLocalRay(Ray ray, mat4 invM){
 }
 
 // Traverse one model’s BVH entirely in LOCAL space. Returns the best WORLD distance and indices via out params.
-HitInfo traverseBVH(int nodeOffset, Ray ray, mat4 M, mat4 invM, float bestTW, inout int triTest, inout int aabbTest){
+Hit traverseBVH(int nodeOffset, Ray ray, mat4 M, mat4 invM, float bestTW, inout int triTest, inout int aabbTest){
 
-    HitInfo hitInfo;
-    hitInfo.hit = false;
+    Hit hit;
+    hit.hit = false;
 
     Ray rayLocal = worldToLocalRay(ray, invM);
 
@@ -435,12 +447,12 @@ HitInfo traverseBVH(int nodeOffset, Ray ray, mat4 M, mat4 invM, float bestTW, in
                 float tW = length(hitW - ray.pos);
 
                 if (tL < bestTL){
-                    hitInfo.hit = true;
-                    hitInfo.triID = j;
-                    hitInfo.t = tW;
-                    hitInfo.u = u;
-                    hitInfo.v = v;
-                    hitInfo.w = 1-u-v;
+                    hit.hit = true;
+                    hit.triID = j;
+                    hit.t = tW;
+                    hit.u = u;
+                    hit.v = v;
+                    hit.w = 1-u-v;
 
                     bestTL = tL;
                 }
@@ -468,15 +480,15 @@ HitInfo traverseBVH(int nodeOffset, Ray ray, mat4 M, mat4 invM, float bestTW, in
         }
     }
 
-    return hitInfo;
+    return hit;
 }
 
-// Find best triangle across all models; all traversal is in LOCAL; returns HitInfo.
-HitInfo findBestTri_world(Ray ray, out int triTest, out int aabbTest){
+// Find best triangle across all models; all traversal is in LOCAL; returns Hit.
+Hit findBestTri(Ray ray, out int triTest, out int aabbTest){
 
-    HitInfo hitInfo;
-    hitInfo.hit = false;
-    hitInfo.t = 1e30;
+    Hit hit;
+    hit.hit = false;
+    hit.t = 1e30;
 
     triTest = 0; aabbTest = 0;
 
@@ -498,6 +510,7 @@ HitInfo findBestTri_world(Ray ray, out int triTest, out int aabbTest){
         vec3 min = boundingBoxMin[rootNode].xyz;
         vec3 max = boundingBoxMax[rootNode].xyz;
 
+        aabbTest++;
         float tLocal = intersectAABB(rayLocal, min, max);
 
         if (tLocal > 1e30){
@@ -527,87 +540,73 @@ HitInfo findBestTri_world(Ray ray, out int triTest, out int aabbTest){
 
     // Traverse models in sorted order
     for (int i = 0; i < numModels; i++){
+        if (modelDists[i].dist2 > 1e30) continue;
         int modelIdx = modelDists[i].index;
 
         mat4 M    = modelTransformations[modelIdx];
         mat4 invM = modelInvTransformations[modelIdx];
 
-        HitInfo hit = traverseBVH(
-        models[modelIdx], ray, M, invM, hitInfo.t,
+        Hit h = traverseBVH(
+        models[modelIdx], ray, M, invM, hit.t,
         triTest, aabbTest
         );
 
-        if (hit.hit && hit.t < hitInfo.t){
-            hitInfo = hit;
-            hitInfo.modelID = modelIdx;
+        if (h.hit && h.t < hit.t){
+            hit = h;
+            hit.modelID = modelIdx;
         }
     }
 
-    hitInfo.tri = createTri(hitInfo.triID);
+    hit.tri = createTri(hit.triID);
 
-    return hitInfo;
-}
-
-// Camera / Path
-vec3 calculateInitialDir(int aaCycle, vec2 screenCoord){
-    float xi = float(aaCycle % aa);
-    float yi = float(aaCycle) / float(aa);
-    float ox = (xi + 0.5)/float(aa) - 0.5;
-    float oy = (yi + 0.5)/float(aa) - 0.5;
-    ox /= float(resolution.x)/2.0;
-    oy /= float(resolution.y)/2.0;
-    vec2 coord = screenCoord + vec2(ox,oy);
-    float fovRadX = radians(fovDeg);
-    coord *= tan(0.5*fovRadX);
-    vec3 d = camForward + camRight*coord.x + camUp*coord.y;
-    return normalize(d);
+    return hit;
 }
 
 // Russian Roulette
 bool russianRoulet(inout vec3 color, inout uint state){
-    float p = min(max(max(color.r,color.g),color.b)*5.0, 1.0);
+    float p = min(max(max(color.r,color.g),color.b), 1.0);
     if (randomValue(state) >= p) return true;
     color *= 1.0/p;
     return false;
 }
 
 // Trace / Shading
-bool hitTriangleUpdate(HitInfo hitInfo, inout Ray ray, inout vec3 color, inout uint state){
+bool hitTriangleUpdate(Hit hit, inout Ray ray, inout vec3 color, inout uint state){
 
-    float u = hitInfo.u;
-    float v = hitInfo.v;
-    float w = hitInfo.w;
+    float u = hit.u;
+    float v = hit.v;
+    float w = hit.w;
 
-    mat4 mat     = modelTransformations[hitInfo.modelID];
-    mat4 invMat  = modelInvTransformations[hitInfo.modelID];
+    mat4 mat     = modelTransformations[hit.modelID];
+    mat4 invMat  = modelInvTransformations[hit.modelID];
 
-    Triangle tri = hitInfo.tri;
+    Triangle tri = hit.tri;
 
     // advance to world hit
-    ray.pos += ray.dir * hitInfo.t;
+    ray.pos += ray.dir * hit.t;
 
     // local normal -> world normal
-    vec3 nL = calculateNormalLocal(tri, u, v, w);
-    vec3 nW = toWorldNormal(nL, invMat);
-    //if (dot(nW, ray.dir) > 0.0) nW = -nW;
+    vec3 normalLocal = calculateNormalLocal(hit);
+    vec3 normalWorld = toWorldNormal(normalLocal, invMat);
+    //if (dot(normalWorld, ray.dir) > 0.0) normalWorld = -normalWorld;
 
     if (debugView){
-        if (debugMode == 0) color = nW*0.5+0.5;
-        else if (debugMode == 2)color = hitInfo.t < depthScale ? vec3(hitInfo.t/depthScale) : vec3(1);
+        if (debugMode == 0) color = normalWorld*0.5+0.5;
+        else if (debugMode == 2)color = hit.t < depthScale ? vec3(hit.t/depthScale) : vec3(1);
         return true;
     }
 
-    float specP   = specularColors[tri.matID].w;
-    bool  diffOnly = (specP == -1.0);
-    bool  isSpec   = randomValue(state) <= specP;
+    float specularProbability = specularColors[tri.matID].w;
+    bool  diffuseOnly         = (specularProbability == -1.0);
+    bool  isSpecular          = randomValue(state) <= specularProbability;
 
-    if (updateColor(hitInfo, color, isSpec, diffOnly, mat)) return true;
+    if (updateColor(hit, color, isSpecular, diffuseOnly, mat)) return true;
 
-    float sm    = (isSpec || diffOnly) ? colors[tri.matID].w : 0.0;
-    float trans = glassLightSettings[tri.matID].x;
-    float ior   = glassLightSettings[tri.matID].y;
+    float smoothness    = (isSpecular || diffuseOnly) ? colors[tri.matID].w : 0.0;
+    float transperancy  = glassLightSettings[tri.matID].x;
+    float ior           = glassLightSettings[tri.matID].y;
 
-    ray.dir   = calculateNewDirection(nW, ray.dir, sm, specP, trans, ior, state, color);
+    ray.dir   = calculateNewDirection(normalWorld, ray.dir, smoothness, specularProbability, transperancy, ior, state, color);
     ray.invDir = 1.0/ray.dir;
     return false;
 }
@@ -617,9 +616,17 @@ bool hitFloorUpdate(inout Ray ray, inout vec3 color, inout uint state){
     float t = (floorY - ray.pos.y)/ray.dir.y;
     if (t > 0.01 && t < 1e30){
         ray.pos += ray.dir*t;
+
         vec3 n = vec3(0,1,0);
-        color *= vec3(0.9);
-        ray.dir = calculateNewDirection(n, ray.dir, 0.0, 0.0, 0.0, 1.0, state, color);
+
+        float smoothness = floorDiffuseColor.w;
+        float specularProbability = floorSpecularColor.w;
+
+        bool isSpecular = randomValue(state) <= specularProbability;
+
+        color *= isSpecular ? floorSpecularColor.rgb : floorDiffuseColor.rgb;
+
+        ray.dir = calculateNewDirection(n, ray.dir, smoothness, specularProbability, 0.0, 1.0, state, color);
         ray.invDir = 1.0/ray.dir;
 
         if (debugView){
@@ -644,10 +651,10 @@ vec3 trace(Ray ray, inout uint state){
     iorStack[0] = 1.0; iorSize = 1;
     vec3 color  = vec3(1.0);
 
-    for (int i=0;i<=bounceLim;i++){
+    for (int bounce = 0; bounce <= bounceLim; bounce++){
         int triTest = 0, aabbTest = 0;
 
-        HitInfo hitInfo = findBestTri_world(ray, triTest, aabbTest);
+        Hit hitInfo = findBestTri(ray, triTest, aabbTest);
 
         if (debugView && debugMode == 1) {
             vec3 heatmap = triTest > triTh || aabbTest > aabbTh ? vec3(1) : vec3(float(triTest)/float(triTh), 0.0, float(aabbTest)/float(aabbTh));
@@ -657,7 +664,7 @@ vec3 trace(Ray ray, inout uint state){
 
         if (hitInfo.hit){
             if (hitTriangleUpdate(hitInfo, ray, color, state)) break;
-        } else if (ray.dir.y < 0.0){
+        } else if (floorActive && ray.dir.y < 0.0){
             if (hitFloorUpdate(ray, color, state)) break;
         } else {
             if (debugView){
@@ -667,8 +674,8 @@ vec3 trace(Ray ray, inout uint state){
             break;
         }
 
-        if (russianRoulet(color, state)) return vec3(0.0);
-        if (i == bounceLim) return vec3(0.0);
+        if (russianRoulet(color, state) && bounce >= 1) return vec3(0.0);
+        if (bounce == bounceLim) return vec3(0.0);
     }
 
     return color;

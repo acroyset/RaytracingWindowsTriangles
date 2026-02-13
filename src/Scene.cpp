@@ -14,25 +14,6 @@ void setBasisVectors(const vec3& forward, vec3& up, vec3& right) {
     up = normalize(cross(right, forward));
 }
 
-mat4 composeTransform(const vec3& position, const vec3& rotation, const vec3& scale) {
-    mat4 I(1.0f);
-
-    // Scale
-    mat4 S = glm::scale(I, scale);
-
-    // Rotation (order: Z * Y * X)
-    mat4 Rx = rotate(I, rotation.x, vec3(1, 0, 0));
-    mat4 Ry = rotate(I, rotation.y, vec3(0, 1, 0));
-    mat4 Rz = rotate(I, rotation.z, vec3(0, 0, 1));
-    mat4 R = Rz * Ry * Rx;
-
-    // Translation
-    mat4 T = translate(I, position);
-
-    // Final TRS matrix
-    return T * R * S;
-}
-
 inline bool DragFloat3(const char* label, vec3& v, float speed = 0.01f, float min = 0.0f, float max = 0.0f) {
     return ImGui::DragFloat3(label, value_ptr(v), speed, min, max);
 }
@@ -141,28 +122,19 @@ Scene::Scene(const int samples, const int aa, const int bounceLim)
     textureScales.fill(0.0f);
 }
 
-void Scene::addModel(const std::string& filename, const vec3 position, const vec3 scale, const vec3 color, const float smoothness, const vec3 specularColor, const float specularProb, const float transparency, const float ior, const float emission) {
+void Scene::addModel(const std::string& filename, const Transformation &transformation, const Material &material) {
     Model model(filename);
 
-    addModel(model, position, scale, color, smoothness, specularColor, specularProb, transparency, ior, emission, "");
+    addModel(model, transformation, material);
 }
-void Scene::addModel(const std::string& filename, const vec3 position, const vec3 scale, const std::string &textureFilename, const float smoothness, const vec3 specularColor, const float specularProb, const float transparency, const float ior, const float emission) {
-    Model model(filename);
+void Scene::addModel(Model& model, Transformation transformation, const Material& material) {
 
-    addModel(model, position, scale, vec3(0), smoothness, specularColor, specularProb, transparency, ior, emission, textureFilename);
-}
-
-void Scene::addModel(Model& model, const vec3 position, const vec3 scale, const std::string &textureFilename, const float smoothness, const vec3 specularColor, const float specularProb, const float transparency, const float ior, const float emission) {
-    addModel(model, position, scale, vec3(0), smoothness, specularColor, specularProb, transparency, ior, emission, textureFilename);
-}
-void Scene::addModel(Model& model, vec3 position, vec3 scale, vec3 color, float smoothness, vec3 specularColor, float specularProb, const float transparency, const float ior, float emission, const std::string& textureFilename) {
-
-    bool useTexture = !model.texCoords.empty() && !textureFilename.empty();
+    bool useTexture = !model.texCoords.empty() && !material.texturePath.empty();
     int textureID = int(textures.size());
     if (useTexture) {
-        textures.emplace_back(window.createTexture("textures[" + std::to_string(textureID) + "]", textureFilename));
+        textures.emplace_back(window.createTexture("textures[" + std::to_string(textureID) + "]", material.texturePath));
         textures.back().setWrap(TextureWrap::REPEAT, TextureWrap::REPEAT);
-        const std::string& name = textureFilename;
+        const std::string& name = material.texturePath;
         std::string label = name;
         int count = 0;
         for (const std::string& i : textureLabels) {
@@ -176,14 +148,12 @@ void Scene::addModel(Model& model, vec3 position, vec3 scale, vec3 color, float 
     }
     modelsTextureID.emplace_back(useTexture ? textureID : -1);
 
-    if (specularColor == vec3(-1)) specularProb = -1.0f;
-
     int Toffset = int(triangles.size())/3;
     int Voffset = int(vertices.size());
     int TXoffset = int(texCoords.size());
     int Noffset = int(normals.size());
     int BBoffset = int(boundingBoxMin.size());
-    int Coffset = int(colors.size());
+    int Coffset = int(diffuseColors.size());
 
     models.emplace_back(BBoffset);
 
@@ -225,13 +195,13 @@ void Scene::addModel(Model& model, vec3 position, vec3 scale, vec3 color, float 
         this->childB.push_back(childB+offsetB);
     }
 
-    if (model.colors.empty()) {
-        colors.emplace_back(color, smoothness);
-        specularColors.emplace_back(specularColor, specularProb);
-        glassLightSettings.emplace_back(transparency, ior, emission, 0);
+    if (model.diffuseColors.empty()) {
+        diffuseColors.emplace_back(material.diffuseColor, material.smoothness);
+        specularColors.emplace_back(material.specularColor, material.specularProbability);
+        glassLightSettings.emplace_back(material.transparency, material.ior, material.emissionStrength, 0);
     } else {
-        for (vec4 tempColor : model.colors) {
-            colors.emplace_back(tempColor);
+        for (vec4 tempColor : model.diffuseColors) {
+            diffuseColors.emplace_back(tempColor);
         }
         for (vec4 tempSpecularColor : model.specularColors) {
             specularColors.emplace_back(tempSpecularColor);
@@ -241,16 +211,12 @@ void Scene::addModel(Model& model, vec3 position, vec3 scale, vec3 color, float 
         }
     }
 
-    modelTransforms.emplace_back(composeTransform(
-        position,
-        vec3(0, 0, 0),
-        scale
-        ));
+    modelTransforms.emplace_back(transformation.matrix);
     modelInvTransforms.emplace_back(inverse(modelTransforms.back()));
 
-    modelPos.emplace_back(position);
-    modelRot.emplace_back(0.0f, 0.0f, 0.0f);
-    modelScale.emplace_back(scale);
+    modelPos.emplace_back(transformation.position);
+    modelRot.emplace_back(transformation.rotation);
+    modelScale.emplace_back(transformation.scale);
 
     std::string name = model.filename;
     std::string label = name;
@@ -264,7 +230,7 @@ void Scene::addModel(Model& model, vec3 position, vec3 scale, vec3 color, float 
 
     modelLabels.emplace_back(label);
 
-    int Ccount = int(colors.size()) - Coffset;
+    int Ccount = int(diffuseColors.size()) - Coffset;
     modelsColors.emplace_back(Coffset, Coffset + Ccount);
 
 }
@@ -280,31 +246,35 @@ int Scene::getNumTris() const {
 void Scene::createUniforms() {
     uNumModels = window.createUniform<int>("numModels");
 
-    uCameraPos =     window.createUniform<vec3>("cameraPos");
+    uCameraPos     = window.createUniform<vec3>("cameraPos");
     uCameraForward = window.createUniform<vec3>("camForward");
-    uCameraUp =      window.createUniform<vec3>("camUp");
-    uCameraRight =   window.createUniform<vec3>("camRight");
-    uFovDeg =        window.createUniform<float>("fovDeg");
+    uCameraUp      = window.createUniform<vec3>("camUp");
+    uCameraRight   = window.createUniform<vec3>("camRight");
+    uFovDeg        = window.createUniform<float>("fovDeg");
 
-    uResolution =     window.createUniform<uvec2>("resolution");
-    uFrameCount =     window.createUniform<int>("frameCount");
+    uResolution     = window.createUniform<uvec2>("resolution");
+    uFrameCount     = window.createUniform<int>("frameCount");
     uTimeSinceStart = window.createUniform<float>("timeSinceStart");
 
-    uNumNodes =  window.createUniform<int>("numNodes");
-    uSamples =   window.createUniform<int>("samples");
-    uAA =        window.createUniform<int>("aa");
+    uNumNodes  = window.createUniform<int>("numNodes");
+    uSamples   = window.createUniform<int>("samples");
+    uAA        = window.createUniform<int>("aa");
     uBounceLim = window.createUniform<int>("bounceLim");
 
     uSkyActive = window.createUniform<bool>("skyActive");
-    uSkyColor =  window.createUniform<vec3>("skyColor");
-    uSunDir =    window.createUniform<vec3>("sunDir");
-    uSunColor =  window.createUniform<vec3>("sunColor");
+    uSkyColor  = window.createUniform<vec3>("skyColor");
+    uSunDir    = window.createUniform<vec3>("sunDir");
+    uSunColor  = window.createUniform<vec3>("sunColor");
 
-    uDebugView =      window.createUniform<bool>("debugView");
-    uDebugMode =      window.createUniform<int>("debugMode");
-    uTriThreshold =   window.createUniform<int>("triTh");
-    uAABBThreshold =  window.createUniform<int>("aabbTh");
-    uDepthScale =     window.createUniform<float>("depthScale");
+    uFloorActive        = window.createUniform<bool>("floorActive");
+    uFloorDiffuseColor  = window.createUniform<vec4>("floorDiffuseColor");
+    uFloorSpecularColor = window.createUniform<vec4>("floorSpecularColor");
+
+    uDebugView     = window.createUniform<bool>("debugView");
+    uDebugMode     = window.createUniform<int>("debugMode");
+    uTriThreshold  = window.createUniform<int>("triTh");
+    uAABBThreshold = window.createUniform<int>("aabbTh");
+    uDepthScale    = window.createUniform<float>("depthScale");
 
     uTextureScales = window.createUniform<float>("textureScales");
 
@@ -335,6 +305,10 @@ void Scene::setUniforms() const {
     uSunDir.set(sunDir);
     uSunColor.set(sunColor*sunStrength);
 
+    uFloorActive.set(floorActive);
+    uFloorDiffuseColor.set(floorDiffuseColor);
+    uFloorSpecularColor.set(floorSpecularColor);
+
     uDebugView.set(debugView);
     uDebugMode.set(debugMode);
     uTriThreshold.set(triTh);
@@ -357,7 +331,7 @@ void Scene::set_ssbo() {
     ssboVertices.set(vertices, 1);
     ssboTexCoords.set(texCoords, 2);
     ssboNormals.set(normals, 3);
-    ssboColors.set(colors, 4, true);
+    ssboColors.set(diffuseColors, 4, true);
     ssboSpecularColors.set(specularColors, 5, true);
     ssboGlassLightSettings.set(glassLightSettings, 6, true);
     ssboBoundingBoxMin.set(boundingBoxMin, 7);
@@ -419,6 +393,7 @@ bool Scene::inputHandling(float speed, float sensitivity, float dt) {
 }
 
 void Scene::updateFrame() {
+    Timer t;
     window.start();
 
     if (hud) {
@@ -428,7 +403,7 @@ void Scene::updateFrame() {
     }
 
     float dt = window.getDeltaTime();
-    updateFPS(dt);
+    updateItemSmooth(totalTime, dt);
 
     const bool moved = inputHandling(speed, sensitivity, dt);
     if (moved) {
@@ -444,7 +419,19 @@ void Scene::updateFrame() {
     // --- Controls window ---
     if (hud) ImGuiRender();
 
+    updateItemSmooth(cpuTime, t.reset());
+
+    GLuint query;
+    glGenQueries(1, &query);
+    glBeginQuery(GL_TIME_ELAPSED, query);
+
     window.render();
+
+    glEndQuery(GL_TIME_ELAPSED);
+    GLuint64 time;
+    glGetQueryObjectui64v(query, GL_QUERY_RESULT, &time);
+    double s = double(time) / 1e9;
+    updateItemSmooth(gpuTime, s);
 
     if (hud) {
         ImGui::Render();
@@ -468,11 +455,32 @@ void Scene::ImGuiRender() {
 
         ui_resetAccum |= ImGui::Checkbox("Sky Active", &skyActive);
         if (skyActive) {
+            ImGui::Indent();
             ui_resetAccum |= ColorEdit3("Sun Color", sunColor);
             ui_resetAccum |= DragFloat3("Sun Direction", sunDir);
             sunDir = normalize(sunDir);
 
             ui_resetAccum |= ImGui::SliderFloat("Sun Strength", &sunStrength, 0, 300);
+            ImGui::Unindent();
+        }
+
+        ui_resetAccum |= ImGui::Checkbox("Floor Active", &floorActive);
+        if (floorActive) {
+            ImGui::Indent();
+
+            vec3 diffuseColor = vec3(floorDiffuseColor);
+            if (ColorEdit3("Floor Diffuse Color", diffuseColor)) {
+                floorDiffuseColor = vec4(diffuseColor, floorDiffuseColor.w);
+                ui_resetAccum = true;
+            }
+
+            vec3 specularColor = vec3(floorSpecularColor);
+            if (ColorEdit3("Floor Specular Color", specularColor)) {
+                floorSpecularColor = vec4(specularColor, floorSpecularColor.w);
+                ui_resetAccum = true;
+            }
+
+            ImGui::Unindent();
         }
 
         ImGui::Separator();
@@ -534,23 +542,42 @@ void Scene::ImGuiRender() {
 
                 if (selectedColor != -1){
                     ImGui::Indent();
-                    vec4& C = colors[selectedColor];
+                    vec4& DC = diffuseColors[selectedColor];
                     vec4& SC = specularColors[selectedColor];
                     vec4& GLS = glassLightSettings[selectedColor];
 
-                    ImGui::Text("Colors");
+                    bool emissive = GLS.z > 0;
+                    if (ImGui::Checkbox("Emissive", &emissive)) {
+                        if (emissive) GLS.z = 1;
+                        else GLS.z = 0;
+                        changedGLS = true;
+                    }
 
-                    if (modelsTextureID[selectedModel] == -1) changedC |= ColorEdit3("Diffuse Color", C);
-                    changedSC |= ColorEdit3("Specular Color", SC);
+                    if (emissive) {
+                        if (modelsTextureID[selectedModel] == -1) changedC |= ColorEdit3("Color", DC);
+                        changedGLS |= ImGui::SliderFloat("Emission Strength", &GLS.z, 0.01f, 1000.0f);
+                    } else {
 
-                    ImGui::Text("Material Properties");
+                        if (modelsTextureID[selectedModel] == -1) changedC |= ColorEdit3("Diffuse Color", DC);
 
-                    changedC |= ImGui::SliderFloat("Smoothness", &C.w, 0.0f, 1.0f);
-                    changedSC |= ImGui::SliderFloat("Specular Probability", &SC.w, 0.0f, 1.0f);
-                    changedGLS |= ImGui::SliderFloat("Transparency", &GLS.x, 0.0f, 1.0f);
-                    if (GLS.x > 0) changedGLS |= ImGui::SliderFloat("Index of Refraction", &GLS.y, 0.0f, 3.0f);
-                    changedGLS |= ImGui::SliderFloat("Emission Strength", &GLS.z, 0.0f, 10.0f);
-                    colors[selectedColor] = C;
+                        bool specular = SC.w >= 0;
+                        if (ImGui::Checkbox("Specular", &specular)) {
+                            if (specular) SC.w = 0;
+                            else SC.w = -1;
+                            changedSC = true;
+                        }
+
+                        if (specular) changedSC |= ColorEdit3("Specular Color", SC);
+
+                        ImGui::Text("Material Properties");
+
+                        changedC |= ImGui::SliderFloat("Smoothness", &DC.w, 0.0f, 1.0f);
+                        if (specular) changedSC |= ImGui::SliderFloat("Specular Probability", &SC.w, 0.0f, 1.0f);
+                        changedGLS |= ImGui::SliderFloat("Transparency", &GLS.x, 0.0f, 1.0f);
+                        if (GLS.x > 0) changedGLS |= ImGui::SliderFloat("Index of Refraction", &GLS.y, 0.0f, 3.0f);
+                    }
+
+                    diffuseColors[selectedColor] = DC;
                     specularColors[selectedColor] = SC;
                     glassLightSettings[selectedColor] = GLS;
                     ImGui::Unindent();
@@ -586,7 +613,8 @@ void Scene::ImGuiRender() {
                 if (changedPRS) {
                     R = radians(rotDeg);
 
-                    modelTransforms[selectedModel] = composeTransform(P, R, S);
+                    Transformation t(P, S, R);
+                    modelTransforms[selectedModel] = t.matrix;
                     modelInvTransforms[selectedModel] = inverse(modelTransforms[selectedModel]);
 
                     ssboModelTransformations.update(selectedModel, modelTransforms[selectedModel]);
@@ -599,7 +627,7 @@ void Scene::ImGuiRender() {
                 const int end   = modelsColors[selectedModel][1];   // exclusive
 
                 if (changedC) {
-                    ssboColors.update(start, end, colors.data() + start);
+                    ssboColors.update(start, end, diffuseColors.data() + start);
                     ui_resetAccum = true;
                 }
 
@@ -625,7 +653,7 @@ void Scene::ImGuiRender() {
     // settings
     {
         ImGui::SetNextWindowPos(ImVec2(520, 10), ImGuiCond_Once);
-        ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_Once);
+        ImGui::SetNextWindowSize(ImVec2(300, 350), ImGuiCond_Once);
         ImGui::Begin("Settings");
 
         ImGui::Checkbox("Lock", &lock);
@@ -681,7 +709,7 @@ void Scene::ImGuiRender() {
     // stats
     {
         ImGui::SetNextWindowPos(ImVec2(830, 10), ImGuiCond_Once);
-        ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
+        ImGui::SetNextWindowSize(ImVec2(300, 250), ImGuiCond_Once);
         ImGui::Begin("Stats");
 
         ImGui::Text("Samples: %d", sampleCount);
@@ -689,8 +717,10 @@ void Scene::ImGuiRender() {
 
         ImGui::Separator();
 
-        ImGui::Text("FPS: %.2f", fps);
-        ImGui::Text("Frame Time (ms): %.2f", 1/fps*1000.0f);
+        ImGui::Text("FPS: %.2f", 1/totalTime);
+        ImGui::Text("Frame Time (ms): %.2f", totalTime*1000.0f);
+        ImGui::Text("CPU Time (ms): %.2f", cpuTime*1000.0f);
+        ImGui::Text("GPU Time (ms): %.2f", gpuTime*1000.0f);
 
         ImGui::Separator();
 

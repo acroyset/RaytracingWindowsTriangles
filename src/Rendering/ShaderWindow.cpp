@@ -164,9 +164,6 @@ ShaderWindow::ShaderWindow() {
     // Cursor hidden for screensaver feel
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
-    timeSinceStart = static_cast<float>(glfwGetTime());
-    previousTime = timeSinceStart;
-
     glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &maxTextureUnits);
 }
 
@@ -189,6 +186,8 @@ void ShaderWindow::render() {
 }
 
 void ShaderWindow::start() {
+    dt = float(deltaTime.reset());
+
     glClear(GL_COLOR_BUFFER_BIT);
     glUseProgram(shaderProgram);
 
@@ -197,10 +196,6 @@ void ShaderWindow::start() {
         glBindTexture(GL_TEXTURE_2D, textures[1 - currentBuffer]);
         glUniform1i(glGetUniformLocation(shaderProgram, "previousFrame"), 0);
     }
-
-    timeSinceStart = static_cast<float>(glfwGetTime() - startTime);
-    deltaTime = timeSinceStart-previousTime;
-    previousTime = timeSinceStart;
 }
 
 void ShaderWindow::setupFramebuffers() {

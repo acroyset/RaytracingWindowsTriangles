@@ -9,6 +9,8 @@
 #include <sstream>
 #include <unordered_map>
 
+#include "Rendering/Timer.h"
+
 void splitSlash(const std::string& s, std::string tokens[3]) {
     std::string token;
     int i = 0;
@@ -456,8 +458,9 @@ Model::Model(const std::string &filename) {
     std::vector<int> tempTriMatIndex;
 
     std::cout << filename << std::endl;
-    std::cout << "   Parsing..." << std::endl;
+    Timer t;
     parse(filename, tempTriangles, tempVertices, tempTexCoords, tempNormals, tempTriMatIndex, tempColors, tempSpecularColors, tempGlassLightSettings);
+    std::cout << "   Parse Time: " << t.reset() << std::endl;
 
     std::cout << "   Triangles: " << tempTriangles.size()/3 << std::endl;
     std::cout << "   Vertices: " << tempVertices.size() << std::endl;
@@ -486,7 +489,7 @@ Model::Model(const std::string &filename) {
     }
 
     for (glm::vec4 tempColor : tempColors) {
-        colors.emplace_back(tempColor);
+        diffuseColors.emplace_back(tempColor);
     }
 
     for (glm::vec4 tempSpecularColor : tempSpecularColors) {
@@ -499,9 +502,9 @@ Model::Model(const std::string &filename) {
 
     int testPerAxis = 3;
 
-    std::cout << "   Starting BVH construction..." << std::endl;
+    t.reset();
     createBVH(47, testPerAxis, triStart, numTris);
-    std::cout << "   BVH construction complete!" << std::endl;
+    std::cout << "   BVH Construction Time: " << t.reset() << std::endl;
 }
 
 void Model::createBVH(const int depth, const int numTestsPerAxis, int triStart, int numTris) {
