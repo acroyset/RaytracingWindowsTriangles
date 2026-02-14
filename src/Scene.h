@@ -35,12 +35,13 @@ class Scene {
     ShaderWindow window{};
 
     std::vector<ivec4> triangles;
+
     std::vector<vec4> vertices;
     std::vector<vec2> texCoords;
     std::vector<vec4> normals;
-    std::vector<vec4> diffuseColors;
-    std::vector<vec4> specularColors;
-    std::vector<vec4> glassLightSettings;
+    std::vector<Material> materials;
+
+    // Model Info
 
     std::vector<mat4> modelTransforms;
     std::vector<mat4> modelInvTransforms;
@@ -51,24 +52,32 @@ class Scene {
     std::vector<vec3> modelScale;
 
     std::vector<std::string> modelLabels;
-    std::vector<ivec2> modelsColors;
+    std::vector<ivec2> modelsMaterialsIdx;
     std::vector<int> modelsTextureID;
+
+    // BVH
 
     std::vector<vec4> boundingBoxMin;
     std::vector<vec4> boundingBoxMax;
     std::vector<int> childA;
     std::vector<int> childB;
 
+    // Camera
 
     vec3 cameraPos{};
     vec3 camForward{};
     vec3 camUp{};
     vec3 camRight{};
     float fovDeg = 60;
+    float aperture = 0.0;
+    float focusDistance = 1000;
+    bool focusDistancePlane = false;
 
     bool lock;
     float sensitivity = 0.03;
     float speed = 500;
+
+    // Stats
 
     int frameCount;
     int sampleCount;
@@ -76,15 +85,26 @@ class Scene {
     int aa;
     int bounceLim;
 
+    float totalTime = 0;
+    float gpuTime = 0;
+    float cpuTime = 0;
+    float smoothing = 0.9;
+
+    // Sky
+
     bool skyActive = true;
     vec3 skyColor = vec3(0.5,0.7,0.9);
     vec3 sunDir = normalize(vec3(0.867, 0.498, 0.01));
-    float sunStrength = 200;
+    float sunStrength = 1000;
     vec3 sunColor = vec3(1, 0.93, 0.31);
+
+    // Floor
 
     bool floorActive = true;
     vec4 floorDiffuseColor = vec4(1, 1, 1, 0);
     vec4 floorSpecularColor = vec4(0, 0, 0, -1);
+
+    // Debug
 
     bool debugView = false;
     DebugMode debugMode = Normals;
@@ -92,23 +112,19 @@ class Scene {
     int aabbTh = 100;
     float depthScale = 1500;
 
+
     int selectedModel = 0;
     int selectedColor = 0;
 
     bool hud = true;
 
-    float totalTime = 0;
-    float gpuTime = 0;
-    float cpuTime = 0;
-    float smoothing = 0.9;
+    // SSBO
 
     SSBO<ivec4> ssboTriangles;
     SSBO<vec4> ssboVertices;
     SSBO<vec2> ssboTexCoords;
     SSBO<vec4> ssboNormals;
-    SSBO<vec4> ssboColors;
-    SSBO<vec4> ssboSpecularColors;
-    SSBO<vec4> ssboGlassLightSettings;
+    SSBO<Material> ssboMaterials;
     SSBO<vec4> ssboBoundingBoxMin;
     SSBO<vec4> ssboBoundingBoxMax;
     SSBO<int> ssboChildA;
@@ -117,6 +133,9 @@ class Scene {
     SSBO<mat4> ssboModelTransformations;
     SSBO<mat4> ssboModelInvTransformations;
 
+
+    // Uniforms
+
     Uniform<int> uNumModels;
 
     Uniform<vec3> uCameraPos;
@@ -124,6 +143,9 @@ class Scene {
     Uniform<vec3> uCameraUp;
     Uniform<vec3> uCameraRight;
     Uniform<float> uFovDeg;
+    Uniform<float> uAperture;
+    Uniform<float> uFocusDistance;
+    Uniform<bool> uFocusDistancePlane;
 
     Uniform<uvec2> uResolution;
     Uniform<int> uFrameCount;
@@ -151,6 +173,7 @@ class Scene {
 
     Uniform<float> uTextureScales;
 
+    // Textures
 
     Texture skyTexture;
     Uniform<float> uEnvYaw{};
@@ -159,6 +182,8 @@ class Scene {
     std::array<float, 64> textureScales{};
     int selectedTexture = 0;
     std::vector<std::string> textureLabels;
+
+    // Keys
 
     std::map<GLuint, bool> trackedKeysPressed{{GLFW_KEY_L , false}, {GLFW_KEY_H , false}};
 
@@ -173,9 +198,8 @@ class Scene {
         ImGui::DestroyContext();
     }
 
-    void addModel(const std::string &filename, const Transformation &transformation, const Material &material);
-
-    void addModel(Model& model, Transformation transformation, const Material& material);
+    void addModel(const std::string &filename, const Transformation& transformation, const Material& material, const std::string& texturePath = "");
+    void addModel(const Model& model, const Transformation& transformation, const Material& material, const std::string& texturePath = "");
 
     [[nodiscard]] int getNumBVHNodes() const;
 

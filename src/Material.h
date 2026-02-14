@@ -6,72 +6,106 @@
 #define MATERIAL_H
 #include <glm/vec3.hpp>
 
-struct Material {
-    vec3 diffuseColor{};
-    float smoothness;
-    vec3 specularColor{};
-    float specularProbability;
-    float transparency;
-    float ior;
-    float emissionStrength;
-    std::string texturePath;
+using namespace glm;
+
+class Material {
+
+    vec4 diffuseColor{}; // diffuse color, smoothness
+    vec4 specularColor{}; // specular color, specular probability
+    vec4 glassLightSettings{}; // transparency, ior, emission strength, (padding)
+
+public:
+
+    Material() = default;
 
     Material(
-        vec3 diffuseColor = vec3(1),
-        float smoothness = 0,
+        vec3 diffuseColor,
+        float smoothness,
         vec3 specularColor = vec3(-1),
         float specularProbability = 0.0f,
         float transparency = 0.0f,
         float ior = 1.0f)
     {
-        this->diffuseColor = diffuseColor;
-        this->smoothness = smoothness;
+        this->diffuseColor = vec4(diffuseColor, smoothness);
         if (specularColor == vec3(-1)) {
-            this->specularColor = vec3(0);
-            this->specularProbability = -1.0f;
+            this->specularColor = vec4(0, 0, 0, -1);
         } else {
-            this->specularColor = specularColor;
-            this->specularProbability = specularProbability;
+            this->specularColor = vec4(specularColor, specularProbability);
         }
-        this->transparency = transparency;
-        this->ior = ior;
-        this->emissionStrength = 0.0f;
-    }
-
-    Material(
-        const std::string& texturePath,
-        float smoothness = 0,
-        vec3 specularColor = vec3(-1),
-        float specularProbability = 0.0f,
-        float transparency = 0.0f,
-        float ior = 1.0f)
-    {
-        this->diffuseColor = vec3(0);
-        this->smoothness = smoothness;
-        if (specularColor == vec3(-1)) {
-            this->specularColor = vec3(0);
-            this->specularProbability = -1.0f;
-        } else {
-            this->specularColor = specularColor;
-            this->specularProbability = specularProbability;
-        }
-        this->transparency = transparency;
-        this->ior = ior;
-        this->emissionStrength = 0.0f;
-        this->texturePath = texturePath;
+        this->glassLightSettings = vec4(transparency, ior, 0, 0);
     }
 
     Material(
         float emissionStrength,
         vec3 color)
     {
-        this->diffuseColor = color;
-        this->smoothness = 0.0f;
-        this->specularColor = vec3(0);
-        this->specularProbability = -1.0f;
-        this->transparency = 0.0f;
-        this->ior = 1.0f;
-        this->emissionStrength = emissionStrength;
+        this->diffuseColor = vec4(color, 0);
+        this->specularColor = vec4(0, 0, 0, -1);
+        this->glassLightSettings = vec4(0, 1, emissionStrength, 0);
+    }
+
+    [[nodiscard]] vec3 getDiffuseColor() const {
+        return xyz(diffuseColor);
+    }
+    [[nodiscard]] float getSmoothness() const {
+        return diffuseColor.w;
+    }
+    [[nodiscard]] vec3 getSpecularColor() const {
+        return xyz(specularColor);
+    }
+    [[nodiscard]] float getSpecularProbability() const {
+        return specularColor.w;
+    }
+    [[nodiscard]] float getTransparency() const {
+        return glassLightSettings.x;
+    }
+    [[nodiscard]] float getIOR() const {
+        return glassLightSettings.y;
+    }
+    [[nodiscard]] float getEmissionStrength() const {
+        return glassLightSettings.z;
+    }
+
+    [[nodiscard]] vec4 getDC() const {
+        return diffuseColor;
+    }
+    [[nodiscard]] vec4 getSC() const {
+        return specularColor;
+    }
+    [[nodiscard]] vec4 getGLS() const {
+        return glassLightSettings;
+    }
+
+    void setDiffuseColor(const vec3 color) {
+        diffuseColor = vec4(color, diffuseColor.w);
+    }
+    void setSmoothness(const float smoothness) {
+        diffuseColor.w = smoothness;
+    }
+    void setSpecularColor(const vec3 color) {
+        specularColor = vec4(color, specularColor.w);
+    }
+    void setSpecularProbability(const float probability) {
+        specularColor.w = probability;
+    }
+    void setTransparency(const float transparency) {
+        glassLightSettings.x = transparency;
+    }
+    void setIOR(const float ior) {
+        glassLightSettings.y = ior;
+    }
+    void setEmissionStrength(const float emissionStrength) {
+        glassLightSettings.z = emissionStrength;
+    }
+
+    void setDC(const vec4 dc) {
+        diffuseColor = dc;
+    }
+    void setSC(const vec4 sc) {
+        specularColor = sc;
+    }
+    void setGLS(const vec4 gls) {
+        glassLightSettings = gls;
     }
 };
 

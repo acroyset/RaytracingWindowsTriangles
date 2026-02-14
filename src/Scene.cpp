@@ -122,19 +122,19 @@ Scene::Scene(const int samples, const int aa, const int bounceLim)
     textureScales.fill(0.0f);
 }
 
-void Scene::addModel(const std::string& filename, const Transformation &transformation, const Material &material) {
+void Scene::addModel(const std::string& filename, const Transformation &transformation, const Material &material, const std::string& texturePath) {
     Model model(filename);
 
-    addModel(model, transformation, material);
+    addModel(model, transformation, material, texturePath);
 }
-void Scene::addModel(Model& model, Transformation transformation, const Material& material) {
+void Scene::addModel(const Model& model, const Transformation& transformation, const Material& material, const std::string& texturePath) {
 
-    bool useTexture = !model.texCoords.empty() && !material.texturePath.empty();
+    bool useTexture = !model.texCoords.empty() && !texturePath.empty();
     int textureID = int(textures.size());
     if (useTexture) {
-        textures.emplace_back(window.createTexture("textures[" + std::to_string(textureID) + "]", material.texturePath));
+        textures.emplace_back(window.createTexture("textures[" + std::to_string(textureID) + "]", texturePath));
         textures.back().setWrap(TextureWrap::REPEAT, TextureWrap::REPEAT);
-        const std::string& name = material.texturePath;
+        const std::string& name = texturePath;
         std::string label = name;
         int count = 0;
         for (const std::string& i : textureLabels) {
@@ -153,7 +153,7 @@ void Scene::addModel(Model& model, Transformation transformation, const Material
     int TXoffset = int(texCoords.size());
     int Noffset = int(normals.size());
     int BBoffset = int(boundingBoxMin.size());
-    int Coffset = int(diffuseColors.size());
+    int Moffset = int(materials.size());
 
     models.emplace_back(BBoffset);
 
@@ -162,9 +162,9 @@ void Scene::addModel(Model& model, Transformation transformation, const Material
         ivec4 triangle2 = model.triangles[i*3+1];
         ivec4 triangle3 = model.triangles[i*3+2];
 
-        triangle1 += vec4(Voffset, TXoffset, Noffset, Coffset);
-        triangle2 += vec4(Voffset, TXoffset, Noffset, useTexture);
-        triangle3 += vec4(Voffset, TXoffset, Noffset, useTexture ? textureID : 0);
+        triangle1 += vec4(Voffset, TXoffset, Noffset, Moffset);
+        triangle2 += vec4(Voffset, TXoffset, Noffset, useTexture ? textureID : -1);
+        triangle3 += vec4(Voffset, TXoffset, Noffset, 0);
 
         triangles.emplace_back(triangle1);
         triangles.emplace_back(triangle2);
@@ -195,19 +195,11 @@ void Scene::addModel(Model& model, Transformation transformation, const Material
         this->childB.push_back(childB+offsetB);
     }
 
-    if (model.diffuseColors.empty()) {
-        diffuseColors.emplace_back(material.diffuseColor, material.smoothness);
-        specularColors.emplace_back(material.specularColor, material.specularProbability);
-        glassLightSettings.emplace_back(material.transparency, material.ior, material.emissionStrength, 0);
+    if (model.materials.empty()) {
+        materials.emplace_back(material);
     } else {
-        for (vec4 tempColor : model.diffuseColors) {
-            diffuseColors.emplace_back(tempColor);
-        }
-        for (vec4 tempSpecularColor : model.specularColors) {
-            specularColors.emplace_back(tempSpecularColor);
-        }
-        for (vec4 tempGlassLightSetting : model.glassLightSettings) {
-            glassLightSettings.emplace_back(tempGlassLightSetting);
+        for (Material m : model.materials) {
+            materials.emplace_back(m);
         }
     }
 
@@ -230,8 +222,8 @@ void Scene::addModel(Model& model, Transformation transformation, const Material
 
     modelLabels.emplace_back(label);
 
-    int Ccount = int(diffuseColors.size()) - Coffset;
-    modelsColors.emplace_back(Coffset, Coffset + Ccount);
+    int Mcount = int(materials.size()) - Moffset;
+    modelsMaterialsIdx.emplace_back(Moffset, Moffset + Mcount);
 
 }
 
@@ -246,11 +238,14 @@ int Scene::getNumTris() const {
 void Scene::createUniforms() {
     uNumModels = window.createUniform<int>("numModels");
 
-    uCameraPos     = window.createUniform<vec3>("cameraPos");
-    uCameraForward = window.createUniform<vec3>("camForward");
-    uCameraUp      = window.createUniform<vec3>("camUp");
-    uCameraRight   = window.createUniform<vec3>("camRight");
-    uFovDeg        = window.createUniform<float>("fovDeg");
+    uCameraPos          = window.createUniform<vec3>("cameraPos");
+    uCameraForward      = window.createUniform<vec3>("camForward");
+    uCameraUp           = window.createUniform<vec3>("camUp");
+    uCameraRight        = window.createUniform<vec3>("camRight");
+    uFovDeg             = window.createUniform<float>("fovDeg");
+    uAperture           = window.createUniform<float>("aperture");
+    uFocusDistance      = window.createUniform<float>("focusDistance");
+    uFocusDistancePlane = window.createUniform<bool>("focusDistancePlane");
 
     uResolution     = window.createUniform<uvec2>("resolution");
     uFrameCount     = window.createUniform<int>("frameCount");
@@ -290,6 +285,9 @@ void Scene::setUniforms() const {
     uCameraUp.set(camUp);
     uCameraRight.set(camRight);
     uFovDeg.set(fovDeg);
+    uAperture.set(aperture);
+    uFocusDistance.set(focusDistance);
+    uFocusDistancePlane.set(focusDistancePlane);
 
     uResolution.set(window.size());
     uFrameCount.set(frameCount);
@@ -331,16 +329,14 @@ void Scene::set_ssbo() {
     ssboVertices.set(vertices, 1);
     ssboTexCoords.set(texCoords, 2);
     ssboNormals.set(normals, 3);
-    ssboColors.set(diffuseColors, 4, true);
-    ssboSpecularColors.set(specularColors, 5, true);
-    ssboGlassLightSettings.set(glassLightSettings, 6, true);
-    ssboBoundingBoxMin.set(boundingBoxMin, 7);
-    ssboBoundingBoxMax.set(boundingBoxMax, 8);
-    ssboChildA.set(childA, 9);
-    ssboChildB.set(childB, 10);
-    ssboModels.set(models, 11);
-    ssboModelTransformations.set(modelTransforms, 12, true);
-    ssboModelInvTransformations.set(modelInvTransforms, 13, true);
+    ssboMaterials.set(materials, 4, true);
+    ssboBoundingBoxMin.set(boundingBoxMin, 5);
+    ssboBoundingBoxMax.set(boundingBoxMax, 6);
+    ssboChildA.set(childA, 7);
+    ssboChildB.set(childB, 8);
+    ssboModels.set(models, 9);
+    ssboModelTransformations.set(modelTransforms, 10, true);
+    ssboModelInvTransformations.set(modelInvTransforms, 11, true);
 
 }
 
@@ -450,7 +446,7 @@ void Scene::ImGuiRender() {
     // scene
     {
         ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Once);
-        ImGui::SetNextWindowSize(ImVec2(500, 550), ImGuiCond_Once);
+        ImGui::SetNextWindowSize(ImVec2(500, 600), ImGuiCond_Once);
         ImGui::Begin("Scene");
 
         ui_resetAccum |= ImGui::Checkbox("Sky Active", &skyActive);
@@ -460,7 +456,7 @@ void Scene::ImGuiRender() {
             ui_resetAccum |= DragFloat3("Sun Direction", sunDir);
             sunDir = normalize(sunDir);
 
-            ui_resetAccum |= ImGui::SliderFloat("Sun Strength", &sunStrength, 0, 300);
+            ui_resetAccum |= ImGui::SliderFloat("Sun Strength", &sunStrength, 0, 2000);
             ImGui::Unindent();
         }
 
@@ -474,11 +470,24 @@ void Scene::ImGuiRender() {
                 ui_resetAccum = true;
             }
 
-            vec3 specularColor = vec3(floorSpecularColor);
-            if (ColorEdit3("Floor Specular Color", specularColor)) {
-                floorSpecularColor = vec4(specularColor, floorSpecularColor.w);
+            bool specularFloor = floorSpecularColor.w != -1.0f;
+            if (ImGui::Checkbox("Specular Floor", &specularFloor)) {
+                if (specularFloor) floorSpecularColor.w = 0.0f;
+                else floorSpecularColor.w = -1.0f;
                 ui_resetAccum = true;
             }
+
+            if (specularFloor) {
+                vec3 specularColor = vec3(floorSpecularColor);
+                if (ColorEdit3("Floor Specular Color", specularColor)) {
+                    floorSpecularColor = vec4(specularColor, floorSpecularColor.w);
+                    ui_resetAccum = true;
+                }
+            }
+
+             ui_resetAccum |= ImGui::SliderFloat("Floor Smoothness", &floorDiffuseColor.w, 0.0f, 1.0f);
+
+            if (specularFloor) ui_resetAccum |= ImGui::SliderFloat("Floor Specular Probability", &floorSpecularColor.w, 0.0f, 1.0f);
 
             ImGui::Unindent();
         }
@@ -498,7 +507,7 @@ void Scene::ImGuiRender() {
                     bool sel = (selectedModel == i);
                     if (ImGui::Selectable(modelLabels[i].c_str(), sel)) {
                         selectedModel = i;
-                        selectedColor = modelsColors[i].x;
+                        selectedColor = modelsMaterialsIdx[i].x;
                     }
                     if (sel) ImGui::SetItemDefaultFocus();
                 }
@@ -508,9 +517,7 @@ void Scene::ImGuiRender() {
             if (selectedModel >= 0) {
                 ImGui::Indent();
                 bool changedPRS = false;
-                bool changedC = false;
-                bool changedSC = false;
-                bool changedGLS = false;
+                bool changedM = false;
 
                 // Local aliases
                 vec3& P = modelPos[selectedModel];
@@ -529,7 +536,7 @@ void Scene::ImGuiRender() {
 
                 std::string previewC = "Material " + std::to_string(selectedColor);
                 if (ImGui::BeginCombo("##Material", previewC.c_str())) {
-                    for (int i = modelsColors[selectedModel].x; i < modelsColors[selectedModel].y; ++i) {
+                    for (int i = modelsMaterialsIdx[selectedModel].x; i < modelsMaterialsIdx[selectedModel].y; ++i) {
                         bool sel = (selectedColor == i);
                         previewC = "Material " + std::to_string(i);
                         if (ImGui::Selectable(previewC.c_str(), sel)) {
@@ -542,44 +549,45 @@ void Scene::ImGuiRender() {
 
                 if (selectedColor != -1){
                     ImGui::Indent();
-                    vec4& DC = diffuseColors[selectedColor];
-                    vec4& SC = specularColors[selectedColor];
-                    vec4& GLS = glassLightSettings[selectedColor];
+                    Material& m = materials[selectedColor];
+                    vec4 DC = m.getDC();
+                    vec4 SC = m.getSC();
+                    vec4 GLS = m.getGLS();
 
                     bool emissive = GLS.z > 0;
                     if (ImGui::Checkbox("Emissive", &emissive)) {
                         if (emissive) GLS.z = 1;
                         else GLS.z = 0;
-                        changedGLS = true;
+                        changedM = true;
                     }
 
                     if (emissive) {
-                        if (modelsTextureID[selectedModel] == -1) changedC |= ColorEdit3("Color", DC);
-                        changedGLS |= ImGui::SliderFloat("Emission Strength", &GLS.z, 0.01f, 1000.0f);
+                        if (modelsTextureID[selectedModel] == -1) changedM |= ColorEdit3("Color", DC);
+                        changedM |= ImGui::SliderFloat("Emission Strength", &GLS.z, 0.01f, 1000.0f);
                     } else {
 
-                        if (modelsTextureID[selectedModel] == -1) changedC |= ColorEdit3("Diffuse Color", DC);
+                        if (modelsTextureID[selectedModel] == -1) changedM |= ColorEdit3("Diffuse Color", DC);
 
                         bool specular = SC.w >= 0;
                         if (ImGui::Checkbox("Specular", &specular)) {
                             if (specular) SC.w = 0;
                             else SC.w = -1;
-                            changedSC = true;
+                            changedM = true;
                         }
 
-                        if (specular) changedSC |= ColorEdit3("Specular Color", SC);
+                        if (specular) changedM |= ColorEdit3("Specular Color", SC);
 
                         ImGui::Text("Material Properties");
 
-                        changedC |= ImGui::SliderFloat("Smoothness", &DC.w, 0.0f, 1.0f);
-                        if (specular) changedSC |= ImGui::SliderFloat("Specular Probability", &SC.w, 0.0f, 1.0f);
-                        changedGLS |= ImGui::SliderFloat("Transparency", &GLS.x, 0.0f, 1.0f);
-                        if (GLS.x > 0) changedGLS |= ImGui::SliderFloat("Index of Refraction", &GLS.y, 0.0f, 3.0f);
+                        changedM |= ImGui::SliderFloat("Smoothness", &DC.w, 0.0f, 1.0f);
+                        if (specular) changedM |= ImGui::SliderFloat("Specular Probability", &SC.w, 0.0f, 1.0f);
+                        changedM |= ImGui::SliderFloat("Transparency", &GLS.x, 0.0f, 1.0f);
+                        if (GLS.x > 0) changedM |= ImGui::SliderFloat("Index of Refraction", &GLS.y, 0.0f, 3.0f);
                     }
 
-                    diffuseColors[selectedColor] = DC;
-                    specularColors[selectedColor] = SC;
-                    glassLightSettings[selectedColor] = GLS;
+                    m.setDC(DC);
+                    m.setSC(SC);
+                    m.setGLS(GLS);
                     ImGui::Unindent();
                 }
 
@@ -623,21 +631,11 @@ void Scene::ImGuiRender() {
                     ui_resetAccum = true;
                 }
                 // All materials for this model share the same contiguous range:
-                const int start = modelsColors[selectedModel][0];   // inclusive
-                const int end   = modelsColors[selectedModel][1];   // exclusive
+                const int start = modelsMaterialsIdx[selectedModel][0];   // inclusive
+                const int end   = modelsMaterialsIdx[selectedModel][1];   // exclusive
 
-                if (changedC) {
-                    ssboColors.update(start, end, diffuseColors.data() + start);
-                    ui_resetAccum = true;
-                }
-
-                if (changedSC) {
-                    ssboSpecularColors.update(start, end, specularColors.data() + start);
-                    ui_resetAccum = true;
-                }
-
-                if (changedGLS) {
-                    ssboGlassLightSettings.update(start, end, glassLightSettings.data() + start);
+                if (changedM) {
+                    ssboMaterials.update(start, end, materials.data() + start);
                     ui_resetAccum = true;
                 }
             }
@@ -667,6 +665,20 @@ void Scene::ImGuiRender() {
         ImGui::Text("Camera");
 
         ui_resetAccum |= ImGui::SliderFloat("FOV", &fovDeg, 20, 140);
+        bool dof = aperture > 0;
+        if (ImGui::Checkbox("Depth of Field", &dof)) {
+            if (dof) aperture = 0.001;
+            else aperture = 0.0;
+            ui_resetAccum = true;
+        }
+
+        if (dof) {
+            ImGui::Indent();
+            ui_resetAccum |= ImGui::SliderFloat("Aperture", &aperture, 0.001f, 0.5f);
+            ui_resetAccum |= ImGui::SliderFloat("Focus Distance", &focusDistance, 0.0f, 1000.0f);
+            ui_resetAccum |= ImGui::Checkbox("Focus Distance Plane", &focusDistancePlane);
+            ImGui::Unindent();
+        }
 
         float s = sensitivity*100;
         if (ImGui::SliderFloat("Sensitivity", &s, 0.1, 10)) sensitivity = s/100;

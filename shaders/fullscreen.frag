@@ -3,11 +3,17 @@ out vec4 FragColor;
 
 in vec2 fragCoord; // [0,1]
 
+struct Material {
+    vec4 diffuseColor; // diffuse color, smoothness
+    vec4 specularColor; // specular color, specular probability
+    vec4 glassLightSettings; // transparency, ior, emission strength, (padding)
+};
+
 struct Triangle{
     vec3 v1, v2, v3;
     vec2 t1, t2, t3;
     vec3 n1, n2, n3;
-    int matID;
+    Material material;
     bool useTexture;
     int textureID;
     bool useNormals;
@@ -28,6 +34,7 @@ struct Ray{
     vec3 invDir;
 };
 
+
 const int MAX_MODELS = 64;
 const int MAX_TEXTURES = 64;
 const int MAX_STACK_SIZE = 48;
@@ -38,16 +45,14 @@ layout(std430, binding = 0) buffer ssboTriangles { ivec4 triangles[]; };
 layout(std430, binding = 1) buffer ssboVertices { vec4 vertices[]; };
 layout(std430, binding = 2) buffer ssboTexCoords { vec2 texCoords[]; };
 layout(std430, binding = 3) buffer ssboNormals { vec4 normals[]; };
-layout(std430, binding = 4) buffer ssboColors { vec4 colors[]; };
-layout(std430, binding = 5) buffer ssboSpecularColors { vec4 specularColors[]; };
-layout(std430, binding = 6) buffer ssboGlassLightSettings { vec4 glassLightSettings[]; };
-layout(std430, binding = 7) buffer ssboBoundingBoxMin { vec4 boundingBoxMin[]; };
-layout(std430, binding = 8) buffer ssboBoundingBoxMax { vec4 boundingBoxMax[]; };
-layout(std430, binding = 9) buffer ssboChildA { int vChildA[]; };
-layout(std430, binding = 10) buffer ssboChildB { int vChildB[]; };
-layout(std430, binding = 11) buffer ssboModels { int models[]; };
-layout(std430, binding = 12) buffer ssboModelTransformations { mat4 modelTransformations[]; };
-layout(std430, binding = 13) buffer ssboModelInvTransformations { mat4 modelInvTransformations[]; };
+layout(std430, binding = 4) buffer ssboMaterials { Material materials[]; };
+layout(std430, binding = 5) buffer ssboBoundingBoxMin { vec4 boundingBoxMin[]; };
+layout(std430, binding = 6) buffer ssboBoundingBoxMax { vec4 boundingBoxMax[]; };
+layout(std430, binding = 7) buffer ssboChildA { int vChildA[]; };
+layout(std430, binding = 8) buffer ssboChildB { int vChildB[]; };
+layout(std430, binding = 9) buffer ssboModels { int models[]; };
+layout(std430, binding = 10) buffer ssboModelTransformations { mat4 modelTransformations[]; };
+layout(std430, binding = 11) buffer ssboModelInvTransformations { mat4 modelInvTransformations[]; };
 
 uniform int   numModels;
 
@@ -56,6 +61,9 @@ uniform vec3  camForward;
 uniform vec3  camUp;
 uniform vec3  camRight;
 uniform float fovDeg;
+uniform float aperture;
+uniform float focusDistance;
+uniform bool  focusDistancePlane;
 
 uniform uvec2 resolution;
 uniform int   frameCount;
@@ -101,9 +109,9 @@ Triangle createTri(int triIndex){
     ivec4 idx2 = triangles[triIndex*3+1];
     ivec4 idx3 = triangles[triIndex*3+2];
 
-    tri.matID = int(idx1.w);
-    tri.useTexture = idx2.w == 1.0;
-    tri.textureID = int(idx3.w);
+    tri.material = materials[int(idx1.w)];
+    tri.useTexture = idx2.w != -1.0;
+    tri.textureID = int(idx2.w);
     tri.useNormals = idx1.z != -1 && idx2.z != -1 && idx3.z != -1;
 
     tri.v1 = vertices[idx1.x].xyz;
@@ -132,15 +140,23 @@ float randomValue(inout uint state){
     result = (result >> 22) ^ result;
     return float(result) * (1.0/4294967295.0);
 }
-vec3 randPointSphere(inout uint state){
-    for (int i=0;i<10;i++){
-        vec3 p = vec3(2.0*randomValue(state)-1.0,
-        2.0*randomValue(state)-1.0,
-        2.0*randomValue(state)-1.0);
-        float m = dot(p,p);
-        if (m < 1.0 && m > 0.0) return p * inversesqrt(m);
-    }
-    return vec3(1,0,0);
+vec2 randPointDisk(inout uint state){
+    float angle = randomValue(state) * 2 * PI;
+    vec2 pointOnCircle = vec2(cos(angle), sin(angle));
+    return pointOnCircle * sqrt(randomValue(state));
+}
+float randomValueNormalDistribution(inout uint state) {
+    // Thanks to https://stackoverflow.com/a/6178290
+    float theta = 2 * PI * randomValue(state);
+    float rho = sqrt(-2 * log(randomValue(state)));
+    return rho * cos(theta);
+}
+vec3 randPointSphere(inout uint state) {
+    // Thanks to https://math.stackexchange.com/a/1585996
+    float x = randomValueNormalDistribution(state);
+    float y = randomValueNormalDistribution(state);
+    float z = randomValueNormalDistribution(state);
+    return normalize(vec3(x, y, z));
 }
 uint hash_u32(uint v) {
     v ^= v >> 16;
@@ -192,18 +208,31 @@ void getTriangle(int triIndex, out ivec4 t1, out ivec4 t2, out ivec4 t3){
 }
 
 // Camera / Path
-vec3 calculateInitialDir(int aaCycle, vec2 screenCoord){
+Ray calculateInitialRay(int aaCycle, vec2 screenCoord, inout uint state){
     float xi = float(aaCycle % aa);
     float yi = float(aaCycle) / float(aa);
+
     float ox = (xi + 0.5)/float(aa) - 0.5;
     float oy = (yi + 0.5)/float(aa) - 0.5;
-    ox /= float(resolution.x)/2.0;
-    oy /= float(resolution.y)/2.0;
-    vec2 coord = screenCoord + vec2(ox,oy);
+
+    vec2 jitter = vec2(ox, oy) * vec2(2.0/resolution.x, 2.0/resolution.y);
+
+    vec2 coord = screenCoord + jitter;
+
     float fovRadX = radians(fovDeg);
     coord *= tan(0.5*fovRadX);
-    vec3 d = camForward + camRight*coord.x + camUp*coord.y;
-    return normalize(d);
+
+    vec3 lensPoint = vec3(randPointDisk(state)*aperture*focusDistance, 0);
+    vec3 focusPoint = focusDistance*vec3(coord, 1);
+
+    vec3 dir = normalize(focusPoint-lensPoint);
+
+    Ray ray;
+    ray.pos = cameraPos+lensPoint;
+    ray.dir = dir.x * camRight + dir.y * camUp + dir.z * camForward;
+    ray.invDir = 1/ray.dir;
+
+    return ray;
 }
 
 // Intersections
@@ -385,15 +414,15 @@ vec3 getTextureColor(Hit hitInfo, mat4 mat){
 }
 
 bool updateColor(Hit hitInfo, inout vec3 color, bool isSpecular, bool diffuseOnly, mat4 mat){
-    int matID = hitInfo.tri.matID;
+    Material material = hitInfo.tri.material;
 
-    vec3 diffuseColor = hitInfo.tri.useTexture ? getTextureColor(hitInfo, mat) : colors[matID].xyz;
+    vec3 diffuseColor = hitInfo.tri.useTexture ? getTextureColor(hitInfo, mat) : material.diffuseColor.xyz;
 
-    vec3 selected = (isSpecular && !diffuseOnly) ? specularColors[matID].xyz : diffuseColor;
+    vec3 selected = (isSpecular && !diffuseOnly) ? material.specularColor.xyz : diffuseColor;
 
     color *= selected;
 
-    if (glassLightSettings[matID].z > 0.0) { color *= glassLightSettings[matID].z; return true; }
+    if (material.glassLightSettings.z > 0.0) { color *= material.glassLightSettings.z; return true; }
 
     return false;
 }
@@ -596,15 +625,17 @@ bool hitTriangleUpdate(Hit hit, inout Ray ray, inout vec3 color, inout uint stat
         return true;
     }
 
-    float specularProbability = specularColors[tri.matID].w;
+    Material material = tri.material;
+
+    float specularProbability = material.specularColor.w;
     bool  diffuseOnly         = (specularProbability == -1.0);
     bool  isSpecular          = randomValue(state) <= specularProbability;
 
     if (updateColor(hit, color, isSpecular, diffuseOnly, mat)) return true;
 
-    float smoothness    = (isSpecular || diffuseOnly) ? colors[tri.matID].w : 0.0;
-    float transperancy  = glassLightSettings[tri.matID].x;
-    float ior           = glassLightSettings[tri.matID].y;
+    float smoothness    = (isSpecular || diffuseOnly) ? material.diffuseColor.w : 0.0;
+    float transperancy  = material.glassLightSettings.x;
+    float ior           = material.glassLightSettings.y;
 
     ray.dir   = calculateNewDirection(normalWorld, ray.dir, smoothness, specularProbability, transperancy, ior, state, color);
     ray.invDir = 1.0/ray.dir;
@@ -619,12 +650,13 @@ bool hitFloorUpdate(inout Ray ray, inout vec3 color, inout uint state){
 
         vec3 n = vec3(0,1,0);
 
-        float smoothness = floorDiffuseColor.w;
         float specularProbability = floorSpecularColor.w;
-
+        bool diffuseOnly = specularProbability == -1;
         bool isSpecular = randomValue(state) <= specularProbability;
 
-        color *= isSpecular ? floorSpecularColor.rgb : floorDiffuseColor.rgb;
+        color *= (isSpecular && !diffuseOnly) ? floorSpecularColor.rgb : floorDiffuseColor.rgb;
+
+        float smoothness = (isSpecular || diffuseOnly) ? floorDiffuseColor.w : 0.0;
 
         ray.dir = calculateNewDirection(n, ray.dir, smoothness, specularProbability, 0.0, 1.0, state, color);
         ray.invDir = 1.0/ray.dir;
@@ -663,6 +695,8 @@ vec3 trace(Ray ray, inout uint state){
         }
 
         if (hitInfo.hit){
+            if (focusDistancePlane && hitInfo.t > focusDistance && bounce == 0) color *= vec3(0.75, 1, 0.75);
+
             if (hitTriangleUpdate(hitInfo, ray, color, state)) break;
         } else if (floorActive && ray.dir.y < 0.0){
             if (hitFloorUpdate(ray, color, state)) break;
@@ -693,10 +727,7 @@ void main(){
     int aaCycle = frameCount % (aa*aa);
 
     for (int s=0; s<samples; ++s){
-        Ray ray;
-        ray.pos = cameraPos;
-        ray.dir = calculateInitialDir(aaCycle, screen);
-        ray.invDir = 1/ray.dir;
+        Ray ray = calculateInitialRay(aaCycle, screen, state);
 
         total += trace(ray, state);
         aaCycle = (aaCycle+1) % (aa*aa);

@@ -12,7 +12,7 @@ int main() {
 
 
     Model sphere("assets/models/sphere.obj");
-    /*
+
     Model bull("assets/models/bull.obj");
     Model dragon("assets/models/dragon800K.obj");
 
@@ -37,38 +37,31 @@ int main() {
     scene.addModel(
         sphere,
         {vec3(-100, 20, 200), vec3(20)},
-        {"assets/textures/grass.png", 0}
+        {},
+        "assets/textures/grass.png"
         );
 
     scene.addModel(
         sphere,
         {vec3(-33.33, 20, 200), vec3(20)},
-        {"assets/textures/rock.png", 0}
+        {},
+        "assets/textures/rock.png"
     );
 
     scene.addModel(
         sphere,
         {vec3(33.33, 20, 200), vec3(20)},
-        {"assets/textures/wood.png", 1, vec3(1), 0.1}
+        {vec3(0), 1, vec3(1), 0.1},
+        "assets/textures/wood.png"
         );
 
     scene.addModel(
         sphere,
         {vec3(100, 20, 200), vec3(20)},
-        {"assets/textures/marble.png", 1, vec3(1), 0.1}
+        {vec3(0), 1, vec3(1), 0.1},
+        "assets/textures/marble.png"
         );
-    */
 
-    scene.addModel(
-        sphere,
-        {vec3(0, -500, 0), vec3(500)},
-        {vec3(1), 1, vec3(0.9), 1}
-        );
-    scene.addModel(
-        sphere,
-        {vec3(0, 100, 0), vec3(100)},
-        {vec3(1), 1, vec3(0.9), 1}
-        );
 
 
     std::cout << std::endl;

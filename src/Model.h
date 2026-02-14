@@ -12,6 +12,8 @@
 #include <condition_variable>
 #include <mutex>
 
+#include "Material.h"
+
 class ThreadPool {
     std::vector<std::thread> workers;
     std::vector<std::function<void()>> tasks;
@@ -97,21 +99,27 @@ class Model {
 
     std::string filename;
 
-    std::vector<glm::ivec4> triangles;
-    std::vector<glm::vec3> vertices;
-    std::vector<glm::vec2> texCoords;
-    std::vector<glm::vec3> normals;
-    std::vector<glm::vec4> diffuseColors;
-    std::vector<glm::vec4> specularColors;
-    std::vector<glm::vec4> glassLightSettings;
+    std::vector<
+    ivec4> triangles;
+    std::vector<
+    vec3> vertices;
+    std::vector<
+    vec2> texCoords;
+    std::vector<
+    vec3> normals;
+    std::vector<Material> materials;
 
-    std::vector<glm::vec3> boundingBoxMin;
-    std::vector<glm::vec3> boundingBoxMax;
+    std::vector<
+    vec3> boundingBoxMin;
+    std::vector<
+    vec3> boundingBoxMax;
     std::vector<int> childA;
     std::vector<int> childB;
 
-    std::vector<glm::vec3> triangleCenters;
-    std::vector<glm::vec3> triangleMin, triangleMax;
+    std::vector<
+    vec3> triangleCenters;
+    std::vector<
+    vec3> triangleMin, triangleMax;
 
     ThreadPool pool{std::thread::hardware_concurrency()};
 
@@ -119,14 +127,16 @@ class Model {
 
     static void parse(
         const std::string& nfilename,
-        std::vector<glm::ivec3>& triangles,
-        std::vector<glm::vec3>& vertices,
-        std::vector<glm::vec2>& texCoords,
-        std::vector<glm::vec3>& normals,
+        std::vector<
+        ivec3>& triangles,
+        std::vector<
+        vec3>& vertices,
+        std::vector<
+        vec2>& texCoords,
+        std::vector<
+        vec3>& normals,
         std::vector<int>& tempTriMatIndex,
-        std::vector<glm::vec4>& colors,
-        std::vector<glm::vec4>& specularColors,
-        std::vector<glm::vec4>& glassLightSettings
+        std::vector<Material>& materials
     );
 
     explicit Model(const std::string& filename);
@@ -135,9 +145,13 @@ class Model {
 
     [[nodiscard]] float evaluateSplit(int childA, int childB, int axis, float pos) const;
 
-    void chooseSplit(int numTestsPerAxis, glm::vec3 min, int childA, glm::vec3 max, int childB, int& bestAxis, float& bestPos, float& bestCost);
+    void chooseSplit(int numTestsPerAxis,
+    vec3 min, int childA,
+    vec3 max, int childB, int& bestAxis, float& bestPos, float& bestCost);
 
-    void split(int numTestsPerAxis, glm::vec3 bboxMin, int& childA, glm::vec3 bboxMax, int& childB, int depth);
+    void split(int numTestsPerAxis,
+    vec3 bboxMin, int& childA,
+    vec3 bboxMax, int& childB, int depth);
 
     void createBVH(int depth, int numTestsPerAxis, int triStart, int numTris);
 };

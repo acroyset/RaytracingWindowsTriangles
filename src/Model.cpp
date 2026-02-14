@@ -74,7 +74,7 @@ void splitSpace4(const std::string& s, std::string words[4], int& num) {
     }
 }
 
-void growToInclude(glm::vec3& min, glm::vec3& max, const glm::vec3 point) {
+void growToInclude(vec3& min, vec3& max, const vec3 point) {
     if (point.x < min.x) min.x = point.x;
     if (point.y < min.y) min.y = point.y;
     if (point.z < min.z) min.z = point.z;
@@ -82,7 +82,7 @@ void growToInclude(glm::vec3& min, glm::vec3& max, const glm::vec3 point) {
     if (point.y > max.y) max.y = point.y;
     if (point.z > max.z) max.z = point.z;
 }
-void growToInclude(glm::vec3& min, glm::vec3& max, const glm::vec3 tMin, const glm::vec3 tMax) {
+void growToInclude(vec3& min, vec3& max, const vec3 tMin, const vec3 tMax) {
     min.x = std::min(min.x, tMin.x);
     min.y = std::min(min.y, tMin.y);
     min.z = std::min(min.z, tMin.z);
@@ -90,7 +90,7 @@ void growToInclude(glm::vec3& min, glm::vec3& max, const glm::vec3 tMin, const g
     max.y = std::max(max.y, tMax.y);
     max.z = std::max(max.z, tMax.z);
 }
-void growToInclude(glm::vec4& min, glm::vec4& max, const glm::vec3 tMin, const glm::vec3 tMax) {
+void growToInclude(vec4& min, vec4& max, const vec3 tMin, const vec3 tMax) {
     min.x = std::min(min.x, tMin.x);
     min.y = std::min(min.y, tMin.y);
     min.z = std::min(min.z, tMin.z);
@@ -98,7 +98,7 @@ void growToInclude(glm::vec4& min, glm::vec4& max, const glm::vec3 tMin, const g
     max.y = std::max(max.y, tMax.y);
     max.z = std::max(max.z, tMax.z);
 }
-void growToInclude(glm::vec4& min, glm::vec4& max, const glm::vec3 point) {
+void growToInclude(vec4& min, vec4& max, const vec3 point) {
     if (point.x < min.x) min.x = point.x;
     if (point.y < min.y) min.y = point.y;
     if (point.z < min.z) min.z = point.z;
@@ -107,33 +107,33 @@ void growToInclude(glm::vec4& min, glm::vec4& max, const glm::vec3 point) {
     if (point.z > max.z) max.z = point.z;
 }
 
-void makeBoundingBox(glm::vec3& min, glm::vec3& max, const std::vector<glm::vec3>& vertices) {
+void makeBoundingBox(vec3& min, vec3& max, const std::vector<vec3>& vertices) {
     for (const auto & vertice : vertices) {
         growToInclude(min, max, vertice);
     }
 }
-void makeBoundingBox(glm::vec3& min, glm::vec3& max, const std::vector<glm::vec4>& vertices) {
-    for (glm::vec4 vertice : vertices) {
+void makeBoundingBox(vec3& min, vec3& max, const std::vector<vec4>& vertices) {
+    for (vec4 vertice : vertices) {
         growToInclude(min, max, xyz(vertice));
     }
 }
 
-void center(std::vector<glm::vec3>& points) {
-    auto min = glm::vec3(1000000000.0f), max = glm::vec3(-1000000000.0f);
+void center(std::vector<vec3>& points) {
+    auto min = vec3(1000000000.0f), max = vec3(-1000000000.0f);
     makeBoundingBox(min, max, points);
 
-    const glm::vec3 offset = {(max.x+min.x)/2, (max.y+min.y)/2, (max.z+min.z)/2};
+    const vec3 offset = {(max.x+min.x)/2, (max.y+min.y)/2, (max.z+min.z)/2};
     const auto biggestDiff = float(fmax(fmax(max.x-min.x, max.y-min.y), max.z-min.z));
     const float scaler = 2/biggestDiff;
 
-    for (glm::vec3 &point : points) {
+    for (vec3 &point : points) {
         point -= offset;
         point *= scaler;
     }
 }
 
-float nodeCost(const glm::vec3 min, const glm::vec3 max, const int numTris) {
-    const glm::vec3 size = max-min;
+float nodeCost(const vec3 min, const vec3 max, const int numTris) {
+    const vec3 size = max-min;
     const float halfArea = size.x * (size.y + size.z) + size.y * size.z;
     return halfArea * float(numTris);
 }
@@ -155,23 +155,21 @@ std::string dirOf(const std::string& path) {
 void loadMTL(
     const std::string& mtlPath,
     std::unordered_map<std::string, int>& nameToIndex,
-    std::vector<glm::vec4>& colors,
-    std::vector<glm::vec4>& specularColors,
-    std::vector<glm::vec4>& glassLightSettings
+    std::vector<Material>& materials
     ) {
     std::ifstream f(mtlPath);
     if (!f) { std::cerr << "WARN: could not open MTL: " << mtlPath << "\n"; return; }
 
     std::string line, curName;
-    glm::vec3 Kd, Ks, Ke;
+    vec3 Kd, Ks, Ke;
     float smoothness, specularProb, transparency, ior, emission;
 
     auto flushMaterial = [&](){
         if (curName.empty()) return;
         if (nameToIndex.find(curName) == nameToIndex.end()) {
-            int idx = int(colors.size());
+            int idx = int(materials.size());
             nameToIndex[curName] = idx;
-            auto luminance = [](glm::vec3 c) {
+            auto luminance = [](vec3 c) {
                 return 0.2126f*c.r + 0.7152f*c.g + 0.0722f*c.b;
             };
 
@@ -180,10 +178,18 @@ void loadMTL(
 
             specularProb = (Ld + Ls > 0.0f) ? (Ls / (Ld + Ls)) : 0.0f;
 
-            emission = glm::length(Ke);
-            colors.emplace_back(emission == 0 ? Kd : Ke, smoothness);
-            specularColors.emplace_back(Ks, specularProb);
-            glassLightSettings.emplace_back(transparency, ior, emission, 0);
+            emission = length(Ke);
+
+            Material material;
+            material.setDiffuseColor(emission == 0 ? Kd : Ke);
+            material.setSmoothness(smoothness);
+            material.setSpecularColor(Ks);
+            material.setSpecularProbability(specularProb);
+            material.setTransparency(transparency);
+            material.setIOR(ior);
+            material.setEmissionStrength(emission);
+
+            materials.push_back(material);
         }
     };
 
@@ -220,14 +226,12 @@ Model::Model() = default;
 
 void Model::parse(
 const std::string& nfilename,
-    std::vector<glm::ivec3>& triangles,
-    std::vector<glm::vec3>& vertices,
-    std::vector<glm::vec2>& texCoords,
-    std::vector<glm::vec3>& normals,
+    std::vector<ivec3>& triangles,
+    std::vector<vec3>& vertices,
+    std::vector<vec2>& texCoords,
+    std::vector<vec3>& normals,
     std::vector<int>& tempTriMatIndex,
-    std::vector<glm::vec4>& colors,
-    std::vector<glm::vec4>& specularColors,
-    std::vector<glm::vec4>& glassLightSettings
+    std::vector<Material>& materials
     ) {
     const std::string filename = "" + nfilename;
     std::ifstream model(filename, std::ios::in | std::ios::binary);
@@ -385,7 +389,7 @@ const std::string& nfilename,
 
                 if (!mtlLoaded) {
                     std::string full = baseDir + mtlName;
-                    loadMTL(full, materialNameToIndex, colors, specularColors, glassLightSettings);
+                    loadMTL(full, materialNameToIndex, materials);
                     mtlLoaded = true;
                 }
             }
@@ -403,11 +407,9 @@ const std::string& nfilename,
                 if (it != materialNameToIndex.end()) currentMaterial = it->second;
                 else {
                     // unseen name: push a default color and remember it
-                    int idx = int(colors.size());
+                    int idx = int(materials.size());
                     materialNameToIndex[matName] = idx;
-                    colors.emplace_back(1.0f, 1.0f, 1.0f, 0.0f);
-                    specularColors.emplace_back(0.0f);
-                    glassLightSettings.emplace_back(0, 1, 0, 0);
+                    materials.emplace_back(vec3(1), 0);
                     currentMaterial = idx;
                 }
             }
@@ -428,7 +430,7 @@ const std::string& nfilename,
     }
 
     // Convert negative indices and adjust for 0-based indexing
-    for (glm::ivec3& i : triangles) {
+    for (ivec3& i : triangles) {
         if (i.x < 0) i.x += int(vertices.size()) + 1;
         if (i.y < 0) i.y += int(texCoords.size()) + 1;
         if (i.z < 0) i.z += int(normals.size()) + 1;
@@ -448,18 +450,16 @@ const std::string& nfilename,
 
 Model::Model(const std::string &filename) {
     this->filename = filename;
-    std::vector<glm::ivec3> tempTriangles;
-    std::vector<glm::vec3> tempVertices;
-    std::vector<glm::vec2> tempTexCoords;
-    std::vector<glm::vec3> tempNormals;
-    std::vector<glm::vec4> tempColors;
-    std::vector<glm::vec4> tempSpecularColors;
-    std::vector<glm::vec4> tempGlassLightSettings;
+    std::vector<ivec3> tempTriangles;
+    std::vector<vec3> tempVertices;
+    std::vector<vec2> tempTexCoords;
+    std::vector<vec3> tempNormals;
+    std::vector<Material> tempMaterials;
     std::vector<int> tempTriMatIndex;
 
     std::cout << filename << std::endl;
     Timer t;
-    parse(filename, tempTriangles, tempVertices, tempTexCoords, tempNormals, tempTriMatIndex, tempColors, tempSpecularColors, tempGlassLightSettings);
+    parse(filename, tempTriangles, tempVertices, tempTexCoords, tempNormals, tempTriMatIndex, tempMaterials);
     std::cout << "   Parse Time: " << t.reset() << std::endl;
 
     std::cout << "   Triangles: " << tempTriangles.size()/3 << std::endl;
@@ -470,15 +470,15 @@ Model::Model(const std::string &filename) {
     int triStart = 0;
     int numTris = int(tempTriangles.size())/3;
 
-    for (glm::vec3 tempVertice : tempVertices) {
+    for (vec3 tempVertice : tempVertices) {
         vertices.emplace_back(tempVertice);
     }
 
-    for (glm::vec2 tempTexCoord : tempTexCoords) {
+    for (vec2 tempTexCoord : tempTexCoords) {
         texCoords.emplace_back(tempTexCoord);
     }
 
-    for (glm::vec3 tempNormal : tempNormals) {
+    for (vec3 tempNormal : tempNormals) {
         normals.emplace_back(tempNormal);
     }
 
@@ -488,16 +488,8 @@ Model::Model(const std::string &filename) {
         triangles.emplace_back(tempTriangles[i*3+2].x, tempTriangles[i*3+2].y, tempTriangles[i*3+2].z, 0);
     }
 
-    for (glm::vec4 tempColor : tempColors) {
-        diffuseColors.emplace_back(tempColor);
-    }
-
-    for (glm::vec4 tempSpecularColor : tempSpecularColors) {
-        specularColors.emplace_back(tempSpecularColor);
-    }
-
-    for (glm::vec4 tempGlassLightSetting : tempGlassLightSettings) {
-        glassLightSettings.emplace_back(tempGlassLightSetting);
+    for (Material m : tempMaterials) {
+        materials.emplace_back(m);
     }
 
     int testPerAxis = 3;
@@ -509,14 +501,14 @@ Model::Model(const std::string &filename) {
 
 void Model::createBVH(const int depth, const int numTestsPerAxis, int triStart, int numTris) {
 
-    auto min = glm::vec3(1000000000.0f);
-    auto max = glm::vec3(-1000000000.0f);
+    auto min = vec3(1000000000.0f);
+    auto max = vec3(-1000000000.0f);
 
     precomputeTriangleData();
 
     for (int i = triStart; i < triStart + numTris; ++i) {
-        const glm::vec3& tMin = triangleMin[i];
-        const glm::vec3& tMax = triangleMax[i];
+        const vec3& tMin = triangleMin[i];
+        const vec3& tMax = triangleMax[i];
 
         growToInclude(min, max, tMin, tMax);
     }
@@ -540,23 +532,23 @@ void Model::precomputeTriangleData() {
     triangleMax.resize(triangles.size()/3);
 
     for (size_t i = 0; i < triangles.size()/3; ++i) {
-        const glm::ivec3& tri1 = triangles[3*i+0];
-        const glm::ivec3& tri2 = triangles[3*i+1];
-        const glm::ivec3& tri3 = triangles[3*i+2];
+        const ivec3& tri1 = triangles[3*i+0];
+        const ivec3& tri2 = triangles[3*i+1];
+        const ivec3& tri3 = triangles[3*i+2];
 
-        const glm::vec3& v1 = vertices[tri1.x];
-        const glm::vec3& v2 = vertices[tri2.x];
-        const glm::vec3& v3 = vertices[tri3.x];
+        const vec3& v1 = vertices[tri1.x];
+        const vec3& v2 = vertices[tri2.x];
+        const vec3& v3 = vertices[tri3.x];
 
         triangleCenters[i] = (v1 + v2 + v3) / 3.0f;
-        triangleMin[i] = glm::min(glm::min(v1, v2), v3);
-        triangleMax[i] = glm::max(glm::max(v1, v2), v3);
+        triangleMin[i] = min(min(v1, v2), v3);
+        triangleMax[i] = max(max(v1, v2), v3);
     }
 }
 
 float Model::evaluateSplit(const int childA, const int childB, const int axis, const float pos) const {
-    auto minA = glm::vec3(1000000000.0f), maxA = glm::vec3(-1000000000.0f);
-    auto minB = glm::vec3(1000000000.0f), maxB = glm::vec3(-1000000000.0f);
+    auto minA = vec3(1000000000.0f), maxA = vec3(-1000000000.0f);
+    auto minB = vec3(1000000000.0f), maxB = vec3(-1000000000.0f);
 
     int triStart = -childA;
     int numTri = -childB;
@@ -565,10 +557,10 @@ float Model::evaluateSplit(const int childA, const int childB, const int axis, c
     int numB = 0;
 
     for (int i = triStart; i < numTri+triStart; ++i) {
-        const glm::vec3& tMin = triangleMin[i];
-        const glm::vec3& tMax = triangleMax[i];
+        const vec3& tMin = triangleMin[i];
+        const vec3& tMax = triangleMax[i];
 
-        glm::vec3 center = triangleCenters[i];
+        vec3 center = triangleCenters[i];
 
         if (center[axis] < pos) {
             growToInclude(minA, maxA, tMin, tMax);
@@ -582,7 +574,7 @@ float Model::evaluateSplit(const int childA, const int childB, const int axis, c
     return nodeCost(minA, maxA, numA) + nodeCost(minB, maxB, numB);
 }
 
-void Model::chooseSplit(const int numTestsPerAxis, glm::vec3 min, const int childA, glm::vec3 max, const int childB, int& bestAxis, float& bestPos, float& bestCost) {
+void Model::chooseSplit(const int numTestsPerAxis, vec3 min, const int childA, vec3 max, const int childB, int& bestAxis, float& bestPos, float& bestCost) {
 
     for (int axis = 0; axis < 3; ++axis) {
         float bStart = min[axis];
@@ -624,7 +616,7 @@ void Model::chooseSplit(const int numTestsPerAxis, glm::vec3 min, const int chil
 
 }
 
-void Model::split(int numTestsPerAxis, glm::vec3 bboxMin, int& childA, glm::vec3 bboxMax, int& childB, int depth) {
+void Model::split(int numTestsPerAxis, vec3 bboxMin, int& childA, vec3 bboxMax, int& childB, int depth) {
     if (depth <= 0) {return;};
 
     int triStart = -childA;
@@ -632,10 +624,10 @@ void Model::split(int numTestsPerAxis, glm::vec3 bboxMin, int& childA, glm::vec3
 
     if (numTris <= 1) {return;}
 
-    auto minA = glm::vec3(1000000000.0f);
-    auto minB = glm::vec3(1000000000.0f);
-    auto maxA = glm::vec3(-1000000000.0f);
-    auto maxB = glm::vec3(-1000000000.0f);
+    auto minA = vec3(1000000000.0f);
+    auto minB = vec3(1000000000.0f);
+    auto maxA = vec3(-1000000000.0f);
+    auto maxB = vec3(-1000000000.0f);
 
     int numA = 0, numB = 0;
     int startA = triStart, startB = triStart;
@@ -649,10 +641,10 @@ void Model::split(int numTestsPerAxis, glm::vec3 bboxMin, int& childA, glm::vec3
     //std::cout << depth << ' ' << splitAxix << ' ' << splitPos << std::endl;
 
     for (int i = triStart; i < triStart+numTris; i++) {
-        const glm::vec3& tMin = triangleMin[i];
-        const glm::vec3& tMax = triangleMax[i];
+        const vec3& tMin = triangleMin[i];
+        const vec3& tMax = triangleMax[i];
 
-        glm::vec3 center = triangleCenters[i];
+        vec3 center = triangleCenters[i];
         bool triInA = center[splitAxis] < splitPos;
         if (triInA) {
             growToInclude(minA, maxA, tMin, tMax);
