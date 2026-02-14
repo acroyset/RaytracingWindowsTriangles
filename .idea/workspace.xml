@@ -39,9 +39,9 @@
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/imgui.ini" beforeDir="false" afterPath="$PROJECT_DIR$/imgui.ini" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/shaders/fullscreen.frag" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/fullscreen.frag" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Material.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Material.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Model.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Model.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Model.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Model.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Rendering/Texture.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/Texture.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
@@ -249,7 +249,8 @@
       <workItem from="1770853129522" duration="18019000" />
       <workItem from="1770953921374" duration="9741000" />
       <workItem from="1771040328395" duration="2000" />
-      <workItem from="1771040508904" duration="7316000" />
+      <workItem from="1771040508904" duration="7887000" />
+      <workItem from="1771090666467" duration="11185000" />
     </task>
     <servers />
   </component>

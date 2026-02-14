@@ -4,25 +4,39 @@
 
 #ifndef SCENE_H
 #define SCENE_H
-#include <glm/glm.hpp>
-#include <string>
-#include "Model.h"
-#define GLFW_INCLUDE_NONE  // Prevent GLFW from including OpenGL headers
-#include <glad/glad.h>      // Include glad FIRST
-#include <GLFW/glfw3.h>     // Then GLFW
+#define GLFW_INCLUDE_NONE
+
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 #include "Rendering/ShaderWindow.h"
 #include "Rendering/Uniform.h"
 #include <glm/gtc/type_ptr.hpp>
 #include "Transformation.h"
 #include "Material.h"
-
-#define GLAD_GL_IMPLEMENTATION
-#include <map>
-
+#include <glm/glm.hpp>
+#include <string>
+#include "Model.h"
+#include <iomanip>
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "Rendering/SSBO.h"
+#include <map>
+
+#define GLAD_GL_IMPLEMENTATION
+
+
+struct DataPackageSize {
+    int totalSize;
+    int triangleDataSize;
+    int vertexDataSize;
+    int texCoordDataSize;
+    int normalDataSize;
+    int materialDataSize;
+    int BVHnodesDataSize;
+    int transformDataSize;
+    int textureDataSize;
+};
 
 enum DebugMode {
     Normals,
@@ -57,10 +71,7 @@ class Scene {
 
     // BVH
 
-    std::vector<vec4> boundingBoxMin;
-    std::vector<vec4> boundingBoxMax;
-    std::vector<int> childA;
-    std::vector<int> childB;
+    std::vector<BVHnode> BVHnodes;
 
     // Camera
 
@@ -125,10 +136,7 @@ class Scene {
     SSBO<vec2> ssboTexCoords;
     SSBO<vec4> ssboNormals;
     SSBO<Material> ssboMaterials;
-    SSBO<vec4> ssboBoundingBoxMin;
-    SSBO<vec4> ssboBoundingBoxMax;
-    SSBO<int> ssboChildA;
-    SSBO<int> ssboChildB;
+    SSBO<BVHnode> ssboBVHnodes;
     SSBO<int> ssboModels;
     SSBO<mat4> ssboModelTransformations;
     SSBO<mat4> ssboModelInvTransformations;
@@ -217,6 +225,10 @@ class Scene {
 
     void ImGuiRender();
 
+
+    void displayStats();
+
+    DataPackageSize dataSentSize() const;
 
     int numTriBelow(int index);
 

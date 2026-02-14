@@ -80,6 +80,31 @@ GLuint LoadEnvLatLongTextureAuto(const char* path) {
     return tex;
 }
 
+std::string bytesToReadable(long long bytes, int sigFigs = 3) {
+    if (bytes == 0) return "0 Bytes";
+    if (sigFigs < 1) sigFigs = 1;
+
+    std::vector<std::string> units = {"Bytes", "KB", "MB", "GB", "TB", "PB"};
+    const int unitCount = int(units.size());
+
+    auto value = static_cast<double>(bytes);
+    int unitIndex = 0;
+
+    while (value >= 1024.0 && unitIndex < unitCount - 1) {
+        value /= 1024.0;
+        ++unitIndex;
+    }
+
+    // determine decimal places needed for desired significant figures
+    int digitsBeforeDecimal = (value > 0) ? static_cast<int>(std::floor(std::log10(value))) + 1 : 1;
+    int decimals = sigFigs - digitsBeforeDecimal;
+    if (decimals < 0) decimals = 0;
+
+    std::ostringstream out;
+    out << std::fixed << std::setprecision(decimals) << value << " " << units[unitIndex];
+    return out.str();
+}
+
 
 Scene::Scene() {
     samples = 1;
@@ -152,7 +177,7 @@ void Scene::addModel(const Model& model, const Transformation& transformation, c
     int Voffset = int(vertices.size());
     int TXoffset = int(texCoords.size());
     int Noffset = int(normals.size());
-    int BBoffset = int(boundingBoxMin.size());
+    int BBoffset = int(BVHnodes.size());
     int Moffset = int(materials.size());
 
     models.emplace_back(BBoffset);
@@ -181,18 +206,20 @@ void Scene::addModel(const Model& model, const Transformation& transformation, c
         normals.emplace_back(normal, 0);
     }
 
-    for (int i = 0; i < model.boundingBoxMin.size(); i++) {
-        vec3 bboxMin = model.boundingBoxMin[i];
-        vec3 bboxMax = model.boundingBoxMax[i];
-        int childA = model.childA[i];
-        int childB = model.childB[i];
+    for (auto node : model.BVHnodes) {
 
-        int offsetA = childA <= 0 ? -Toffset : BBoffset;
-        int offsetB = childA <= 0 ? 0 : BBoffset;
-        boundingBoxMin.emplace_back(bboxMin, 0);
-        boundingBoxMax.emplace_back(bboxMax, 0);
-        this->childA.push_back(childA+offsetA);
-        this->childB.push_back(childB+offsetB);
+        BVHnode newNode;
+        newNode.setMin(node.getMin());
+        newNode.setMax(node.getMax());
+        if (node.leaf()) {
+            newNode.setTriStart(node.getTriStart()+Toffset);
+            newNode.setNumTri(node.getNumTri());
+        } else {
+            newNode.setChildA(node.getChildA()+BBoffset);
+            newNode.setChildB(node.getChildB()+BBoffset);
+        }
+
+        BVHnodes.emplace_back(newNode);
     }
 
     if (model.materials.empty()) {
@@ -228,7 +255,7 @@ void Scene::addModel(const Model& model, const Transformation& transformation, c
 }
 
 int Scene::getNumBVHNodes() const {
-    return int(boundingBoxMin.size());
+    return int(BVHnodes.size());
 }
 
 int Scene::getNumTris() const {
@@ -330,13 +357,10 @@ void Scene::set_ssbo() {
     ssboTexCoords.set(texCoords, 2);
     ssboNormals.set(normals, 3);
     ssboMaterials.set(materials, 4, true);
-    ssboBoundingBoxMin.set(boundingBoxMin, 5);
-    ssboBoundingBoxMax.set(boundingBoxMax, 6);
-    ssboChildA.set(childA, 7);
-    ssboChildB.set(childB, 8);
-    ssboModels.set(models, 9);
-    ssboModelTransformations.set(modelTransforms, 10, true);
-    ssboModelInvTransformations.set(modelInvTransforms, 11, true);
+    ssboBVHnodes.set(BVHnodes, 5);
+    ssboModels.set(models, 6);
+    ssboModelTransformations.set(modelTransforms, 7, true);
+    ssboModelInvTransformations.set(modelInvTransforms, 8, true);
 
 }
 
@@ -755,6 +779,53 @@ void Scene::ImGuiRender() {
 }
 
 
+void Scene::displayStats() {
+    DataPackageSize package = dataSentSize();
+
+    std::cout << "Triangles: "       << triangles.size()       << " (" << bytesToReadable(package.triangleDataSize)  << ")" << std::endl;
+    std::cout << "Vertices: "        << vertices.size()        << " (" << bytesToReadable(package.vertexDataSize)    << ")" << std::endl;
+    std::cout << "Texture Coords: "  << texCoords.size()       << " (" << bytesToReadable(package.texCoordDataSize)  << ")" << std::endl;
+    std::cout << "Normals: "         << normals.size()         << " (" << bytesToReadable(package.normalDataSize)    << ")" << std::endl;
+    std::cout                                                                                                               << std::endl;
+    std::cout << "Models: "          << models.size()                                                                       << std::endl;
+    std::cout << "Materials: "       << materials.size()       << " (" << bytesToReadable(package.materialDataSize)  << ")" << std::endl;
+    std::cout << "Textures: "        << textures.size()        << " (" << bytesToReadable(package.textureDataSize)   << ")" << std::endl;
+    std::cout << "BVH Nodes: "       << BVHnodes.size()        << " (" << bytesToReadable(package.BVHnodesDataSize)  << ")" << std::endl;
+    std::cout << "Transformations: " << modelTransforms.size() << " (" << bytesToReadable(package.transformDataSize) << ")" << std::endl;
+    std::cout << "Total Data Sent: " << bytesToReadable(package.totalSize) << std::endl;
+    std::cout << std::endl;
+}
+
+DataPackageSize Scene::dataSentSize() const {
+    DataPackageSize result{};
+
+    result.triangleDataSize  =   int(triangles.size()       * sizeof(ivec4));
+    result.vertexDataSize    =   int(vertices.size()        * sizeof(vec4));
+    result.texCoordDataSize  =   int(texCoords.size()       * sizeof(vec2));
+    result.normalDataSize    =   int(normals.size()         * sizeof(vec4));
+    result.materialDataSize  =   int(materials.size()       * sizeof(Material));
+    result.BVHnodesDataSize  =   int(BVHnodes.size()        * sizeof(BVHnode));
+    result.transformDataSize = 2*int(modelTransforms.size() * sizeof(mat4));
+
+    result.textureDataSize = 0;
+    for (const Texture& t : textures) {
+        result.textureDataSize += int(t.gpuSizeBytes());
+    }
+
+    result.totalSize =
+        result.triangleDataSize +
+        result.vertexDataSize +
+        result.texCoordDataSize +
+        result.normalDataSize +
+        result.materialDataSize +
+        result.BVHnodesDataSize +
+        result.transformDataSize +
+        result.textureDataSize;
+
+    return result;
+}
+
+/*
 int Scene::numTriBelow(int index) {
     int childA = this->childA[index];
     int childB = this->childB[index];
@@ -815,3 +886,4 @@ void Scene::displayBVH(int index, std::string prefix) {
     }
     std::cout << prefix << "Triangles: " << numTris << std::endl;
 }
+*/

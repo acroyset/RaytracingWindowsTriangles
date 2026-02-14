@@ -34,6 +34,11 @@ struct Ray{
     vec3 invDir;
 };
 
+struct BVHnode {
+    vec4 min;// xyz: bbox min    w: childA, -TriStart
+    vec4 max;// xyz: bbox max    w: childB, -NumTri
+};
+
 
 const int MAX_MODELS = 64;
 const int MAX_TEXTURES = 64;
@@ -46,13 +51,10 @@ layout(std430, binding = 1) buffer ssboVertices { vec4 vertices[]; };
 layout(std430, binding = 2) buffer ssboTexCoords { vec2 texCoords[]; };
 layout(std430, binding = 3) buffer ssboNormals { vec4 normals[]; };
 layout(std430, binding = 4) buffer ssboMaterials { Material materials[]; };
-layout(std430, binding = 5) buffer ssboBoundingBoxMin { vec4 boundingBoxMin[]; };
-layout(std430, binding = 6) buffer ssboBoundingBoxMax { vec4 boundingBoxMax[]; };
-layout(std430, binding = 7) buffer ssboChildA { int vChildA[]; };
-layout(std430, binding = 8) buffer ssboChildB { int vChildB[]; };
-layout(std430, binding = 9) buffer ssboModels { int models[]; };
-layout(std430, binding = 10) buffer ssboModelTransformations { mat4 modelTransformations[]; };
-layout(std430, binding = 11) buffer ssboModelInvTransformations { mat4 modelInvTransformations[]; };
+layout(std430, binding = 5) buffer ssboBoundingBoxMin { BVHnode BVHnodes[]; };
+layout(std430, binding = 6) buffer ssboModels { int models[]; };
+layout(std430, binding = 7) buffer ssboModelTransformations { mat4 modelTransformations[]; };
+layout(std430, binding = 8) buffer ssboModelInvTransformations { mat4 modelInvTransformations[]; };
 
 uniform int   numModels;
 
@@ -131,6 +133,52 @@ Triangle createTri(int triIndex){
     }
 
     return tri;
+}
+
+vec3 diffuseColor(Material m){
+    return m.diffuseColor.rgb;
+}
+float smoothness(Material m){
+    return m.diffuseColor.w;
+}
+vec3 specularColor(Material m){
+    return m.specularColor.rgb;
+}
+float specularProbability(Material m){
+    return m.specularColor.w;
+}
+float transperancy(Material m){
+    return m.glassLightSettings.x;
+}
+float ior(Material m){
+    return m.glassLightSettings.y;
+}
+float emissionStrength(Material m){
+    return m.glassLightSettings.z;
+}
+
+int childA(BVHnode node){
+    int w = floatBitsToInt(node.min.w);
+    if (w <= 0) return -1;
+    return w;
+}
+int childB(BVHnode node){
+    int w = floatBitsToInt(node.max.w);
+    if (w <= 0) return -1;
+    return w;
+}
+int triStart(BVHnode node){
+    int w = floatBitsToInt(node.min.w);
+    if (w > 0) return -1;
+    return -w;
+}
+int numTri(BVHnode node){
+    int w = floatBitsToInt(node.max.w);
+    if (w > 0) return -1;
+    return -w;
+}
+bool leaf(BVHnode node){
+    return childA(node) == -1;
 }
 
 // RNG
@@ -413,16 +461,19 @@ vec3 getTextureColor(Hit hitInfo, mat4 mat){
     return texture(textures[hitInfo.tri.textureID], texCoord).xyz;
 }
 
-bool updateColor(Hit hitInfo, inout vec3 color, bool isSpecular, bool diffuseOnly, mat4 mat){
-    Material material = hitInfo.tri.material;
+bool updateColor(Hit hit, inout vec3 color, bool isSpecular, bool diffuseOnly, mat4 mat){
+    Material material = hit.tri.material;
 
-    vec3 diffuseColor = hitInfo.tri.useTexture ? getTextureColor(hitInfo, mat) : material.diffuseColor.xyz;
+    vec3 diffuseColor = hit.tri.useTexture ? getTextureColor(hit, mat) : diffuseColor(material);
 
-    vec3 selected = (isSpecular && !diffuseOnly) ? material.specularColor.xyz : diffuseColor;
+    vec3 selected = (isSpecular && !diffuseOnly) ? specularColor(material) : diffuseColor;
 
     color *= selected;
 
-    if (material.glassLightSettings.z > 0.0) { color *= material.glassLightSettings.z; return true; }
+    if (emissionStrength(material) > 0.0) {
+        color *= emissionStrength(material);
+        return true;
+    }
 
     return false;
 }
@@ -453,14 +504,12 @@ Hit traverseBVH(int nodeOffset, Ray ray, mat4 M, mat4 invM, float bestTW, inout 
     stack[sp++] = nodeOffset;
 
     while (sp > 0){
-        int node = stack[--sp];
-        int A = vChildA[node];
-        int B = vChildB[node];
+        BVHnode node = BVHnodes[stack[--sp]];
 
-        if (A <= 0){
-            int triStart = -A;
-            int triCount = -B;
-            for (int j = triStart; j < triStart+triCount; ++j){
+        if (leaf(node)){
+            int start = triStart(node);
+            int num = numTri(node);
+            for (int j = start; j < start+num; ++j){
                 triTest++;
                 ivec4 tri1, tri2, tri3;
                 getTriangle(j, tri1, tri2, tri3);
@@ -487,14 +536,14 @@ Hit traverseBVH(int nodeOffset, Ray ray, mat4 M, mat4 invM, float bestTW, inout 
                 }
             }
         } else {
-            vec3 Amin = boundingBoxMin[A].xyz;
-            vec3 Amax = boundingBoxMax[A].xyz;
-            vec3 Bmin = boundingBoxMin[B].xyz;
-            vec3 Bmax = boundingBoxMax[B].xyz;
+            int A = childA(node);
+            int B = childB(node);
+            BVHnode childA = BVHnodes[A];
+            BVHnode childB = BVHnodes[B];
 
             aabbTest += 2;
-            float dA = intersectAABB(rayLocal, Amin, Amax);
-            float dB = intersectAABB(rayLocal, Bmin, Bmax);
+            float dA = intersectAABB(rayLocal, childA.min.xyz, childA.max.xyz);
+            float dB = intersectAABB(rayLocal, childB.min.xyz, childB.max.xyz);
 
             bool nearA = (dA <= dB);
             float dNear = nearA ? dA : dB;
@@ -535,16 +584,15 @@ Hit findBestTri(Ray ray, out int triTest, out int aabbTest){
         Ray rayLocal = worldToLocalRay(ray, invM);
 
         // Get root AABB bounds in local space
-        int rootNode = models[i];
-        vec3 min = boundingBoxMin[rootNode].xyz;
-        vec3 max = boundingBoxMax[rootNode].xyz;
+        BVHnode root = BVHnodes[models[i]];
 
         aabbTest++;
-        float tLocal = intersectAABB(rayLocal, min, max);
+        float tLocal = intersectAABB(rayLocal, root.min.xyz, root.max.xyz);
 
         if (tLocal > 1e30){
             modelDists[i].index = i;
             modelDists[i].dist2 = 3.4e38;
+            continue;
         }
 
         vec3 hitLocal = rayLocal.dir*tLocal + rayLocal.pos;
@@ -627,15 +675,15 @@ bool hitTriangleUpdate(Hit hit, inout Ray ray, inout vec3 color, inout uint stat
 
     Material material = tri.material;
 
-    float specularProbability = material.specularColor.w;
+    float specularProbability = specularProbability(material);
     bool  diffuseOnly         = (specularProbability == -1.0);
     bool  isSpecular          = randomValue(state) <= specularProbability;
 
     if (updateColor(hit, color, isSpecular, diffuseOnly, mat)) return true;
 
-    float smoothness    = (isSpecular || diffuseOnly) ? material.diffuseColor.w : 0.0;
-    float transperancy  = material.glassLightSettings.x;
-    float ior           = material.glassLightSettings.y;
+    float smoothness    = (isSpecular || diffuseOnly) ? smoothness(material) : 0.0;
+    float transperancy  = transperancy(material);
+    float ior           = ior(material);
 
     ray.dir   = calculateNewDirection(normalWorld, ray.dir, smoothness, specularProbability, transperancy, ior, state, color);
     ray.invDir = 1.0/ray.dir;
@@ -686,7 +734,7 @@ vec3 trace(Ray ray, inout uint state){
     for (int bounce = 0; bounce <= bounceLim; bounce++){
         int triTest = 0, aabbTest = 0;
 
-        Hit hitInfo = findBestTri(ray, triTest, aabbTest);
+        Hit hit = findBestTri(ray, triTest, aabbTest);
 
         if (debugView && debugMode == 1) {
             vec3 heatmap = triTest > triTh || aabbTest > aabbTh ? vec3(1) : vec3(float(triTest)/float(triTh), 0.0, float(aabbTest)/float(aabbTh));
@@ -694,10 +742,10 @@ vec3 trace(Ray ray, inout uint state){
             return heatmap;
         }
 
-        if (hitInfo.hit){
-            if (focusDistancePlane && hitInfo.t > focusDistance && bounce == 0) color *= vec3(0.75, 1, 0.75);
+        if (hit.hit){
+            if (focusDistancePlane && hit.t > focusDistance && bounce == 0) color *= vec3(0.75, 1, 0.75);
 
-            if (hitTriangleUpdate(hitInfo, ray, color, state)) break;
+            if (hitTriangleUpdate(hit, ray, color, state)) break;
         } else if (floorActive && ray.dir.y < 0.0){
             if (hitFloorUpdate(ray, color, state)) break;
         } else {

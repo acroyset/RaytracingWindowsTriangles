@@ -28,11 +28,13 @@ int main() {
         {vec3(0), 1, vec3(1), 0.1}
         );
 
+
     scene.addModel(
         "assets/models/cube.obj",
         {vec3(0, -20, 0), vec3(300, 20, 300)},
         {vec3(1), 0}
         );
+
 
     scene.addModel(
         sphere,
@@ -63,15 +65,14 @@ int main() {
         );
 
 
-
     std::cout << std::endl;
     std::cout << "Total build time: " << t.reset() << std::endl;
-
-    //scene.displayBVH();
 
     scene.set_ssbo();
 
     std::cout << "SSBO build time: " << t.reset() << std::endl;
+
+    scene.displayStats();
 
 
 

@@ -10,6 +10,7 @@
 #include <thread>
 #include <atomic>
 #include <condition_variable>
+#include <iostream>
 #include <mutex>
 
 #include "Material.h"
@@ -94,6 +95,75 @@ public:
 
 };
 
+class BVHnode {
+    vec4 min{}; // xyz: bbox min    w: childA, -TriStart
+    vec4 max{}; // xyz: bbox max    w: childB, -NumTri
+
+    [[nodiscard]] int minW() const {
+        return floatBitsToInt(min.w);
+    }
+    [[nodiscard]] int maxW() const {
+        return floatBitsToInt(max.w);
+    }
+
+public:
+
+    BVHnode() {
+        min = vec4(vec3(std::numeric_limits<float>::infinity()), 0);
+        max = vec4(vec3(-std::numeric_limits<float>::infinity()), 0);
+    }
+
+    BVHnode(vec4 min, vec4 max) {
+        this->min = min;
+        this->max = max;
+    }
+
+    [[nodiscard]] bool leaf() const {
+        int w = minW();
+        return w <= 0;
+    }
+
+    [[nodiscard]] vec3 getMin() const {
+        return xyz(min);
+    }
+    [[nodiscard]] vec3 getMax() const {
+        return xyz(max);
+    }
+    [[nodiscard]] int getChildA() const {
+        int w = minW();
+        if (w <= 0) std::cerr << "Tried to access child A of leaf node" << std::endl;
+        return w;
+    }
+    [[nodiscard]] int getChildB() const {
+        int w = maxW();
+        if (w <= 0) std::cerr << "Tried to access child B of leaf node" << std::endl;
+        return w;
+    }
+    [[nodiscard]] int getTriStart() const {
+        int w = minW();
+        if (w > 0) std::cerr << "Tried to access triStart of non leaf node" << std::endl;
+        return -w;
+    }
+    [[nodiscard]] int getNumTri() const {
+        int w = maxW();
+        if (w > 0) std::cerr << "Tried to access numTri of non leaf node" << std::endl;
+        return -w;
+    }
+
+    [[nodiscard]] vec3 getCenter() const {
+        return 0.5f*(getMin() + getMax());
+    }
+
+    void setChildA(const int a) { min.w = intBitsToFloat(a); }
+    void setChildB(const int b) { max.w = intBitsToFloat(b); }
+
+    void setTriStart(const int triStart) {min.w = intBitsToFloat(-triStart); }
+    void setNumTri(const int numTri) {max.w = intBitsToFloat(-numTri); }
+
+    void setMin(const vec3 min) {this->min = vec4(min, this->min.w);}
+    void setMax(const vec3 max) {this->max = vec4(max, this->max.w);}
+};
+
 class Model {
     public:
 
@@ -109,17 +179,10 @@ class Model {
     vec3> normals;
     std::vector<Material> materials;
 
-    std::vector<
-    vec3> boundingBoxMin;
-    std::vector<
-    vec3> boundingBoxMax;
-    std::vector<int> childA;
-    std::vector<int> childB;
+    std::vector<BVHnode> BVHnodes;
 
-    std::vector<
-    vec3> triangleCenters;
-    std::vector<
-    vec3> triangleMin, triangleMax;
+    std::vector<vec3> triangleCenters;
+    std::vector<vec3> triangleMin, triangleMax;
 
     ThreadPool pool{std::thread::hardware_concurrency()};
 
@@ -143,15 +206,11 @@ class Model {
 
     void precomputeTriangleData();
 
-    [[nodiscard]] float evaluateSplit(int childA, int childB, int axis, float pos) const;
+    [[nodiscard]] float evaluateSplit(int triStart, int numTri, int axis, float pos) const;
 
-    void chooseSplit(int numTestsPerAxis,
-    vec3 min, int childA,
-    vec3 max, int childB, int& bestAxis, float& bestPos, float& bestCost);
+    void chooseSplit(int numTestsPerAxis, BVHnode node, int& bestAxis, float& bestPos, float& bestCost);
 
-    void split(int numTestsPerAxis,
-    vec3 bboxMin, int& childA,
-    vec3 bboxMax, int& childB, int depth);
+    void split(int numTestsPerAxis, int BVHindex, int depth);
 
     void createBVH(int depth, int numTestsPerAxis, int triStart, int numTris);
 };

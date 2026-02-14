@@ -132,10 +132,16 @@ void center(std::vector<vec3>& points) {
     }
 }
 
-float nodeCost(const vec3 min, const vec3 max, const int numTris) {
-    const vec3 size = max-min;
+float nodeCost(const BVHnode &node) {
+    int numTris = node.getNumTri();
+    const vec3 size = node.getMax()-node.getMin();
     const float halfArea = size.x * (size.y + size.z) + size.y * size.z;
     return halfArea * float(numTris);
+}
+float nodeCost(vec3 min, vec3 max, int numTri) {
+    const vec3 size = max-min;
+    const float halfArea = size.x * (size.y + size.z) + size.y * size.z;
+    return halfArea * float(numTri);
 }
 
 inline float fast_strtof(const char* str, char** endptr) {
@@ -152,11 +158,7 @@ std::string dirOf(const std::string& path) {
     return (p == std::string::npos) ? std::string() : path.substr(0, p+1);
 }
 
-void loadMTL(
-    const std::string& mtlPath,
-    std::unordered_map<std::string, int>& nameToIndex,
-    std::vector<Material>& materials
-    ) {
+void loadMTL(const std::string& mtlPath, std::unordered_map<std::string, int>& nameToIndex, std::vector<Material>& materials) {
     std::ifstream f(mtlPath);
     if (!f) { std::cerr << "WARN: could not open MTL: " << mtlPath << "\n"; return; }
 
@@ -224,15 +226,7 @@ void loadMTL(
 
 Model::Model() = default;
 
-void Model::parse(
-const std::string& nfilename,
-    std::vector<ivec3>& triangles,
-    std::vector<vec3>& vertices,
-    std::vector<vec2>& texCoords,
-    std::vector<vec3>& normals,
-    std::vector<int>& tempTriMatIndex,
-    std::vector<Material>& materials
-    ) {
+void Model::parse(const std::string& nfilename, std::vector<ivec3>& triangles, std::vector<vec3>& vertices, std::vector<vec2>& texCoords, std::vector<vec3>& normals, std::vector<int>& tempTriMatIndex, std::vector<Material>& materials) {
     const std::string filename = "" + nfilename;
     std::ifstream model(filename, std::ios::in | std::ios::binary);
 
@@ -496,6 +490,7 @@ Model::Model(const std::string &filename) {
 
     t.reset();
     createBVH(47, testPerAxis, triStart, numTris);
+    std::cout << "   BVH Nodes: " << BVHnodes.size() << std::endl;
     std::cout << "   BVH Construction Time: " << t.reset() << std::endl;
 }
 
@@ -513,17 +508,17 @@ void Model::createBVH(const int depth, const int numTestsPerAxis, int triStart, 
         growToInclude(min, max, tMin, tMax);
     }
 
-    int index = int(boundingBoxMin.size());
-    boundingBoxMin.emplace_back(min);
-    boundingBoxMax.emplace_back(max);
-    int indexA = -triStart;
-    int indexB = -numTris;
-    childA.emplace_back(indexA);
-    childB.emplace_back(indexA);
+    BVHnode root;
+    root.setMin(min);
+    root.setMax(max);
+    root.setTriStart(triStart);
+    root.setNumTri(numTris);
 
-    split(numTestsPerAxis, min, indexA, max, indexB, depth-1);
-    childA[index] = indexA;
-    childB[index] = indexB;
+    BVHnodes.emplace_back(root);
+
+    split(numTestsPerAxis, 0, depth-1);
+
+
 }
 
 void Model::precomputeTriangleData() {
@@ -546,12 +541,9 @@ void Model::precomputeTriangleData() {
     }
 }
 
-float Model::evaluateSplit(const int childA, const int childB, const int axis, const float pos) const {
+float Model::evaluateSplit(const int triStart, const int numTri, const int axis, const float pos) const {
     auto minA = vec3(1000000000.0f), maxA = vec3(-1000000000.0f);
     auto minB = vec3(1000000000.0f), maxB = vec3(-1000000000.0f);
-
-    int triStart = -childA;
-    int numTri = -childB;
 
     int numA = 0;
     int numB = 0;
@@ -574,21 +566,24 @@ float Model::evaluateSplit(const int childA, const int childB, const int axis, c
     return nodeCost(minA, maxA, numA) + nodeCost(minB, maxB, numB);
 }
 
-void Model::chooseSplit(const int numTestsPerAxis, vec3 min, const int childA, vec3 max, const int childB, int& bestAxis, float& bestPos, float& bestCost) {
+void Model::chooseSplit(const int numTestsPerAxis, BVHnode node, int& bestAxis, float& bestPos, float& bestCost) {
+
+    int triStart = node.getTriStart();
+    int numTri = node.getNumTri();
 
     for (int axis = 0; axis < 3; ++axis) {
-        float bStart = min[axis];
-        float bEnd = max[axis];
+        float bStart = node.getMin()[axis];
+        float bEnd = node.getMax()[axis];
 
         for (int i = 0; i < numTestsPerAxis; ++i) {
 
-            if (-childB > 1000) {
+            if (numTri > 1000) {
 
-                pool.enqueue([numTestsPerAxis, childA, childB, i, bStart, bEnd, axis, &bestPos, &bestCost, &bestAxis, this] {
+                pool.enqueue([numTestsPerAxis, triStart, numTri, i, bStart, bEnd, axis, &bestPos, &bestCost, &bestAxis, this] {
                     float splitT = float(i+1) / float(numTestsPerAxis+1);
 
                     float pos = bStart + (bEnd - bStart) * splitT;
-                    float cost = evaluateSplit(childA, childB, axis, pos);
+                    float cost = evaluateSplit(triStart, numTri, axis, pos);
 
                     if (cost < bestCost) {
                         bestPos = pos;
@@ -601,7 +596,7 @@ void Model::chooseSplit(const int numTestsPerAxis, vec3 min, const int childA, v
                 float splitT = float(i+1) / float(numTestsPerAxis+1);
 
                 float pos = bStart + (bEnd - bStart) * splitT;
-                float cost = evaluateSplit(childA, childB, axis, pos);
+                float cost = evaluateSplit(triStart, numTri, axis, pos);
 
                 if (cost < bestCost) {
                     bestPos = pos;
@@ -616,11 +611,12 @@ void Model::chooseSplit(const int numTestsPerAxis, vec3 min, const int childA, v
 
 }
 
-void Model::split(int numTestsPerAxis, vec3 bboxMin, int& childA, vec3 bboxMax, int& childB, int depth) {
+void Model::split(int numTestsPerAxis, int BVHindex, int depth) {
     if (depth <= 0) {return;};
 
-    int triStart = -childA;
-    int numTris = -childB;
+    BVHnode& node = BVHnodes[BVHindex];
+    int triStart = node.getTriStart();
+    int numTris = node.getNumTri();
 
     if (numTris <= 1) {return;}
 
@@ -635,8 +631,8 @@ void Model::split(int numTestsPerAxis, vec3 bboxMin, int& childA, vec3 bboxMax, 
     int splitAxis;
     float splitPos = 0;
     float bestCost = std::numeric_limits<float>::max();
-    chooseSplit(numTestsPerAxis, bboxMin, childA, bboxMax, childB, splitAxis, splitPos, bestCost);
-    if (bestCost >= nodeCost(bboxMin, bboxMax, numTris)) {return;}
+    chooseSplit(numTestsPerAxis, node, splitAxis, splitPos, bestCost);
+    if (bestCost >= nodeCost(node)) {return;}
 
     //std::cout << depth << ' ' << splitAxix << ' ' << splitPos << std::endl;
 
@@ -670,43 +666,31 @@ void Model::split(int numTestsPerAxis, vec3 bboxMin, int& childA, vec3 bboxMax, 
     //std::cout << "  " << maxB.x << ' ' << maxB.y << ' ' << maxB.z << std::endl;
 
     if (numA > 0 and numB > 0) {
-        int childA_A = -startA, childB_A = -numA;
-        int childA_B = -startB, childB_B = -numB;
 
-        boundingBoxMin.push_back(minA);
-        boundingBoxMax.push_back(maxA);
-        int indexA = int(boundingBoxMin.size())-1;
-        boundingBoxMin.push_back(minB);
-        boundingBoxMax.push_back(maxB);
+        BVHnode childA;
+        BVHnode childB;
+
+        childA.setMin(minA);
+        childA.setMax(maxA);
+        childB.setMin(minB);
+        childB.setMax(maxB);
+
+        int indexA = int(BVHnodes.size());
         int indexB = indexA + 1;
 
-        this->childA.emplace_back(childA_A);
-        this->childB.emplace_back(childB_A);
-        this->childA.emplace_back(childA_B);
-        this->childB.emplace_back(childB_B);
+        childA.setTriStart(startA);
+        childA.setNumTri(numA);
+        childB.setTriStart(startB);
+        childB.setNumTri(numB);
 
-        childA = indexA;
-        childB = indexB;
+        node.setChildA(indexA);
+        node.setChildB(indexB);
 
-        split(numTestsPerAxis, minA, childA_A, maxA, childB_A, depth-1);
-        split(numTestsPerAxis, minB, childA_B, maxB, childB_B, depth-1);
+        BVHnodes.emplace_back(childA);
+        BVHnodes.emplace_back(childB);
 
-        if (childA_A > 0 && (childA_A == indexA || childB_A == indexA)) {
-            std::cerr << "Child A points back to parent indexA=" << indexA << std::endl;
-            std::cerr << "childA_A=" << childA_A << " childB_A=" << childB_A << std::endl;
-            return;
-        }
+        split(numTestsPerAxis, indexA, depth-1);
+        split(numTestsPerAxis, indexB, depth-1);
 
-        if (childA_B > 0 && (childA_B == indexB || childB_B == indexB)) {
-            std::cerr << "Child B points back to parent indexA=" << indexB << std::endl;
-            std::cerr << "childA_B=" << childA_B << " childB_B=" << childB_B << std::endl;
-            return;
-        }
-
-
-        this->childA[indexA] = childA_A;
-        this->childB[indexA] = childB_A;
-        this->childA[indexB] = childA_B;
-        this->childB[indexB] = childB_B;
     }
 }

@@ -110,4 +110,10 @@ public:
     [[nodiscard]] GLuint getID() const { return textureID; }
     [[nodiscard]] const std::string& getPath() const { return originalPath; }
 
+     [[nodiscard]] long long gpuSizeBytes() const {
+        int bytesPerChannel = isHDR ? 2 : 1;
+        long long size = width * height * channels * bytesPerChannel;
+        return params.generateMipmaps ? size * 4 / 3 : size;
+    }
+
 };
