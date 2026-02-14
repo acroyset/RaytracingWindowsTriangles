@@ -11,7 +11,7 @@
 
 #include "Rendering/Timer.h"
 
-void splitSlash(const std::string& s, std::string tokens[3]) {
+inline void splitSlash(const std::string& s, std::string tokens[3]) {
     std::string token;
     int i = 0;
     int loc = 0;
@@ -33,7 +33,7 @@ void splitSlash(const std::string& s, std::string tokens[3]) {
         i++;
     }
 }
-void splitSpace3(const std::string& s, std::string words[3]) {
+inline void splitSpace3(const std::string& s, std::string words[3]) {
     std::string word;
     int loc = 0;
     int i = 0;
@@ -53,7 +53,7 @@ void splitSpace3(const std::string& s, std::string words[3]) {
         i++;
     }
 }
-void splitSpace4(const std::string& s, std::string words[4], int& num) {
+inline void splitSpace4(const std::string& s, std::string words[4], int& num) {
     std::string word;
     num = 0;
     int i = 0;
@@ -74,47 +74,18 @@ void splitSpace4(const std::string& s, std::string words[4], int& num) {
     }
 }
 
-void growToInclude(vec3& min, vec3& max, const vec3 point) {
-    if (point.x < min.x) min.x = point.x;
-    if (point.y < min.y) min.y = point.y;
-    if (point.z < min.z) min.z = point.z;
-    if (point.x > max.x) max.x = point.x;
-    if (point.y > max.y) max.y = point.y;
-    if (point.z > max.z) max.z = point.z;
-}
-void growToInclude(vec3& min, vec3& max, const vec3 tMin, const vec3 tMax) {
-    min.x = std::min(min.x, tMin.x);
-    min.y = std::min(min.y, tMin.y);
-    min.z = std::min(min.z, tMin.z);
-    max.x = std::max(max.x, tMax.x);
-    max.y = std::max(max.y, tMax.y);
-    max.z = std::max(max.z, tMax.z);
-}
-void growToInclude(vec4& min, vec4& max, const vec3 tMin, const vec3 tMax) {
-    min.x = std::min(min.x, tMin.x);
-    min.y = std::min(min.y, tMin.y);
-    min.z = std::min(min.z, tMin.z);
-    max.x = std::max(max.x, tMax.x);
-    max.y = std::max(max.y, tMax.y);
-    max.z = std::max(max.z, tMax.z);
-}
-void growToInclude(vec4& min, vec4& max, const vec3 point) {
-    if (point.x < min.x) min.x = point.x;
-    if (point.y < min.y) min.y = point.y;
-    if (point.z < min.z) min.z = point.z;
-    if (point.x > max.x) max.x = point.x;
-    if (point.y > max.y) max.y = point.y;
-    if (point.z > max.z) max.z = point.z;
+inline void growToInclude(vec3& min, vec3& max, const vec3 p) {
+    min.x = std::min(min.x, p.x);
+    min.y = std::min(min.y, p.y);
+    min.z = std::min(min.z, p.z);
+    max.x = std::max(max.x, p.x);
+    max.y = std::max(max.y, p.y);
+    max.z = std::max(max.z, p.z);
 }
 
 void makeBoundingBox(vec3& min, vec3& max, const std::vector<vec3>& vertices) {
     for (const auto & vertice : vertices) {
         growToInclude(min, max, vertice);
-    }
-}
-void makeBoundingBox(vec3& min, vec3& max, const std::vector<vec4>& vertices) {
-    for (vec4 vertice : vertices) {
-        growToInclude(min, max, xyz(vertice));
     }
 }
 
@@ -132,21 +103,15 @@ void center(std::vector<vec3>& points) {
     }
 }
 
-float nodeCost(const BVHnode &node) {
+inline float nodeCost(const BVHnode &node) {
     int numTris = node.getNumTri();
     const vec3 size = node.getMax()-node.getMin();
     const float halfArea = size.x * (size.y + size.z) + size.y * size.z;
     return halfArea * float(numTris);
 }
-float nodeCost(vec3 min, vec3 max, int numTri) {
-    const vec3 size = max-min;
-    const float halfArea = size.x * (size.y + size.z) + size.y * size.z;
-    return halfArea * float(numTri);
-}
 
 inline float fast_strtof(const char* str, char** endptr) {
     return std::strtof(str, endptr);
-    // Or use a faster implementation like:
     // return fast_float::from_chars(str, str + strlen(str), result).ptr;
 }
 inline int fast_strtoi(const char* str, char** endptr) {
@@ -496,8 +461,7 @@ Model::Model(const std::string &filename) {
 
 void Model::createBVH(const int depth, const int numTestsPerAxis, int triStart, int numTris) {
 
-    auto min = vec3(1000000000.0f);
-    auto max = vec3(-1000000000.0f);
+    BVHnode root;
 
     precomputeTriangleData();
 
@@ -505,12 +469,9 @@ void Model::createBVH(const int depth, const int numTestsPerAxis, int triStart, 
         const vec3& tMin = triangleMin[i];
         const vec3& tMax = triangleMax[i];
 
-        growToInclude(min, max, tMin, tMax);
+        root.growToInclude(tMin, tMax);
     }
 
-    BVHnode root;
-    root.setMin(min);
-    root.setMax(max);
     root.setTriStart(triStart);
     root.setNumTri(numTris);
 
@@ -542,8 +503,8 @@ void Model::precomputeTriangleData() {
 }
 
 float Model::evaluateSplit(const int triStart, const int numTri, const int axis, const float pos) const {
-    auto minA = vec3(1000000000.0f), maxA = vec3(-1000000000.0f);
-    auto minB = vec3(1000000000.0f), maxB = vec3(-1000000000.0f);
+    BVHnode nodeA;
+    BVHnode nodeB;
 
     int numA = 0;
     int numB = 0;
@@ -555,18 +516,21 @@ float Model::evaluateSplit(const int triStart, const int numTri, const int axis,
         vec3 center = triangleCenters[i];
 
         if (center[axis] < pos) {
-            growToInclude(minA, maxA, tMin, tMax);
+            nodeA.growToInclude(tMin, tMax);
             numA++;
         } else {
-            growToInclude(minB, maxB, tMin, tMax);
+            nodeB.growToInclude(tMin, tMax);
             numB++;
         }
     }
 
-    return nodeCost(minA, maxA, numA) + nodeCost(minB, maxB, numB);
+    nodeA.setNumTri(numA);
+    nodeB.setNumTri(numB);
+
+    return nodeCost(nodeA) + nodeCost(nodeB);
 }
 
-void Model::chooseSplit(const int numTestsPerAxis, BVHnode node, int& bestAxis, float& bestPos, float& bestCost) {
+void Model::chooseSplit(const int numTestsPerAxis, const BVHnode &node, int& bestAxis, float& bestPos, float& bestCost) {
 
     int triStart = node.getTriStart();
     int numTri = node.getNumTri();
@@ -577,7 +541,7 @@ void Model::chooseSplit(const int numTestsPerAxis, BVHnode node, int& bestAxis, 
 
         for (int i = 0; i < numTestsPerAxis; ++i) {
 
-            if (numTri > 1000) {
+            if (numTri > 500) {
 
                 pool.enqueue([numTestsPerAxis, triStart, numTri, i, bStart, bEnd, axis, &bestPos, &bestCost, &bestAxis, this] {
                     float splitT = float(i+1) / float(numTestsPerAxis+1);
@@ -620,15 +584,13 @@ void Model::split(int numTestsPerAxis, int BVHindex, int depth) {
 
     if (numTris <= 1) {return;}
 
-    auto minA = vec3(1000000000.0f);
-    auto minB = vec3(1000000000.0f);
-    auto maxA = vec3(-1000000000.0f);
-    auto maxB = vec3(-1000000000.0f);
+    BVHnode childA;
+    BVHnode childB;
 
     int numA = 0, numB = 0;
     int startA = triStart, startB = triStart;
 
-    int splitAxis;
+    int splitAxis = -1;
     float splitPos = 0;
     float bestCost = std::numeric_limits<float>::max();
     chooseSplit(numTestsPerAxis, node, splitAxis, splitPos, bestCost);
@@ -643,9 +605,9 @@ void Model::split(int numTestsPerAxis, int BVHindex, int depth) {
         vec3 center = triangleCenters[i];
         bool triInA = center[splitAxis] < splitPos;
         if (triInA) {
-            growToInclude(minA, maxA, tMin, tMax);
+            childA.growToInclude(tMin, tMax);
             numA++;
-            startB ++;
+            startB++;
             int swap = startA + numA - 1;
             std::swap(triangles[i*3+0], triangles[swap*3+0]);
             std::swap(triangles[i*3+1], triangles[swap*3+1]);
@@ -654,10 +616,11 @@ void Model::split(int numTestsPerAxis, int BVHindex, int depth) {
             std::swap(triangleMin[i], triangleMin[swap]);
             std::swap(triangleMax[i], triangleMax[swap]);
         } else {
-            growToInclude(minB, maxB, tMin, tMax);
+            childB.growToInclude(tMin, tMax);
             numB++;
         }
     }
+
     //std::cout << depth << std::endl;
     //std::cout << "  " << numA << ' ' << numB << ' ' << splitAxis << ' ' << splitPos << std::endl;
     //std::cout << "  " << minA.x << ' ' << minA.y << ' ' << minA.z << std::endl;
@@ -666,22 +629,13 @@ void Model::split(int numTestsPerAxis, int BVHindex, int depth) {
     //std::cout << "  " << maxB.x << ' ' << maxB.y << ' ' << maxB.z << std::endl;
 
     if (numA > 0 and numB > 0) {
-
-        BVHnode childA;
-        BVHnode childB;
-
-        childA.setMin(minA);
-        childA.setMax(maxA);
-        childB.setMin(minB);
-        childB.setMax(maxB);
-
-        int indexA = int(BVHnodes.size());
-        int indexB = indexA + 1;
-
         childA.setTriStart(startA);
         childA.setNumTri(numA);
         childB.setTriStart(startB);
         childB.setNumTri(numB);
+
+        int indexA = int(BVHnodes.size());
+        int indexB = indexA + 1;
 
         node.setChildA(indexA);
         node.setChildB(indexB);

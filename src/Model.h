@@ -160,8 +160,17 @@ public:
     void setTriStart(const int triStart) {min.w = intBitsToFloat(-triStart); }
     void setNumTri(const int numTri) {max.w = intBitsToFloat(-numTri); }
 
-    void setMin(const vec3 min) {this->min = vec4(min, this->min.w);}
-    void setMax(const vec3 max) {this->max = vec4(max, this->max.w);}
+    void setMin(const vec3& min) {this->min = vec4(min, this->min.w);}
+    void setMax(const vec3& max) {this->max = vec4(max, this->max.w);}
+
+    void growToInclude(const vec3& tMin, const vec3& tMax) {
+        vec3 bmin = xyz(min);
+        vec3 bmax = xyz(max);
+        bmin = glm::min(bmin, tMin);
+        bmax = glm::max(bmax, tMax);
+        min = vec4(bmin, min.w);
+        max = vec4(bmax, max.w);
+    }
 };
 
 class Model {
@@ -208,7 +217,7 @@ class Model {
 
     [[nodiscard]] float evaluateSplit(int triStart, int numTri, int axis, float pos) const;
 
-    void chooseSplit(int numTestsPerAxis, BVHnode node, int& bestAxis, float& bestPos, float& bestCost);
+    void chooseSplit(int numTestsPerAxis, const BVHnode &node, int& bestAxis, float& bestPos, float& bestCost);
 
     void split(int numTestsPerAxis, int BVHindex, int depth);
 

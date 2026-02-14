@@ -6,13 +6,12 @@
 #include "Scene.h"
 
 int main() {
-    Scene scene(1,3, 16);
+    Scene scene(1,5, 8);
 
     Timer t;
 
 
     Model sphere("assets/models/sphere.obj");
-
     Model bull("assets/models/bull.obj");
     Model dragon("assets/models/dragon800K.obj");
 
@@ -73,8 +72,6 @@ int main() {
     std::cout << "SSBO build time: " << t.reset() << std::endl;
 
     scene.displayStats();
-
-
 
     // render loop
     while (scene.open()) {

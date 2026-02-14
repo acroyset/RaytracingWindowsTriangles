@@ -284,20 +284,40 @@ Ray calculateInitialRay(int aaCycle, vec2 screenCoord, inout uint state){
 }
 
 // Intersections
-bool rayTriangleIntersect(Ray ray, vec3 v0, vec3 v1, vec3 v2, out float t, out float u, out float v){
+Hit rayTriangleIntersect(Ray ray, vec3 v1, vec3 v2, vec3 v3){
+    Hit h;
+    h.hit = false;
+
     const float EPS = 1e-10;
-    vec3 e1 = v1 - v0;
-    vec3 e2 = v2 - v0;
+
+    vec3 e1 = v2 - v1;
+    vec3 e2 = v3 - v1;
+
     vec3 p  = cross(ray.dir, e2);
+
     float det = dot(e1, p);
-    if (abs(det) < EPS) return false;
+
+    if (abs(det) < EPS) return h;
+
     float invDet = 1.0/det;
-    vec3 tv = ray.pos - v0;
-    u = dot(tv, p) * invDet; if (u < 0.0 || u > 1.0) return false;
+    vec3 tv = ray.pos - v1;
+
+    float u = dot(tv, p) * invDet; if (u < 0.0 || u > 1.0) return h;
+
     vec3 q = cross(tv, e1);
-    v = dot(ray.dir, q) * invDet; if (v < 0.0 || (u+v) > 1.0) return false;
-    t = dot(e2, q) * invDet;
-    return t > 0.0005;
+
+    float v = dot(ray.dir, q) * invDet; if (v < 0.0 || (u+v) > 1.0) return h;
+
+    float t = dot(e2, q) * invDet;
+    if (t < 0.0005) return h;
+
+    h.hit = true;
+    h.t = t;
+    h.u = u;
+    h.v = v;
+    h.w = 1-u-v;
+    return h;
+
 }
 float intersectAABB(Ray ray, vec3 bmin, vec3 bmax){
     vec3 t0 = (bmin - ray.pos) * ray.invDir;
@@ -498,7 +518,7 @@ Hit traverseBVH(int nodeOffset, Ray ray, mat4 M, mat4 invM, float bestTW, inout 
     vec3 bestHitPosW = ray.pos + bestTW*ray.dir;
     vec3 bestHitPosL = (invM * vec4(bestHitPosW, 1)).xyz;
 
-    float bestTL = dot(bestHitPosL - rayLocal.pos, rayLocal.dir);
+    hit.t = dot(bestHitPosL - rayLocal.pos, rayLocal.dir);
 
     int sp = 0;
     stack[sp++] = nodeOffset;
@@ -516,23 +536,11 @@ Hit traverseBVH(int nodeOffset, Ray ray, mat4 M, mat4 invM, float bestTW, inout 
                 vec3 v0 = vertices[tri1.x].xyz;
                 vec3 v1 = vertices[tri2.x].xyz;
                 vec3 v2 = vertices[tri3.x].xyz;
-                float tL, u, v;
-                if (!rayTriangleIntersect(rayLocal, v0, v1, v2, tL, u, v)) continue;
+                Hit h = rayTriangleIntersect(rayLocal, v0, v1, v2);
 
-                // local hit -> world hit distance
-                vec3 hitL = rayLocal.pos + tL*rayLocal.dir;
-                vec3 hitW = (M * vec4(hitL, 1.0)).xyz;
-                float tW = length(hitW - ray.pos);
-
-                if (tL < bestTL){
-                    hit.hit = true;
+                if (h.hit && h.t < hit.t){
+                    hit = h;
                     hit.triID = j;
-                    hit.t = tW;
-                    hit.u = u;
-                    hit.v = v;
-                    hit.w = 1-u-v;
-
-                    bestTL = tL;
                 }
             }
         } else {
@@ -551,12 +559,16 @@ Hit traverseBVH(int nodeOffset, Ray ray, mat4 M, mat4 invM, float bestTW, inout 
             int   iNear = nearA ? A  : B;
             int   iFar  = nearA ? B  : A;
 
-            if (dFar < bestTL  && dFar < 1e38)  stack[sp++] = iFar;
-            if (dNear < bestTL && dNear < 1e38) stack[sp++] = iNear;
+            if (dFar < hit.t  && dFar < 1e38)  stack[sp++] = iFar;
+            if (dNear < hit.t && dNear < 1e38) stack[sp++] = iNear;
 
             if (sp > MAX_STACK_SIZE) break;
         }
     }
+
+    vec3 hitL = rayLocal.pos + hit.t*rayLocal.dir;
+    vec3 hitW = (M * vec4(hitL, 1.0)).xyz;
+    hit.t = length(hitW - ray.pos);
 
     return hit;
 }
@@ -624,8 +636,8 @@ Hit findBestTri(Ray ray, out int triTest, out int aabbTest){
         mat4 invM = modelInvTransformations[modelIdx];
 
         Hit h = traverseBVH(
-        models[modelIdx], ray, M, invM, hit.t,
-        triTest, aabbTest
+            models[modelIdx], ray, M, invM, hit.t,
+            triTest, aabbTest
         );
 
         if (h.hit && h.t < hit.t){

@@ -60,6 +60,8 @@ class Scene {
     std::vector<mat4> modelTransforms;
     std::vector<mat4> modelInvTransforms;
 
+    std::map<std::string, std::vector<int>> modelOffsets;
+
     std::vector<int> models;
     std::vector<vec3> modelPos;
     std::vector<vec3> modelRot;   // radians (x,y,z)

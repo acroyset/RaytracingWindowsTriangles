@@ -180,6 +180,22 @@ void Scene::addModel(const Model& model, const Transformation& transformation, c
     int BBoffset = int(BVHnodes.size());
     int Moffset = int(materials.size());
 
+    bool reuse = false;
+
+    if (modelOffsets.find(model.filename) != modelOffsets.end()) {
+        std::vector<int> offsets = modelOffsets[model.filename];
+        //Toffset need to work out material
+        Voffset = offsets[1];
+        TXoffset = offsets[2];
+        Noffset = offsets[3];
+        //BBoffsets relies on triangle idx so have to do Toffset first
+
+        reuse = true;
+        std::cout << "Reuse " << model.filename << std::endl;
+    } else {
+        modelOffsets[model.filename] = {Toffset, Voffset, TXoffset, Noffset, BBoffset};
+    }
+
     models.emplace_back(BBoffset);
 
     for (int i = 0; i < model.triangles.size()/3; i++) {
@@ -187,23 +203,27 @@ void Scene::addModel(const Model& model, const Transformation& transformation, c
         ivec4 triangle2 = model.triangles[i*3+1];
         ivec4 triangle3 = model.triangles[i*3+2];
 
-        triangle1 += vec4(Voffset, TXoffset, Noffset, Moffset);
-        triangle2 += vec4(Voffset, TXoffset, Noffset, useTexture ? textureID : -1);
-        triangle3 += vec4(Voffset, TXoffset, Noffset, 0);
+        ivec3 offsets = ivec3(Voffset, TXoffset, Noffset);
+
+        triangle1 += ivec4(offsets, Moffset);
+        triangle2 += ivec4(offsets, useTexture ? textureID : -1);
+        triangle3 += ivec4(offsets, 0);
 
         triangles.emplace_back(triangle1);
         triangles.emplace_back(triangle2);
         triangles.emplace_back(triangle3);
     }
 
-    for (vec3 vertex : model.vertices) {
-        vertices.emplace_back(vertex, 0);
-    }
-    for (vec2 texCoord : model.texCoords) {
-        texCoords.emplace_back(texCoord);
-    }
-    for (vec3 normal : model.normals) {
-        normals.emplace_back(normal, 0);
+    if (!reuse) {
+        for (vec3 vertex : model.vertices) {
+            vertices.emplace_back(vertex, 0);
+        }
+        for (vec2 texCoord : model.texCoords) {
+            texCoords.emplace_back(texCoord);
+        }
+        for (vec3 normal : model.normals) {
+            normals.emplace_back(normal, 0);
+        }
     }
 
     for (auto node : model.BVHnodes) {
