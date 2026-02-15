@@ -90,7 +90,7 @@ void makeBoundingBox(vec3& min, vec3& max, const std::vector<vec3>& vertices) {
 }
 
 void center(std::vector<vec3>& points) {
-    auto min = vec3(1000000000.0f), max = vec3(-1000000000.0f);
+    auto min = vec3(std::numeric_limits<float>::infinity()), max = vec3(-std::numeric_limits<float>::infinity());
     makeBoundingBox(min, max, points);
 
     const vec3 offset = {(max.x+min.x)/2, (max.y+min.y)/2, (max.z+min.z)/2};
@@ -155,6 +155,7 @@ void loadMTL(const std::string& mtlPath, std::unordered_map<std::string, int>& n
             material.setTransparency(transparency);
             material.setIOR(ior);
             material.setEmissionStrength(emission);
+            material.setTransparentSmoothness(1.0f);
 
             materials.push_back(material);
         }
@@ -539,14 +540,22 @@ void Model::chooseSplit(const int numTestsPerAxis, const BVHnode &node, int& bes
         float bStart = node.getMin()[axis];
         float bEnd = node.getMax()[axis];
 
+        float centerMin = std::numeric_limits<float>::max();
+        float centerMax = -std::numeric_limits<float>::max();
+
+        for (int i = triStart; i < triStart + numTri; ++i) {
+            float c = triangleCenters[i][axis];
+            centerMin = std::min(centerMin, c);
+            centerMax = std::max(centerMax, c);
+        }
+
         for (int i = 0; i < numTestsPerAxis; ++i) {
 
             if (numTri > 500) {
 
-                pool.enqueue([numTestsPerAxis, triStart, numTri, i, bStart, bEnd, axis, &bestPos, &bestCost, &bestAxis, this] {
+                for (int i = 0; i < numTestsPerAxis; ++i) {
                     float splitT = float(i+1) / float(numTestsPerAxis+1);
-
-                    float pos = bStart + (bEnd - bStart) * splitT;
+                    float pos = centerMin + (centerMax - centerMin) * splitT;
                     float cost = evaluateSplit(triStart, numTri, axis, pos);
 
                     if (cost < bestCost) {
@@ -554,18 +563,20 @@ void Model::chooseSplit(const int numTestsPerAxis, const BVHnode &node, int& bes
                         bestCost = cost;
                         bestAxis = axis;
                     }
-                });
+                }
 
             } else {
-                float splitT = float(i+1) / float(numTestsPerAxis+1);
 
-                float pos = bStart + (bEnd - bStart) * splitT;
-                float cost = evaluateSplit(triStart, numTri, axis, pos);
+                for (int i = 0; i < numTestsPerAxis; ++i) {
+                    float splitT = float(i+1) / float(numTestsPerAxis+1);
+                    float pos = centerMin + (centerMax - centerMin) * splitT;
+                    float cost = evaluateSplit(triStart, numTri, axis, pos);
 
-                if (cost < bestCost) {
-                    bestPos = pos;
-                    bestCost = cost;
-                    bestAxis = axis;
+                    if (cost < bestCost) {
+                        bestPos = pos;
+                        bestCost = cost;
+                        bestAxis = axis;
+                    }
                 }
             }
         }
@@ -576,11 +587,17 @@ void Model::chooseSplit(const int numTestsPerAxis, const BVHnode &node, int& bes
 }
 
 void Model::split(int numTestsPerAxis, int BVHindex, int depth) {
-    if (depth <= 0) {return;};
 
     BVHnode& node = BVHnodes[BVHindex];
     int triStart = node.getTriStart();
     int numTris = node.getNumTri();
+
+    if (depth <= 0) {
+        if (numTris > 10) {
+            std::cerr << "Hit depth limit with " << numTris << " tri" << std::endl;
+        }
+        return;
+    }
 
     if (numTris <= 1) {return;}
 
@@ -595,6 +612,24 @@ void Model::split(int numTestsPerAxis, int BVHindex, int depth) {
     float bestCost = std::numeric_limits<float>::max();
     chooseSplit(numTestsPerAxis, node, splitAxis, splitPos, bestCost);
     if (bestCost >= nodeCost(node)) {return;}
+
+    if (splitAxis == -1) {
+        vec3 min = node.getMin();
+        vec3 max = node.getMax();
+        vec3 size = max - min;
+
+        if (size.x > size.y && size.x > size.z) {
+            splitAxis = 0;
+        } else if (size.y > size.z && size.y > size.x) {
+            splitAxis = 1;
+        } else {
+            splitAxis = 2;
+        }
+
+        splitPos = (min[splitAxis]+max[splitAxis])/2;
+
+        std::cerr << "Fallback to center split" << std::endl;
+    }
 
     //std::cout << depth << ' ' << splitAxix << ' ' << splitPos << std::endl;
 
@@ -634,6 +669,11 @@ void Model::split(int numTestsPerAxis, int BVHindex, int depth) {
         childB.setTriStart(startB);
         childB.setNumTri(numB);
 
+        if (numA > 1000 || numB > 1000) {
+            std::cout << "Depth " << depth << " split: " << numA << " vs " << numB
+                      << " (axis " << splitAxis << ", pos " << splitPos << ")" << std::endl;
+        }
+
         int indexA = int(BVHnodes.size());
         int indexB = indexA + 1;
 
@@ -646,5 +686,9 @@ void Model::split(int numTestsPerAxis, int BVHindex, int depth) {
         split(numTestsPerAxis, indexA, depth-1);
         split(numTestsPerAxis, indexB, depth-1);
 
+    } else if (numA > 10) {
+        std::cerr << "Big Leaf Node  " << numA << " tri" << std::endl;
+    } else if (numB > 10) {
+        std::cerr << "Big Leaf Node  " << numB << " tri" << std::endl;
     }
 }

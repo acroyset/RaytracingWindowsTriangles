@@ -12,7 +12,7 @@ class Material {
 
     vec4 diffuseColor{}; // diffuse color, smoothness
     vec4 specularColor{}; // specular color, specular probability
-    vec4 glassLightSettings{}; // transparency, ior, emission strength, (padding)
+    vec4 glassLightSettings{}; // transparency, ior, emission strength, transparent smoothness
 
 public:
 
@@ -24,7 +24,8 @@ public:
         vec3 specularColor = vec3(-1),
         float specularProbability = 0.0f,
         float transparency = 0.0f,
-        float ior = 1.0f)
+        float ior = 1.0f,
+        float transparentSmoothness = 1.0f)
     {
         this->diffuseColor = vec4(diffuseColor, smoothness);
         if (specularColor == vec3(-1)) {
@@ -32,7 +33,7 @@ public:
         } else {
             this->specularColor = vec4(specularColor, specularProbability);
         }
-        this->glassLightSettings = vec4(transparency, ior, 0, 0);
+        this->glassLightSettings = vec4(transparency, ior, 0, transparentSmoothness);
     }
 
     Material(
@@ -41,7 +42,7 @@ public:
     {
         this->diffuseColor = vec4(color, 0);
         this->specularColor = vec4(0, 0, 0, -1);
-        this->glassLightSettings = vec4(0, 1, emissionStrength, 0);
+        this->glassLightSettings = vec4(0, 1, emissionStrength, 1.0f);
     }
 
     [[nodiscard]] vec3 getDiffuseColor() const {
@@ -64,6 +65,9 @@ public:
     }
     [[nodiscard]] float getEmissionStrength() const {
         return glassLightSettings.z;
+    }
+    [[nodiscard]] float getTransparentSmoothness() const {
+        return glassLightSettings.w;
     }
 
     [[nodiscard]] vec4 getDC() const {
@@ -96,6 +100,9 @@ public:
     }
     void setEmissionStrength(const float emissionStrength) {
         glassLightSettings.z = emissionStrength;
+    }
+    void setTransparentSmoothness(const float transparentSmoothness) {
+        glassLightSettings.w = transparentSmoothness;
     }
 
     void setDC(const vec4 dc) {

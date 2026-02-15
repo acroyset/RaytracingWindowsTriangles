@@ -160,6 +160,7 @@ class Scene {
     Uniform<uvec2> uResolution;
     Uniform<int> uFrameCount;
     Uniform<float> uTimeSinceStart;
+    Uniform<int> uSampleCount;
 
     Uniform<int> uNumNodes;
     Uniform<int> uSamples;

@@ -38,10 +38,11 @@
     <list default="true" id="cd06d447-a7c8-42f4-a8e5-4bf88ac1888b" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/shaders/fullscreen.frag" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/fullscreen.frag" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Material.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Material.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Model.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Model.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Model.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Model.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -124,11 +125,11 @@
       <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\models" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\assets\models\tuilips" />
+      <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\assets\models" />
+      <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\assets\models\flowerPot" />
       <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\src\Rendering" />
       <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\Assets\models" />
-      <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\Assets" />
-      <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\Textures" />
-      <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\external" />
     </key>
   </component>
   <component name="RunManager" selected="CMake Application.RaytracingWindowsTriangles">
@@ -247,7 +248,9 @@
       <workItem from="1770953921374" duration="9741000" />
       <workItem from="1771040328395" duration="2000" />
       <workItem from="1771040508904" duration="7887000" />
-      <workItem from="1771090666467" duration="15786000" />
+      <workItem from="1771090666467" duration="16124000" />
+      <workItem from="1771113715649" duration="9546000" />
+      <workItem from="1771123553795" duration="3877000" />
     </task>
     <servers />
   </component>

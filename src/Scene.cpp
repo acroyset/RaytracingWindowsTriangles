@@ -297,6 +297,7 @@ void Scene::createUniforms() {
     uResolution     = window.createUniform<uvec2>("resolution");
     uFrameCount     = window.createUniform<int>("frameCount");
     uTimeSinceStart = window.createUniform<float>("timeSinceStart");
+    uSampleCount    = window.createUniform<int>("sampleCount");
 
     uNumNodes  = window.createUniform<int>("numNodes");
     uSamples   = window.createUniform<int>("samples");
@@ -339,6 +340,7 @@ void Scene::setUniforms() const {
     uResolution.set(window.size());
     uFrameCount.set(frameCount);
     uTimeSinceStart.set(window.getTimeSinceStart());
+    uSampleCount.set(sampleCount);
 
     uNumNodes.set(getNumBVHNodes());
     uSamples.set(samples);
@@ -500,7 +502,7 @@ void Scene::ImGuiRender() {
             ui_resetAccum |= DragFloat3("Sun Direction", sunDir);
             sunDir = normalize(sunDir);
 
-            ui_resetAccum |= ImGui::SliderFloat("Sun Strength", &sunStrength, 0, 2000);
+            ui_resetAccum |= ImGui::SliderFloat("Sun Strength", &sunStrength, 0, 500);
             ImGui::Unindent();
         }
 
@@ -607,26 +609,44 @@ void Scene::ImGuiRender() {
 
                     if (emissive) {
                         if (modelsTextureID[selectedModel] == -1) changedM |= ColorEdit3("Color", DC);
-                        changedM |= ImGui::SliderFloat("Emission Strength", &GLS.z, 0.01f, 1000.0f);
+                        changedM |= ImGui::SliderFloat("Emission Strength", &GLS.z, 0.01f, 250.0f);
                     } else {
 
-                        if (modelsTextureID[selectedModel] == -1) changedM |= ColorEdit3("Diffuse Color", DC);
-
-                        bool specular = SC.w >= 0;
-                        if (ImGui::Checkbox("Specular", &specular)) {
-                            if (specular) SC.w = 0;
-                            else SC.w = -1;
+                        bool isTransparent = (GLS.x > 0);
+                        if (ImGui::Checkbox("Transparent", &isTransparent)) {
+                            if (isTransparent) GLS.x = 1;
+                            else GLS.x = 0;
                             changedM = true;
                         }
 
-                        if (specular) changedM |= ColorEdit3("Specular Color", SC);
+                        if (isTransparent) {
+                            changedM |= ImGui::SliderFloat("Transparency", &GLS.x, 0.0f, 1.0f);
 
-                        ImGui::Text("Material Properties");
+                            changedM |= ColorEdit3("Color", SC);
+                            changedM |= ColorEdit3("Absorb Color", DC);
 
-                        changedM |= ImGui::SliderFloat("Smoothness", &DC.w, 0.0f, 1.0f);
-                        if (specular) changedM |= ImGui::SliderFloat("Specular Probability", &SC.w, 0.0f, 1.0f);
-                        changedM |= ImGui::SliderFloat("Transparency", &GLS.x, 0.0f, 1.0f);
-                        if (GLS.x > 0) changedM |= ImGui::SliderFloat("Index of Refraction", &GLS.y, 0.0f, 3.0f);
+                            changedM |= ImGui::SliderFloat("Index of Refraction", &GLS.y, 0.0f, 3.0f);
+                            changedM |= ImGui::SliderFloat("Smoothness", &DC.w, 0.0f, 1.0f);
+                            changedM |= ImGui::SliderFloat("Transparent Smoothness", &GLS.w, 0.0f, 1.0f);
+                            changedM |= ImGui::SliderFloat("Absorb Multiplier", &SC.w, 0.0f, 0.1f);
+                        } else {
+                            if (modelsTextureID[selectedModel] == -1) changedM |= ColorEdit3("Diffuse Color", DC);
+
+                            bool specular = SC.w >= 0;
+                            if (ImGui::Checkbox("Specular", &specular)) {
+                                if (specular) SC.w = 0;
+                                else SC.w = -1;
+                                changedM = true;
+                            }
+
+                            if (specular && !isTransparent) changedM |= ColorEdit3("Specular Color", SC);
+
+                            ImGui::Text("Material Properties");
+
+                            changedM |= ImGui::SliderFloat("Smoothness", &DC.w, 0.0f, 1.0f);
+                            if (specular) changedM |= ImGui::SliderFloat("Specular Probability", &SC.w, 0.0f, 1.0f);
+                        }
+
                     }
 
                     m.setDC(DC);
@@ -802,7 +822,7 @@ void Scene::ImGuiRender() {
 void Scene::displayStats() {
     DataPackageSize package = dataSentSize();
 
-    std::cout << "Triangles: "       << triangles.size()       << " (" << bytesToReadable(package.triangleDataSize)  << ")" << std::endl;
+    std::cout << "Triangles: "       << triangles.size()/3     << " (" << bytesToReadable(package.triangleDataSize)  << ")" << std::endl;
     std::cout << "Vertices: "        << vertices.size()        << " (" << bytesToReadable(package.vertexDataSize)    << ")" << std::endl;
     std::cout << "Texture Coords: "  << texCoords.size()       << " (" << bytesToReadable(package.texCoordDataSize)  << ")" << std::endl;
     std::cout << "Normals: "         << normals.size()         << " (" << bytesToReadable(package.normalDataSize)    << ")" << std::endl;
