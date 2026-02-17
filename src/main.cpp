@@ -11,23 +11,6 @@ int main() {
     Timer t;
 
 
-    //Model sphere("assets/models/sphere.obj");
-    Model dragon("assets/models/dragon800K.obj");
-
-    scene.addModel(
-        "assets/models/cube.obj",
-        {vec3(0, -10, 0), vec3(300, 10, 300)},
-        {vec3(0.9), 0}
-        );
-
-
-    scene.addModel(
-        dragon,
-        {vec3(0, 70, 0), vec3(100)},
-        {vec3(0.9), 1, vec3(0.95), 1, 1, 1.3}
-        );
-
-
     std::cout << std::endl;
     std::cout << "Total build time: " << t.reset() << std::endl;
 

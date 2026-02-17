@@ -2,7 +2,7 @@
 // Created by acroy on 7/26/2025.
 //
 
-#include "Model.h"
+#include "BaseModel.h"
 #include <fstream>
 #include <iostream>
 #include <cstring>
@@ -189,11 +189,37 @@ void loadMTL(const std::string& mtlPath, std::unordered_map<std::string, int>& n
     flushMaterial();
 }
 
+std::vector<vec3> createNormals(std::vector<ivec3>& triangles, const std::vector<vec3>& vertices) {
+    std::vector<vec3> normals(triangles.size()/3);
+    for (int i = 0; i < triangles.size()/3; ++i) {
+        ivec3 tri1 = triangles[3*i+0];
+        ivec3 tri2 = triangles[3*i+1];
+        ivec3 tri3 = triangles[3*i+2];
 
-Model::Model() = default;
+        vec3 v1 = vertices[tri1.x];
+        vec3 v2 = vertices[tri2.x];
+        vec3 v3 = vertices[tri3.x];
 
-void Model::parse(const std::string& nfilename, std::vector<ivec3>& triangles, std::vector<vec3>& vertices, std::vector<vec2>& texCoords, std::vector<vec3>& normals, std::vector<int>& tempTriMatIndex, std::vector<Material>& materials) {
-    const std::string filename = "" + nfilename;
+        vec3 e1 = v2-v1;
+        vec3 e2 = v3-v1;
+
+        vec3 normal = normalize(cross(e1, e2));
+        triangles[3*i+0].z = i;
+        triangles[3*i+1].z = i;
+        triangles[3*i+2].z = i;
+        normals[i] = normal;
+    }
+
+    return normals;
+}
+
+
+BaseModel::BaseModel() = default;
+
+void BaseModel::parse(const std::string& filename) {
+    std::vector<ivec3> tempTriangles;
+    std::vector<int> tempTriMatIndex;
+
     std::ifstream model(filename, std::ios::in | std::ios::binary);
 
     if (!model.is_open()) {
@@ -322,12 +348,12 @@ void Model::parse(const std::string& nfilename, std::vector<ivec3>& triangles, s
                     vertexCount++;
 
                     if (vertexCount >= 4) {
-                        triangles.push_back(triangles[triangles.size() - vertexCount + 1]);
-                        triangles.push_back(triangles[triangles.size() - 2]);
+                        tempTriangles.push_back(tempTriangles[tempTriangles.size() - vertexCount + 1]);
+                        tempTriangles.push_back(tempTriangles[tempTriangles.size() - 2]);
                         tempTriMatIndex.push_back(currentMaterial);
                     }
 
-                    triangles.emplace_back(v, vt, vn);
+                    tempTriangles.emplace_back(v, vt, vn);
 
                     // Skip to next vertex or end of line
                     while (ptr < end && *ptr != ' ' && *ptr != '\t' && *ptr != '\n' && *ptr != '\r') {
@@ -390,7 +416,7 @@ void Model::parse(const std::string& nfilename, std::vector<ivec3>& triangles, s
     }
 
     // Convert negative indices and adjust for 0-based indexing
-    for (ivec3& i : triangles) {
+    for (ivec3& i : tempTriangles) {
         if (i.x < 0) i.x += int(vertices.size()) + 1;
         if (i.y < 0) i.y += int(texCoords.size()) + 1;
         if (i.z < 0) i.z += int(normals.size()) + 1;
@@ -405,42 +431,12 @@ void Model::parse(const std::string& nfilename, std::vector<ivec3>& triangles, s
     }
 
     center(vertices);
-    model.close();
-}
 
-Model::Model(const std::string &filename) {
-    this->filename = filename;
-    std::vector<ivec3> tempTriangles;
-    std::vector<vec3> tempVertices;
-    std::vector<vec2> tempTexCoords;
-    std::vector<vec3> tempNormals;
-    std::vector<Material> tempMaterials;
-    std::vector<int> tempTriMatIndex;
+    if (normals.empty()) {
+        normals = createNormals(tempTriangles, vertices);
+    }
 
-    std::cout << filename << std::endl;
-    Timer t;
-    parse(filename, tempTriangles, tempVertices, tempTexCoords, tempNormals, tempTriMatIndex, tempMaterials);
-    std::cout << "   Parse Time: " << t.reset() << std::endl;
-
-    std::cout << "   Triangles: " << tempTriangles.size()/3 << std::endl;
-    std::cout << "   Vertices: " << tempVertices.size() << std::endl;
-    std::cout << "   TexCoords: " << tempTexCoords.size() << std::endl;
-    std::cout << "   Normals: " << tempNormals.size() << std::endl;
-
-    int triStart = 0;
     int numTris = int(tempTriangles.size())/3;
-
-    for (vec3 tempVertice : tempVertices) {
-        vertices.emplace_back(tempVertice);
-    }
-
-    for (vec2 tempTexCoord : tempTexCoords) {
-        texCoords.emplace_back(tempTexCoord);
-    }
-
-    for (vec3 tempNormal : tempNormals) {
-        normals.emplace_back(tempNormal);
-    }
 
     for (int i = 0; i < numTris; ++i) {
         triangles.emplace_back(tempTriangles[i*3+0].x, tempTriangles[i*3+0].y, tempTriangles[i*3+0].z, tempTriMatIndex[i]);
@@ -448,19 +444,33 @@ Model::Model(const std::string &filename) {
         triangles.emplace_back(tempTriangles[i*3+2].x, tempTriangles[i*3+2].y, tempTriangles[i*3+2].z, 0);
     }
 
-    for (Material m : tempMaterials) {
-        materials.emplace_back(m);
-    }
+    model.close();
+}
+
+BaseModel::BaseModel(const std::string &filename) {
+    this->filename = filename;
+
+    std::cout << filename << std::endl;
+    Timer t;
+    parse(filename);
+    std::cout << "   Parse Time: " << t.reset() << std::endl;
+
+    std::cout << "   Triangles: " << triangles.size()/3 << std::endl;
+    std::cout << "   Vertices: " << vertices.size() << std::endl;
+    std::cout << "   TexCoords: " << texCoords.size() << std::endl;
+    std::cout << "   Normals: " << normals.size() << std::endl;
+
+
 
     int testPerAxis = 3;
 
     t.reset();
-    createBVH(47, testPerAxis, triStart, numTris);
+    createBVH(47, testPerAxis, 0, int(triangles.size())/3);
     std::cout << "   BVH Nodes: " << BVHnodes.size() << std::endl;
     std::cout << "   BVH Construction Time: " << t.reset() << std::endl;
 }
 
-void Model::createBVH(const int depth, const int numTestsPerAxis, int triStart, int numTris) {
+void BaseModel::createBVH(const int depth, const int numTestsPerAxis, int triStart, int numTris) {
 
     BVHnode root;
 
@@ -483,7 +493,7 @@ void Model::createBVH(const int depth, const int numTestsPerAxis, int triStart, 
 
 }
 
-void Model::precomputeTriangleData() {
+void BaseModel::precomputeTriangleData() {
     triangleCenters.resize(triangles.size()/3);
     triangleMin.resize(triangles.size()/3);
     triangleMax.resize(triangles.size()/3);
@@ -503,7 +513,7 @@ void Model::precomputeTriangleData() {
     }
 }
 
-float Model::evaluateSplit(const int triStart, const int numTri, const int axis, const float pos) const {
+float BaseModel::evaluateSplit(const int triStart, const int numTri, const int axis, const float pos) const {
     BVHnode nodeA;
     BVHnode nodeB;
 
@@ -531,7 +541,7 @@ float Model::evaluateSplit(const int triStart, const int numTri, const int axis,
     return nodeCost(nodeA) + nodeCost(nodeB);
 }
 
-void Model::chooseSplit(const int numTestsPerAxis, const BVHnode &node, int& bestAxis, float& bestPos, float& bestCost) {
+void BaseModel::chooseSplit(const int numTestsPerAxis, const BVHnode &node, int& bestAxis, float& bestPos, float& bestCost) {
 
     int triStart = node.getTriStart();
     int numTri = node.getNumTri();
@@ -586,7 +596,7 @@ void Model::chooseSplit(const int numTestsPerAxis, const BVHnode &node, int& bes
 
 }
 
-void Model::split(int numTestsPerAxis, int BVHindex, int depth) {
+void BaseModel::split(int numTestsPerAxis, int BVHindex, int depth) {
 
     BVHnode& node = BVHnodes[BVHindex];
     int triStart = node.getTriStart();
@@ -668,11 +678,6 @@ void Model::split(int numTestsPerAxis, int BVHindex, int depth) {
         childA.setNumTri(numA);
         childB.setTriStart(startB);
         childB.setNumTri(numB);
-
-        if (numA > 1000 || numB > 1000) {
-            std::cout << "Depth " << depth << " split: " << numA << " vs " << numB
-                      << " (axis " << splitAxis << ", pos " << splitPos << ")" << std::endl;
-        }
 
         int indexA = int(BVHnodes.size());
         int indexB = indexA + 1;

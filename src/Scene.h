@@ -6,6 +6,7 @@
 #define SCENE_H
 #define GLFW_INCLUDE_NONE
 
+#include <future>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "Rendering/ShaderWindow.h"
@@ -15,13 +16,15 @@
 #include "Material.h"
 #include <glm/glm.hpp>
 #include <string>
-#include "Model.h"
+#include "BaseModel.h"
 #include <iomanip>
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "Rendering/SSBO.h"
 #include <map>
+#include "Model.h"
+#include "JSONextensions.h"
 
 #define GLAD_GL_IMPLEMENTATION
 
@@ -53,23 +56,15 @@ class Scene {
     std::vector<vec4> vertices;
     std::vector<vec2> texCoords;
     std::vector<vec4> normals;
-    std::vector<Material> materials;
 
     // Model Info
 
-    std::vector<mat4> modelTransforms;
-    std::vector<mat4> modelInvTransforms;
+    std::map<std::string, BaseModel> precomputedModels;
+    std::vector<Model> models;
 
-    std::map<std::string, std::vector<int>> modelOffsets;
+    // Model Info
 
-    std::vector<int> models;
-    std::vector<vec3> modelPos;
-    std::vector<vec3> modelRot;   // radians (x,y,z)
-    std::vector<vec3> modelScale;
-
-    std::vector<std::string> modelLabels;
-    std::vector<ivec2> modelsMaterialsIdx;
-    std::vector<int> modelsTextureID;
+    std::vector<std::vector<int>> modelOffsets; // Toffset, Voffset, TXoffset, Noffset, BVHoffset, Moffset
 
     // BVH
 
@@ -102,6 +97,7 @@ class Scene {
     float gpuTime = 0;
     float cpuTime = 0;
     float smoothing = 0.9;
+    std::vector<float> dtData;
 
     // Sky
 
@@ -126,10 +122,11 @@ class Scene {
     float depthScale = 1500;
 
 
-    int selectedModel = 0;
+    int selectedModel = -1;
     int selectedColor = 0;
 
     bool hud = true;
+    bool typing = false;
 
     // SSBO
 
@@ -142,6 +139,8 @@ class Scene {
     SSBO<int> ssboModels;
     SSBO<mat4> ssboModelTransformations;
     SSBO<mat4> ssboModelInvTransformations;
+
+    DataPackageSize lastSentPackage{};
 
 
     // Uniforms
@@ -194,6 +193,15 @@ class Scene {
     int selectedTexture = 0;
     std::vector<std::string> textureLabels;
 
+    // Scene save / load
+
+    std::future<void> job;
+    std::atomic<bool> busy{};
+    std::string busyLabel;
+    std::string statusMsg;
+    bool statusIsError;
+    std::atomic<bool> newData{};
+
     // Keys
 
     std::map<GLuint, bool> trackedKeysPressed{{GLFW_KEY_L , false}, {GLFW_KEY_H , false}};
@@ -209,12 +217,14 @@ class Scene {
         ImGui::DestroyContext();
     }
 
-    void addModel(const std::string &filename, const Transformation& transformation, const Material& material, const std::string& texturePath = "");
-    void addModel(const Model& model, const Transformation& transformation, const Material& material, const std::string& texturePath = "");
+    void addModel(const std::string &filename, const Transformation& transformation, const std::string& texturePath = "");
+    void addModel(const Model& model, const std::string& texturePath = "");
 
     [[nodiscard]] int getNumBVHNodes() const;
 
     [[nodiscard]] int getNumTris() const;
+
+    [[nodiscard]] int getNumMaterials() const;
 
     void createUniforms();
 
@@ -229,9 +239,12 @@ class Scene {
     void ImGuiRender();
 
 
-    void displayStats();
+    void displayStats() const;
 
-    DataPackageSize dataSentSize() const;
+    [[nodiscard]] DataPackageSize dataSentSize() const;
+
+    void saveJSON(const std::string& filename) const;
+    void loadJSON(const std::string& filename);
 
     int numTriBelow(int index);
 
@@ -247,6 +260,48 @@ class Scene {
 
     void updateItemSmooth(float& item, const float value) const {
         item = smoothing * item + (1.0f - smoothing) * value;
+    }
+
+    void startAddJob(const std::string& path) {
+        busy = true;
+        busyLabel = "Adding Model...";
+
+        job = std::async(std::launch::async, [path, this]() {
+            try {
+                addModel(path, Transformation(vec3(0), vec3(100)));
+                statusIsError = false;
+                statusMsg = "Added: " + path;
+                newData = true;
+            } catch (const std::exception& e) {
+                statusIsError = true;
+                statusMsg = std::string("Add failed: ") + e.what();
+            } catch (...) {
+                statusIsError = true;
+                statusMsg = "Add failed: unknown error";
+            }
+            busy = false;
+        });
+    }
+
+    void startLoadJob(const std::string& path){
+        busy = true;
+        busyLabel = "Loading JSON...";
+
+        job = std::async(std::launch::async, [path, this]() {
+            try {
+                loadJSON(path);
+                statusIsError = false;
+                statusMsg = "Loaded: " + path;
+                newData = true;
+            } catch (const std::exception& e) {
+                statusIsError = true;
+                statusMsg = std::string("Load failed: ") + e.what();
+            } catch (...) {
+                statusIsError = true;
+                statusMsg = "Load failed: unknown error";
+            }
+            busy = false;
+        });
     }
 };
 

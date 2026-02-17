@@ -16,7 +16,11 @@ class Material {
 
 public:
 
-    Material() = default;
+    Material() {
+        diffuseColor = vec4(vec3(1), 0);
+        specularColor = vec4(0);
+        glassLightSettings = vec4(0, 1, 0, 1);
+    }
 
     Material(
         vec3 diffuseColor,

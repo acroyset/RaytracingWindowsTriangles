@@ -3,43 +3,6 @@ out vec4 FragColor;
 
 in vec2 fragCoord; // [0,1]
 
-struct Material {
-    vec4 diffuseColor; // diffuse color, smoothness
-    vec4 specularColor; // specular color, specular probability
-    vec4 glassLightSettings; // transparency, ior, emission strength, transparent smoothness
-};
-
-struct Triangle{
-    vec3 v1, v2, v3;
-    vec2 t1, t2, t3;
-    vec3 n1, n2, n3;
-    Material material;
-    bool useTexture;
-    int textureID;
-    bool useNormals;
-};
-
-struct Hit{
-    bool hit;
-    Triangle tri;
-    int triID;
-    int modelID;
-    float t;
-    float u, v, w;
-};
-
-struct Ray{
-    vec3 pos;
-    vec3 dir;
-    vec3 invDir;
-};
-
-struct BVHnode {
-    vec4 min;// xyz: bbox min    w: childA, -TriStart
-    vec4 max;// xyz: bbox max    w: childB, -NumTri
-};
-
-
 const int MAX_MODELS = 64;
 const int MAX_TEXTURES = 64;
 const int MAX_STACK_SIZE = 48;
@@ -116,7 +79,7 @@ Triangle createTri(int triIndex){
     tri.material = materials[int(idx1.w)];
     tri.useTexture = idx2.w != -1.0;
     tri.textureID = int(idx2.w);
-    tri.useNormals = idx1.z != -1 && idx2.z != -1 && idx3.z != -1;
+    tri.useNormals = idx1.z != -1.0 && idx2.z != -1.0 && idx3.z != -1.0;
 
     tri.v1 = vertices[idx1.x].xyz;
     tri.v2 = vertices[idx2.x].xyz;
@@ -135,55 +98,6 @@ Triangle createTri(int triIndex){
     }
 
     return tri;
-}
-
-vec3 diffuseColor(Material m){
-    return m.diffuseColor.rgb;
-}
-float smoothness(Material m){
-    return m.diffuseColor.w;
-}
-vec3 specularColor(Material m){
-    return m.specularColor.rgb;
-}
-float specularProbability(Material m){
-    return m.specularColor.w;
-}
-float transparency(Material m){
-    return m.glassLightSettings.x;
-}
-float ior(Material m){
-    return m.glassLightSettings.y;
-}
-float emissionStrength(Material m){
-    return m.glassLightSettings.z;
-}
-float transparentSmoothness(Material m){
-    return m.glassLightSettings.w;
-}
-
-int childA(BVHnode node){
-    int w = floatBitsToInt(node.min.w);
-    if (w <= 0) return -1;
-    return w;
-}
-int childB(BVHnode node){
-    int w = floatBitsToInt(node.max.w);
-    if (w <= 0) return -1;
-    return w;
-}
-int triStart(BVHnode node){
-    int w = floatBitsToInt(node.min.w);
-    if (w > 0) return -1;
-    return -w;
-}
-int numTri(BVHnode node){
-    int w = floatBitsToInt(node.max.w);
-    if (w > 0) return -1;
-    return -w;
-}
-bool leaf(BVHnode node){
-    return childA(node) == -1;
 }
 
 // RNG
@@ -565,8 +479,8 @@ Hit traverseBVH(int nodeOffset, Ray ray, mat4 M, mat4 invM, float bestTW, inout 
             BVHnode childB = BVHnodes[B];
 
             aabbTest += 2;
-            float dA = intersectAABB(rayLocal, childA.min.xyz, childA.max.xyz);
-            float dB = intersectAABB(rayLocal, childB.min.xyz, childB.max.xyz);
+            float dA = intersectAABB(rayLocal, getMin(childA), getMax(childA));
+            float dB = intersectAABB(rayLocal, getMin(childB), getMax(childB));
 
             bool nearA = (dA <= dB);
             float dNear = nearA ? dA : dB;
@@ -614,7 +528,7 @@ Hit findBestTri(Ray ray, out int triTest, out int aabbTest){
         BVHnode root = BVHnodes[models[i]];
 
         aabbTest++;
-        float tLocal = intersectAABB(rayLocal, root.min.xyz, root.max.xyz);
+        float tLocal = intersectAABB(rayLocal, getMin(root), getMax(root));
 
         if (tLocal > 1e30){
             modelDists[i].index = i;
@@ -802,18 +716,22 @@ void main(){
     vec3 total = vec3(0.0);
     int aaCycle = frameCount % (aa*aa);
 
-    for (int s=0; s<samples; ++s){
+    vec3 prev = texture(previousFrame, fragCoord).rgb;
+    prev *= prev;
+
+    for (int s=0; s<samples; ++s) {
         Ray ray = calculateInitialRay(aaCycle, screen, state);
 
-        total += min(trace(ray, state), vec3(25.));
+        vec3 color = min(trace(ray, state), vec3(25.));
+
+        total += color;
+
         aaCycle = (aaCycle+1) % (aa*aa);
     }
 
     total /= float(samples);
 
-    vec3 prev = texture(previousFrame, fragCoord).rgb;
-    prev *= prev;
-    vec3 accum = mix(prev, total, samples/(float(sampleCount)+samples));
+    vec3 accum = mix(prev, total, float(samples)/(float(sampleCount+samples)));
     accum = sqrt(accum);
 
     FragColor = vec4(accum, 1.0);

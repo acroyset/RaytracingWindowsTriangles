@@ -8,10 +8,13 @@
 #include <glm/ext/matrix_transform.hpp>
 
 struct Transformation {
-    vec3 position;
-    vec3 rotation; // rad
-    vec3 scale;
+    vec3 position{};
+    vec3 rotation{}; // rad
+    vec3 scale{};
     mat4 matrix{};
+    mat4 inverseMatrix{};
+
+    Transformation() = default;
 
     Transformation(vec3 position, vec3 scale, vec3 rotation = vec3(0)) : position(position), rotation(rotation), scale(scale) {setMatrix();}
 
@@ -32,6 +35,7 @@ struct Transformation {
 
         // Final TRS matrix
         matrix =  T * R * S;
+        inverseMatrix = inverse(matrix);
     }
 };
 

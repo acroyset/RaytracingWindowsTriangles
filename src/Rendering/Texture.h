@@ -99,6 +99,10 @@ public:
         applyParameters();
     }
 
+    std::string getPath() {
+        return originalPath;
+    }
+
     // Getters
 
     [[nodiscard]] bool isValid() const { return textureID != 0; }

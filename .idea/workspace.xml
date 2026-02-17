@@ -36,12 +36,21 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cd06d447-a7c8-42f4-a8e5-4bf88ac1888b" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/shaders/structs.glsl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/BaseModel.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/JSONextensions.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/imgui.ini" beforeDir="false" afterPath="$PROJECT_DIR$/imgui.ini" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/shaders/fullscreen.frag" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/fullscreen.frag" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Material.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Material.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Model.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Model.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Model.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/BaseModel.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Model.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Model.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Rendering/ShaderWindow.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/ShaderWindow.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Rendering/Texture.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/Texture.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Transformation.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Transformation.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -125,15 +134,20 @@
       <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\models" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\external" />
       <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\assets\models\tuilips" />
       <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\assets\models" />
       <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\assets\models\flowerPot" />
       <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\src\Rendering" />
-      <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\Assets\models" />
     </key>
   </component>
   <component name="RunManager" selected="CMake Application.RaytracingWindowsTriangles">
     <configuration name="RaytracingWindowsTriangles" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="RaytracingWindowsTriangles" TARGET_NAME="RaytracingWindowsTriangles" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="RaytracingWindowsTriangles" RUN_TARGET_NAME="RaytracingWindowsTriangles">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
@@ -251,6 +265,10 @@
       <workItem from="1771090666467" duration="16124000" />
       <workItem from="1771113715649" duration="9546000" />
       <workItem from="1771123553795" duration="3877000" />
+      <workItem from="1771193934460" duration="4242000" />
+      <workItem from="1771284670419" duration="10625000" />
+      <workItem from="1771296252674" duration="3514000" />
+      <workItem from="1771303422043" duration="6616000" />
     </task>
     <servers />
   </component>

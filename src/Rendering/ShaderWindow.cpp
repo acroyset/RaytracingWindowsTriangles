@@ -64,9 +64,28 @@ static GLuint compileShader(GLenum type, const std::string& src, const std::stri
     return sh;
 }
 
-static GLuint createProgramFromFiles(const char* vertPath, const char* fragPath, const std::string& version) {
+static std::string loadAndMergeShader(const char* mainPath, const std::vector<std::string>& includePaths) {
+    std::string result;
+
+    // Load all includes first
+    for (const auto& incPath : includePaths) {
+        std::string inc = loadTextFile(incPath.c_str());
+        result += "// ===== " + incPath + " =====\n";
+        result += inc + "\n\n";
+    }
+
+    // Load main file last (so it can use includes)
+    std::string main = loadTextFile(mainPath);
+    result += "// ===== " + std::string(mainPath) + " =====\n";
+    result += main;
+
+    return result;
+}
+
+static GLuint createProgramFromFiles(const char* vertPath, const char* fragPath, const std::string& version, const std::vector<std::string>& fragIncludes = {}) {
+
     std::string vsrc = loadTextFile(vertPath);
-    std::string fsrc = loadTextFile(fragPath);
+    std::string fsrc = loadAndMergeShader(fragPath, fragIncludes);
     if (vsrc.empty() || fsrc.empty()) return 0;
 
     GLuint vs = compileShader(GL_VERTEX_SHADER,   vsrc, version);
@@ -155,7 +174,10 @@ ShaderWindow::ShaderWindow() {
     glClearColor(0.02f, 0.02f, 0.03f, 1.0f);
 
     // Program
-    shaderProgram = createProgramFromFiles("shaders/fullscreen.vert", "shaders/fullscreen.frag", apple ? "330 core" : "430 core");
+    shaderProgram = createProgramFromFiles("shaders/fullscreen.vert", "shaders/fullscreen.frag", apple ? "330 core" : "430 core",
+        {
+            "shaders/structs.glsl"
+        });
 
     // Empty VAO required for core profile when using gl_VertexID
     glGenVertexArrays(1, &vao);

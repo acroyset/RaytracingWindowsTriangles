@@ -29,56 +29,47 @@ inline bool ColorEdit3(const char* label, vec4& v) {
     return out;
 }
 
-GLuint LoadEnvLatLongTextureAuto(const char* path) {
-    stbi_set_flip_vertically_on_load(false); // equirect usually not flipped
-
-    int w=0, h=0, n=0;  // n = channels in file
-    GLuint tex=0;
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
-
-    // Alignment fix (prevents rainbow banding on RGB 3-byte rows)
-    GLint prevAlign = 4;
-    glGetIntegerv(GL_UNPACK_ALIGNMENT, &prevAlign);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-    if (stbi_is_hdr(path)) {
-        float* data = stbi_loadf(path, &w, &h, &n, 0); // keep original n (3 or 4)
-        if (!data) {
-            fprintf(stderr, "HDR load failed: %s (%s)\n", path, stbi_failure_reason());
-            glBindTexture(GL_TEXTURE_2D, 0);
-            glDeleteTextures(1, &tex);
-            glPixelStorei(GL_UNPACK_ALIGNMENT, prevAlign);
-            return 0;
-        }
-        GLenum srcFmt = (n == 4) ? GL_RGBA : GL_RGB;
-        GLint  dstFmt = (n == 4) ? GL_RGBA16F : GL_RGB16F;
-        glTexImage2D(GL_TEXTURE_2D, 0, dstFmt, w, h, 0, srcFmt, GL_FLOAT, data);
-        stbi_image_free(data);
-    } else {
-        unsigned char* data = stbi_load(path, &w, &h, &n, 0); // keep original n (3 or 4)
-        if (!data) {
-            fprintf(stderr, "LDR load failed: %s (%s)\n", path, stbi_failure_reason());
-            glBindTexture(GL_TEXTURE_2D, 0);
-            glDeleteTextures(1, &tex);
-            glPixelStorei(GL_UNPACK_ALIGNMENT, prevAlign);
-            return 0;
-        }
-        GLenum srcFmt = (n == 4) ? GL_RGBA : GL_RGB;
-        GLint  dstFmt = (n == 4) ? GL_SRGB8_ALPHA8 : GL_SRGB8;
-        glTexImage2D(GL_TEXTURE_2D, 0, dstFmt, w, h, 0, srcFmt, GL_UNSIGNED_BYTE, data);
-        stbi_image_free(data);
+static void DrawBusyOverlay(const char* label){
+    ImGui::OpenPopup("Working...");
+    if (ImGui::BeginPopupModal("Working...", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
+        auto t = static_cast<float>(ImGui::GetTime());
+        float v = 0.5f + 0.5f * sinf(t * 6.0f);
+        ImGui::TextUnformatted(label);
+        ImGui::ProgressBar(v, ImVec2(250, 0));
+        ImGui::TextDisabled("Please wait...");
+        ImGui::EndPopup();
     }
-
-    glGenerateMipmap(GL_TEXTURE_2D);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);        // horiz repeat
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // clamp vertically
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-    return tex;
 }
+
+void DrawDockSpace(){
+    ImGuiWindowFlags window_flags =
+        ImGuiWindowFlags_NoDocking |
+        ImGuiWindowFlags_NoTitleBar |
+        ImGuiWindowFlags_NoCollapse |
+        ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoBringToFrontOnFocus |
+        ImGuiWindowFlags_NoNavFocus;
+
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->Pos);
+    ImGui::SetNextWindowSize(viewport->Size);
+    ImGui::SetNextWindowViewport(viewport->ID);
+
+    // Optional: remove window padding so dockspace fills the viewport
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+
+    ImGui::Begin("DockSpaceRoot", nullptr, window_flags);
+    ImGui::PopStyleVar(3);
+
+    ImGuiID dockspace_id = ImGui::GetID("MainDockSpace");
+    ImGui::DockSpace(dockspace_id, ImVec2(0, 0), ImGuiDockNodeFlags_PassthruCentralNode);
+
+    ImGui::End();
+}
+
 
 std::string bytesToReadable(long long bytes, int sigFigs = 3) {
     if (bytes == 0) return "0 Bytes";
@@ -105,7 +96,6 @@ std::string bytesToReadable(long long bytes, int sigFigs = 3) {
     return out.str();
 }
 
-
 Scene::Scene() {
     samples = 1;
     aa = 1;
@@ -117,6 +107,10 @@ Scene::Scene() {
     lock = false;
 
     textureScales.fill(0.0f);
+
+    busy = false;
+    newData = false;
+    statusIsError = false;
 }
 
 Scene::Scene(const int samples, const int aa, const int bounceLim)
@@ -126,7 +120,8 @@ Scene::Scene(const int samples, const int aa, const int bounceLim)
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     ImGui::StyleColorsDark();
 
     const char* glsl_version = "#version 430";
@@ -145,45 +140,69 @@ Scene::Scene(const int samples, const int aa, const int bounceLim)
     skyTexture = window.createTexture("skyTex", "assets/textures/sky.png");
 
     textureScales.fill(0.0f);
+
+    busy = false;
+    newData = false;
+    statusIsError = false;
 }
 
-void Scene::addModel(const std::string& filename, const Transformation &transformation, const Material &material, const std::string& texturePath) {
-    Model model(filename);
+void Scene::addModel(const std::string& filename, const Transformation &transformation, const std::string& texturePath) {
+    if (precomputedModels.find(filename) != precomputedModels.end()) {
+        const BaseModel baseModel = precomputedModels[filename];
 
-    addModel(model, transformation, material, texturePath);
-}
-void Scene::addModel(const Model& model, const Transformation& transformation, const Material& material, const std::string& texturePath) {
-
-    bool useTexture = !model.texCoords.empty() && !texturePath.empty();
-    int textureID = int(textures.size());
-    if (useTexture) {
-        textures.emplace_back(window.createTexture("textures[" + std::to_string(textureID) + "]", texturePath));
-        textures.back().setWrap(TextureWrap::REPEAT, TextureWrap::REPEAT);
-        const std::string& name = texturePath;
-        std::string label = name;
+        std::string name = baseModel.filename;
         int count = 0;
-        for (const std::string& i : textureLabels) {
-            if (i == label) {
+        for (const Model& m : models) {
+            if (m.filename == name) {
                 count++;
-                label = name + (count != 0 ? " " + std::to_string(count) : "");
             }
         }
+        name += (count != 0 ? " " + std::to_string(count) : "");
 
-        textureLabels.emplace_back(label);
+        Model model(name, baseModel, transformation);
+
+        addModel(model, texturePath);
+    } else {
+        BaseModel baseModel(filename);
+        precomputedModels.emplace(filename, baseModel);
+
+        std::string name = baseModel.filename;
+        int count = 0;
+        for (const Model& m : models) {
+            if (m.filename == name) {
+                count++;
+            }
+        }
+        name += (count != 0 ? " " + std::to_string(count) : "");
+
+        Model model(name, baseModel, transformation);
+
+        addModel(model, texturePath);
     }
-    modelsTextureID.emplace_back(useTexture ? textureID : -1);
+}
+void Scene::addModel(const Model& m, const std::string& texturePath) {
+    Model model(m);
 
     int Toffset = int(triangles.size())/3;
     int Voffset = int(vertices.size());
     int TXoffset = int(texCoords.size());
     int Noffset = int(normals.size());
     int BBoffset = int(BVHnodes.size());
-    int Moffset = int(materials.size());
+    int Moffset = getNumMaterials();
+
+    bool useTexture = !model.base.texCoords.empty() && !texturePath.empty();
+    int textureID = int(textures.size());
 
     bool reuse = false;
 
-    if (modelOffsets.find(model.filename) != modelOffsets.end()) {
-        std::vector<int> offsets = modelOffsets[model.filename];
+    auto loc = std::find_if(models.begin(), models.end(),
+    [&model](const Model& a) {
+        return a.filename == model.filename;
+    });
+
+    if (loc != models.end()) {
+        int index = int(loc - models.begin());
+        std::vector<int> offsets = modelOffsets[index];
         //Toffset need to work out material
         Voffset = offsets[1];
         TXoffset = offsets[2];
@@ -191,23 +210,23 @@ void Scene::addModel(const Model& model, const Transformation& transformation, c
         //BBoffsets relies on triangle idx so have to do Toffset first
 
         reuse = true;
-        std::cout << "Reuse " << model.filename << std::endl;
-    } else {
-        modelOffsets[model.filename] = {Toffset, Voffset, TXoffset, Noffset, BBoffset};
     }
 
-    models.emplace_back(BBoffset);
+    models.emplace_back(model);
+    modelOffsets.push_back({Toffset, Voffset, TXoffset, Noffset, BBoffset, Moffset});
 
-    for (int i = 0; i < model.triangles.size()/3; i++) {
-        ivec4 triangle1 = model.triangles[i*3+0];
-        ivec4 triangle2 = model.triangles[i*3+1];
-        ivec4 triangle3 = model.triangles[i*3+2];
+    for (int i = 0; i < model.base.triangles.size()/3; i++) {
+        ivec4 triangle1 = model.base.triangles[i*3+0];
+        ivec4 triangle2 = model.base.triangles[i*3+1];
+        ivec4 triangle3 = model.base.triangles[i*3+2];
 
-        ivec3 offsets = ivec3(Voffset, TXoffset, Noffset);
+        ivec4 offsets1 = ivec4(Voffset, triangle1.y == -1 ? 0 : TXoffset, triangle1.z == -1 ? 0 : Noffset, Moffset);
+        ivec4 offsets2 = ivec4(Voffset, triangle2.y == -1 ? 0 : TXoffset, triangle2.z == -1 ? 0 : Noffset, useTexture ? textureID : -1);
+        ivec4 offsets3 = ivec4(Voffset, triangle3.y == -1 ? 0 : TXoffset, triangle3.z == -1 ? 0 : Noffset, 0);
 
-        triangle1 += ivec4(offsets, Moffset);
-        triangle2 += ivec4(offsets, useTexture ? textureID : -1);
-        triangle3 += ivec4(offsets, 0);
+        triangle1 += offsets1;
+        triangle2 += offsets2;
+        triangle3 += offsets3;
 
         triangles.emplace_back(triangle1);
         triangles.emplace_back(triangle2);
@@ -215,18 +234,18 @@ void Scene::addModel(const Model& model, const Transformation& transformation, c
     }
 
     if (!reuse) {
-        for (vec3 vertex : model.vertices) {
+        for (vec3 vertex : model.base.vertices) {
             vertices.emplace_back(vertex, 0);
         }
-        for (vec2 texCoord : model.texCoords) {
+        for (vec2 texCoord : model.base.texCoords) {
             texCoords.emplace_back(texCoord);
         }
-        for (vec3 normal : model.normals) {
+        for (vec3 normal : model.base.normals) {
             normals.emplace_back(normal, 0);
         }
     }
 
-    for (auto node : model.BVHnodes) {
+    for (auto node : model.base.BVHnodes) {
 
         BVHnode newNode;
         newNode.setMin(node.getMin());
@@ -243,35 +262,25 @@ void Scene::addModel(const Model& model, const Transformation& transformation, c
     }
 
     if (model.materials.empty()) {
-        materials.emplace_back(material);
-    } else {
-        for (Material m : model.materials) {
-            materials.emplace_back(m);
-        }
+        models.back().materials.emplace_back();
     }
 
-    modelTransforms.emplace_back(transformation.matrix);
-    modelInvTransforms.emplace_back(inverse(modelTransforms.back()));
-
-    modelPos.emplace_back(transformation.position);
-    modelRot.emplace_back(transformation.rotation);
-    modelScale.emplace_back(transformation.scale);
-
-    std::string name = model.filename;
-    std::string label = name;
-    int count = 0;
-    for (const std::string& i : modelLabels) {
-        if (i == label) {
-            count++;
-            label = name + (count != 0 ? " " + std::to_string(count) : "");
+    if (useTexture) {
+        textures.emplace_back(window.createTexture("textures[" + std::to_string(textureID) + "]", texturePath));
+        textures.back().setWrap(TextureWrap::REPEAT, TextureWrap::REPEAT);
+        const std::string& name = texturePath;
+        std::string label = name;
+        int count = 0;
+        for (const std::string& i : textureLabels) {
+            if (i == label) {
+                count++;
+                label = name + (count != 0 ? " " + std::to_string(count) : "");
+            }
         }
+
+        textureLabels.emplace_back(label);
+        model.textureID = textureID;
     }
-
-    modelLabels.emplace_back(label);
-
-    int Mcount = int(materials.size()) - Moffset;
-    modelsMaterialsIdx.emplace_back(Moffset, Moffset + Mcount);
-
 }
 
 int Scene::getNumBVHNodes() const {
@@ -281,6 +290,13 @@ int Scene::getNumBVHNodes() const {
 int Scene::getNumTris() const {
     return int(triangles.size()/3);
 }
+
+int Scene::getNumMaterials() const {
+    int materials = 0;
+    for (const Model& m : models) {materials += int(m.materials.size());}
+    return materials;
+}
+
 
 void Scene::createUniforms() {
     uNumModels = window.createUniform<int>("numModels");
@@ -374,19 +390,37 @@ void Scene::setUniforms() const {
 
 void Scene::set_ssbo() {
 
+    lastSentPackage = dataSentSize();
+
+    std::vector<int> modelBVHoffset;
+    for (const std::vector<int>& offsets : modelOffsets) {
+        modelBVHoffset.push_back(offsets[4]);
+    }
+
+    std::vector<Material> materials;
+    std::vector<mat4> modelTransforms;
+    std::vector<mat4> modelInvTransforms;
+    for (const Model& model : models) {
+        for (const Material& m : model.materials) materials.emplace_back(m);
+        modelTransforms.emplace_back(model.transformation.matrix);
+        modelInvTransforms.emplace_back(model.transformation.inverseMatrix);
+    }
+
     ssboTriangles.set(triangles, 0);
     ssboVertices.set(vertices, 1);
     ssboTexCoords.set(texCoords, 2);
     ssboNormals.set(normals, 3);
-    ssboMaterials.set(materials, 4, true);
+    ssboMaterials.set(materials, 4);
     ssboBVHnodes.set(BVHnodes, 5);
-    ssboModels.set(models, 6);
-    ssboModelTransformations.set(modelTransforms, 7, true);
-    ssboModelInvTransformations.set(modelInvTransforms, 8, true);
+    ssboModels.set(modelBVHoffset, 6);
+    ssboModelTransformations.set(modelTransforms, 7);
+    ssboModelInvTransformations.set(modelInvTransforms, 8);
 
 }
 
 bool Scene::inputHandling(float speed, float sensitivity, float dt) {
+    if (typing) return false;
+
     sensitivity *= fovDeg;
 
     bool moved = false;
@@ -438,6 +472,11 @@ void Scene::updateFrame() {
     Timer t;
     window.start();
 
+    if (newData) {
+        set_ssbo();
+        newData = false;
+    }
+
     if (hud) {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -446,9 +485,9 @@ void Scene::updateFrame() {
 
     float dt = window.getDeltaTime();
     updateItemSmooth(totalTime, dt);
+    dtData.emplace_back(dt);
 
-    const bool moved = inputHandling(speed, sensitivity, dt);
-    if (moved) {
+    if (inputHandling(speed, sensitivity, dt)) {
         frameCount = 0;
         sampleCount = 0;
     }
@@ -461,7 +500,7 @@ void Scene::updateFrame() {
     // --- Controls window ---
     if (hud) ImGuiRender();
 
-    updateItemSmooth(cpuTime, t.reset());
+    updateItemSmooth(cpuTime, float(t.reset()));
 
     GLuint query;
     glGenQueries(1, &query);
@@ -472,7 +511,7 @@ void Scene::updateFrame() {
     glEndQuery(GL_TIME_ELAPSED);
     GLuint64 time;
     glGetQueryObjectui64v(query, GL_QUERY_RESULT, &time);
-    double s = double(time) / 1e9;
+    float s = float(time) / 1e9f;
     updateItemSmooth(gpuTime, s);
 
     if (hud) {
@@ -489,233 +528,200 @@ void Scene::ImGuiRender() {
 
     bool ui_resetAccum = false;
 
+    DrawDockSpace();
+
     // scene
     {
-        ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Once);
-        ImGui::SetNextWindowSize(ImVec2(500, 600), ImGuiCond_Once);
         ImGui::Begin("Scene");
 
-        ui_resetAccum |= ImGui::Checkbox("Sky Active", &skyActive);
-        if (skyActive) {
-            ImGui::Indent();
-            ui_resetAccum |= ColorEdit3("Sun Color", sunColor);
-            ui_resetAccum |= DragFloat3("Sun Direction", sunDir);
-            sunDir = normalize(sunDir);
+        if (ImGui::Button("Reset accumulation")) ui_resetAccum = true;
 
-            ui_resetAccum |= ImGui::SliderFloat("Sun Strength", &sunStrength, 0, 500);
-            ImGui::Unindent();
+        if (ImGui::CollapsingHeader("Sky")) {
+            ui_resetAccum |= ImGui::Checkbox("Sky Active", &skyActive);
+            if (skyActive) {
+                ImGui::Indent();
+                ui_resetAccum |= ColorEdit3("Sun Color", sunColor);
+                ui_resetAccum |= DragFloat3("Sun Direction", sunDir);
+                sunDir = normalize(sunDir);
+
+                ui_resetAccum |= ImGui::SliderFloat("Sun Strength", &sunStrength, 0, 500);
+                ImGui::Unindent();
+            }
         }
 
-        ui_resetAccum |= ImGui::Checkbox("Floor Active", &floorActive);
-        if (floorActive) {
-            ImGui::Indent();
+        if (ImGui::CollapsingHeader("Floor")) {
+            ui_resetAccum |= ImGui::Checkbox("Floor Active", &floorActive);
+            if (floorActive) {
+                ImGui::Indent();
 
-            vec3 diffuseColor = vec3(floorDiffuseColor);
-            if (ColorEdit3("Floor Diffuse Color", diffuseColor)) {
-                floorDiffuseColor = vec4(diffuseColor, floorDiffuseColor.w);
-                ui_resetAccum = true;
-            }
-
-            bool specularFloor = floorSpecularColor.w != -1.0f;
-            if (ImGui::Checkbox("Specular Floor", &specularFloor)) {
-                if (specularFloor) floorSpecularColor.w = 0.0f;
-                else floorSpecularColor.w = -1.0f;
-                ui_resetAccum = true;
-            }
-
-            if (specularFloor) {
-                vec3 specularColor = vec3(floorSpecularColor);
-                if (ColorEdit3("Floor Specular Color", specularColor)) {
-                    floorSpecularColor = vec4(specularColor, floorSpecularColor.w);
+                vec3 diffuseColor = vec3(floorDiffuseColor);
+                if (ColorEdit3("Floor Diffuse Color", diffuseColor)) {
+                    floorDiffuseColor = vec4(diffuseColor, floorDiffuseColor.w);
                     ui_resetAccum = true;
                 }
+
+                bool specularFloor = floorSpecularColor.w != -1.0f;
+                if (ImGui::Checkbox("Specular Floor", &specularFloor)) {
+                    if (specularFloor) floorSpecularColor.w = 0.0f;
+                    else floorSpecularColor.w = -1.0f;
+                    ui_resetAccum = true;
+                }
+
+                if (specularFloor) {
+                    vec3 specularColor = vec3(floorSpecularColor);
+                    if (ColorEdit3("Floor Specular Color", specularColor)) {
+                        floorSpecularColor = vec4(specularColor, floorSpecularColor.w);
+                        ui_resetAccum = true;
+                    }
+                }
+
+                ui_resetAccum |= ImGui::SliderFloat("Floor Smoothness", &floorDiffuseColor.w, 0.0f, 1.0f);
+
+                if (specularFloor) ui_resetAccum |= ImGui::SliderFloat("Floor Specular Probability", &floorSpecularColor.w, 0.0f, 1.0f);
+
+                ImGui::Unindent();
             }
-
-             ui_resetAccum |= ImGui::SliderFloat("Floor Smoothness", &floorDiffuseColor.w, 0.0f, 1.0f);
-
-            if (specularFloor) ui_resetAccum |= ImGui::SliderFloat("Floor Specular Probability", &floorSpecularColor.w, 0.0f, 1.0f);
-
-            ImGui::Unindent();
         }
 
         ImGui::Separator();
         ImGui::Text("Models");
 
-        const bool hasModels = !modelLabels.empty();
+        ImGui::Indent();
+
+        const bool hasModels = !models.empty();
         if (!hasModels) {
             ImGui::TextDisabled("(no models)");
         }
         else {
-            // Current label
-            const char* preview = (selectedModel >= 0) ? modelLabels[selectedModel].c_str() : "(select)";
-            if (ImGui::BeginCombo("Model", preview)) {
-                for (int i = 0; i < (int)modelLabels.size(); ++i) {
-                    bool sel = (selectedModel == i);
-                    if (ImGui::Selectable(modelLabels[i].c_str(), sel)) {
+
+            for (int i = 0; i < models.size(); i++) {
+                bool sel = (selectedModel == i);
+                if (ImGui::Selectable(models[i].name.c_str(), sel)) {
+                    if (i == selectedModel) selectedModel = -1;
+                    else {
                         selectedModel = i;
-                        selectedColor = modelsMaterialsIdx[i].x;
+                        selectedColor = 0;
                     }
-                    if (sel) ImGui::SetItemDefaultFocus();
-                }
-                ImGui::EndCombo();
-            }
-
-            if (selectedModel >= 0) {
-                ImGui::Indent();
-                bool changedPRS = false;
-                bool changedM = false;
-
-                // Local aliases
-                vec3& P = modelPos[selectedModel];
-                vec3& R = modelRot[selectedModel];   // radians
-                vec3& S = modelScale[selectedModel];
-
-                ImGui::Text("Transformations");
-
-                // Rotation UI in degrees (convert to/from radians for nicer UX)
-                vec3 rotDeg = degrees(R);
-                changedPRS |= DragFloat3("Position", P, 3.0f);                     // world units
-                changedPRS |= DragFloat3("Scale",    S, 1.0f, 0.0f, 1e36);
-                changedPRS |= DragFloat3("Rotation (deg)", rotDeg, 0.2f);
-
-                ImGui::Separator();
-
-                std::string previewC = "Material " + std::to_string(selectedColor);
-                if (ImGui::BeginCombo("##Material", previewC.c_str())) {
-                    for (int i = modelsMaterialsIdx[selectedModel].x; i < modelsMaterialsIdx[selectedModel].y; ++i) {
-                        bool sel = (selectedColor == i);
-                        previewC = "Material " + std::to_string(i);
-                        if (ImGui::Selectable(previewC.c_str(), sel)) {
-                            selectedColor = i;
-                        }
-                        if (sel) ImGui::SetItemDefaultFocus();
-                    }
-                    ImGui::EndCombo();
-                }
-
-                if (selectedColor != -1){
-                    ImGui::Indent();
-                    Material& m = materials[selectedColor];
-                    vec4 DC = m.getDC();
-                    vec4 SC = m.getSC();
-                    vec4 GLS = m.getGLS();
-
-                    bool emissive = GLS.z > 0;
-                    if (ImGui::Checkbox("Emissive", &emissive)) {
-                        if (emissive) GLS.z = 1;
-                        else GLS.z = 0;
-                        changedM = true;
-                    }
-
-                    if (emissive) {
-                        if (modelsTextureID[selectedModel] == -1) changedM |= ColorEdit3("Color", DC);
-                        changedM |= ImGui::SliderFloat("Emission Strength", &GLS.z, 0.01f, 250.0f);
-                    } else {
-
-                        bool isTransparent = (GLS.x > 0);
-                        if (ImGui::Checkbox("Transparent", &isTransparent)) {
-                            if (isTransparent) GLS.x = 1;
-                            else GLS.x = 0;
-                            changedM = true;
-                        }
-
-                        if (isTransparent) {
-                            changedM |= ImGui::SliderFloat("Transparency", &GLS.x, 0.0f, 1.0f);
-
-                            changedM |= ColorEdit3("Color", SC);
-                            changedM |= ColorEdit3("Absorb Color", DC);
-
-                            changedM |= ImGui::SliderFloat("Index of Refraction", &GLS.y, 0.0f, 3.0f);
-                            changedM |= ImGui::SliderFloat("Smoothness", &DC.w, 0.0f, 1.0f);
-                            changedM |= ImGui::SliderFloat("Transparent Smoothness", &GLS.w, 0.0f, 1.0f);
-                            changedM |= ImGui::SliderFloat("Absorb Multiplier", &SC.w, 0.0f, 0.1f);
-                        } else {
-                            if (modelsTextureID[selectedModel] == -1) changedM |= ColorEdit3("Diffuse Color", DC);
-
-                            bool specular = SC.w >= 0;
-                            if (ImGui::Checkbox("Specular", &specular)) {
-                                if (specular) SC.w = 0;
-                                else SC.w = -1;
-                                changedM = true;
-                            }
-
-                            if (specular && !isTransparent) changedM |= ColorEdit3("Specular Color", SC);
-
-                            ImGui::Text("Material Properties");
-
-                            changedM |= ImGui::SliderFloat("Smoothness", &DC.w, 0.0f, 1.0f);
-                            if (specular) changedM |= ImGui::SliderFloat("Specular Probability", &SC.w, 0.0f, 1.0f);
-                        }
-
-                    }
-
-                    m.setDC(DC);
-                    m.setSC(SC);
-                    m.setGLS(GLS);
-                    ImGui::Unindent();
-                }
-
-                int textureID = modelsTextureID[selectedModel];
-                if (textureID != -1) {
-                    ImGui::Separator();
-                    ImGui::Text("Texture");
-                    ImGui::Text(textureLabels[textureID].c_str());
-                    ImGui::Text("ID: %i", textureID);
-
-                    float s = textureScales[textureID];
-                    bool wrapTexture = s > 0;;
-                    if (ImGui::Checkbox("Wrap Texture", &wrapTexture)) {
-                        if (wrapTexture) {
-                            textureScales[textureID] = 0.001;
-                        } else {
-                            textureScales[textureID] = 0;
-                        }
-                        ui_resetAccum = true;
-                    }
-
-                    if (wrapTexture) {
-                        if (ImGui::DragFloat("Scale", &s, 0.005f, 0.0001f, 2.0f, "%.4f")) {
-                            textureScales[textureID] = s;
-                            ui_resetAccum = true;
-                        }
-                    }
-                }
-                ImGui::Unindent();
-
-                if (changedPRS) {
-                    R = radians(rotDeg);
-
-                    Transformation t(P, S, R);
-                    modelTransforms[selectedModel] = t.matrix;
-                    modelInvTransforms[selectedModel] = inverse(modelTransforms[selectedModel]);
-
-                    ssboModelTransformations.update(selectedModel, modelTransforms[selectedModel]);
-                    ssboModelInvTransformations.update(selectedModel, modelInvTransforms[selectedModel]);
-
-                    ui_resetAccum = true;
-                }
-                // All materials for this model share the same contiguous range:
-                const int start = modelsMaterialsIdx[selectedModel][0];   // inclusive
-                const int end   = modelsMaterialsIdx[selectedModel][1];   // exclusive
-
-                if (changedM) {
-                    ssboMaterials.update(start, end, materials.data() + start);
-                    ui_resetAccum = true;
                 }
             }
         }
 
-        ImGui::Separator();
+        ImGui::Unindent();
 
-        if (ImGui::Button("Reset accumulation")) ui_resetAccum = true;
+
+        float buttonHeight = 30.0f;
+        float spacing      = ImGui::GetStyle().ItemSpacing.y;
+
+        // total height of the bottom block: 3 buttons + 2 gaps
+        float blockHeight = 3.0f * buttonHeight + 2.0f * spacing;
+
+        float availY = ImGui::GetContentRegionAvail().y;
+
+        // Move cursor down so the next items land at the bottom
+        float y = ImGui::GetCursorPosY() + (availY - blockHeight);
+        if (y > ImGui::GetCursorPosY())  // avoid moving up if not enough room
+            ImGui::SetCursorPosY(y);
+
+
+        static char filename[256] = "";
+
+
+        if (ImGui::Button("Add Model", ImVec2(-FLT_MIN, buttonHeight))) {
+            strcpy(filename, "assets/models/");
+
+            ImGui::OpenPopup("Add Model");
+        }
+
+        if (ImGui::Button("Save JSON", ImVec2(-FLT_MIN, buttonHeight))) {
+            strcpy(filename, "");
+
+            ImGui::OpenPopup("Save JSON");
+        }
+
+        if (ImGui::Button("Load JSON", ImVec2(-FLT_MIN, buttonHeight))) {
+            strcpy(filename, "");
+
+            ImGui::OpenPopup("Load JSON");
+        }
+
+        if (ImGui::BeginPopupModal("Add Model", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            lock = true;
+            typing = true;
+
+            ImGui::Text("Enter file name:");
+            ImGui::InputText("##filename", filename, IM_ARRAYSIZE(filename));
+
+            ImGui::Separator();
+
+            if (ImGui::Button("Add")) {
+                startAddJob(filename);
+                typing = false;
+
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel")) {
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+
+        if (ImGui::BeginPopupModal("Save JSON", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            lock = true;
+            typing = true;
+
+            ImGui::Text("Enter file name:");
+            ImGui::InputText("##filename", filename, IM_ARRAYSIZE(filename));
+
+            ImGui::Separator();
+
+            if (ImGui::Button("Save")) {
+                saveJSON(filename);
+                typing = false;
+
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel")) {
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+
+        if (ImGui::BeginPopupModal("Load JSON", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            lock = true;
+            typing = true;
+
+            ImGui::Text("Enter file name:");
+            ImGui::InputText("##filename", filename, IM_ARRAYSIZE(filename));
+
+            ImGui::Separator();
+
+            if (ImGui::Button("Load")) {
+                startLoadJob(filename);
+                typing = false;
+
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel")) {
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+
+        if (busy) {
+            DrawBusyOverlay(busyLabel.c_str());
+        }
 
         ImGui::End();
     }
 
     // settings
     {
-        ImGui::SetNextWindowPos(ImVec2(520, 10), ImGuiCond_Once);
-        ImGui::SetNextWindowSize(ImVec2(300, 350), ImGuiCond_Once);
         ImGui::Begin("Settings");
 
         ImGui::Checkbox("Lock", &lock);
@@ -724,30 +730,28 @@ void Scene::ImGuiRender() {
         ui_resetAccum |= ImGui::SliderInt("Antialiasing", &aa, 1, 5);
         ui_resetAccum |= ImGui::SliderInt("Bounces", &bounceLim, 1, 16);
 
-        ImGui::Separator();
+        if (ImGui::CollapsingHeader("Camera")) {
+            ui_resetAccum |= ImGui::SliderFloat("FOV", &fovDeg, 20, 140);
+            bool dof = aperture > 0;
+            if (ImGui::Checkbox("Depth of Field", &dof)) {
+                if (dof) aperture = 0.001;
+                else aperture = 0.0;
+                ui_resetAccum = true;
+            }
 
-        ImGui::Text("Camera");
+            if (dof) {
+                ImGui::Indent();
+                ui_resetAccum |= ImGui::SliderFloat("Aperture", &aperture, 0.001f, 0.5f);
+                ui_resetAccum |= ImGui::SliderFloat("Focus Distance", &focusDistance, 0.0f, 1000.0f);
+                ui_resetAccum |= ImGui::Checkbox("Focus Distance Plane", &focusDistancePlane);
+                ImGui::Unindent();
+            }
 
-        ui_resetAccum |= ImGui::SliderFloat("FOV", &fovDeg, 20, 140);
-        bool dof = aperture > 0;
-        if (ImGui::Checkbox("Depth of Field", &dof)) {
-            if (dof) aperture = 0.001;
-            else aperture = 0.0;
-            ui_resetAccum = true;
+            float s = sensitivity*100;
+            if (ImGui::SliderFloat("Sensitivity", &s, 0.1, 10)) sensitivity = s/100;
+
+            ImGui::SliderFloat("Speed", &speed, 0.01, 1000);
         }
-
-        if (dof) {
-            ImGui::Indent();
-            ui_resetAccum |= ImGui::SliderFloat("Aperture", &aperture, 0.001f, 0.5f);
-            ui_resetAccum |= ImGui::SliderFloat("Focus Distance", &focusDistance, 0.0f, 1000.0f);
-            ui_resetAccum |= ImGui::Checkbox("Focus Distance Plane", &focusDistancePlane);
-            ImGui::Unindent();
-        }
-
-        float s = sensitivity*100;
-        if (ImGui::SliderFloat("Sensitivity", &s, 0.1, 10)) sensitivity = s/100;
-
-        ImGui::SliderFloat("Speed", &speed, 0.01, 1000);
 
         ImGui::Separator();
 
@@ -784,8 +788,6 @@ void Scene::ImGuiRender() {
 
     // stats
     {
-        ImGui::SetNextWindowPos(ImVec2(830, 10), ImGuiCond_Once);
-        ImGui::SetNextWindowSize(ImVec2(300, 250), ImGuiCond_Once);
         ImGui::Begin("Stats");
 
         ImGui::Text("Samples: %d", sampleCount);
@@ -793,10 +795,27 @@ void Scene::ImGuiRender() {
 
         ImGui::Separator();
 
-        ImGui::Text("FPS: %.2f", 1/totalTime);
-        ImGui::Text("Frame Time (ms): %.2f", totalTime*1000.0f);
-        ImGui::Text("CPU Time (ms): %.2f", cpuTime*1000.0f);
-        ImGui::Text("GPU Time (ms): %.2f", gpuTime*1000.0f);
+        char overlay[128];
+        sprintf(overlay, "FPS: %.2f (%.2f ms)  CPU: %.2f ms  GPU: %.2f ms", 1/totalTime, totalTime*1000.0f, cpuTime*1000.0f, gpuTime*1000.0f);
+
+        float maxVal = (*std::max_element(dtData.begin(), dtData.end())) * 1.2f;
+        ImGui::PlotHistogram(
+            "##Frame Time (ms)",
+            dtData.data(),
+            int(dtData.size()),
+            0,
+            overlay,
+            0.0f,
+            maxVal,
+            ImVec2(0, 100)
+            );
+        if (ImGui::Button("Reset")) {
+            dtData.clear();
+        }
+        int maxNum = int(10.0f/totalTime);
+        if (int(dtData.size()) > maxNum) {
+            dtData.erase(dtData.begin());
+        }
 
         ImGui::Separator();
 
@@ -807,6 +826,219 @@ void Scene::ImGuiRender() {
 
         ImGui::Text("Position: %.2f, %.2f, %.2f", cameraPos.x, cameraPos.y, cameraPos.z);
         ImGui::Text("Forward: %.2f, %.2f, %.2f", camForward.x, camForward.y, camForward.z);
+
+        ImGui::Separator();
+
+        if (ImGui::CollapsingHeader("Scene Statistics"))
+        {
+            DataPackageSize package = lastSentPackage;
+
+            if (ImGui::BeginTable("StatsTable", 3,
+                ImGuiTableFlags_SizingStretchProp |
+                ImGuiTableFlags_BordersInnerV))
+            {
+                ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthStretch);
+                ImGui::TableSetupColumn("Count", ImGuiTableColumnFlags_WidthFixed, 80.0f);
+                ImGui::TableSetupColumn("Size",  ImGuiTableColumnFlags_WidthFixed, 100.0f);
+                ImGui::TableHeadersRow();
+
+                auto Row = [&](const char* label, int count, const std::string& size)
+                {
+                    ImGui::TableNextRow();
+
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::TextUnformatted(label);
+
+                    ImGui::TableSetColumnIndex(1);
+                    ImGui::Text("%d", count);
+
+                    ImGui::TableSetColumnIndex(2);
+                    ImGui::Text("%s", size.c_str());
+                };
+
+                Row("Triangles", int(triangles.size())/3,
+                    bytesToReadable(package.triangleDataSize));
+
+                Row("Vertices", int(vertices.size()),
+                    bytesToReadable(package.vertexDataSize));
+
+                Row("Texture Coords", int(texCoords.size()),
+                    bytesToReadable(package.texCoordDataSize));
+
+                Row("Normals", int(normals.size()),
+                    bytesToReadable(package.normalDataSize));
+
+                Row("Materials", getNumMaterials(),
+                    bytesToReadable(package.materialDataSize));
+
+                Row("Textures", int(textures.size()),
+                    bytesToReadable(package.textureDataSize));
+
+                Row("BVH Nodes", int(BVHnodes.size()),
+                    bytesToReadable(package.BVHnodesDataSize));
+
+                Row("Transformations", int(models.size()),
+                    bytesToReadable(package.transformDataSize));
+
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::TextColored(ImVec4(1,1,0.4f,1), "Total");
+
+                ImGui::TableSetColumnIndex(2);
+                ImGui::TextColored(ImVec4(1,1,0.4f,1),
+                    "%s", bytesToReadable(package.totalSize).c_str());
+
+                ImGui::EndTable();
+            }
+        }
+
+        ImGui::End();
+    }
+
+    // inspector
+    if (selectedModel >= 0) {
+        ImGui::Begin("Inspector");
+
+        ImGui::Indent();
+        bool changedT = false;
+        bool changedM = false;
+
+        Model& model = models[selectedModel];
+
+        // Local aliases
+        Transformation& transform = model.transformation;
+
+        ImGui::Text("Transformations");
+
+        // Rotation UI in degrees (convert to/from radians for nicer UX)
+        vec3 rotDeg = degrees(transform.rotation);
+        changedT |= DragFloat3("Position", transform.position, 3.0f);
+        changedT |= DragFloat3("Scale",    transform.scale, 1.0f, 0.0f, 1e36);
+        changedT |= DragFloat3("Rotation (deg)", rotDeg, 0.2f);
+
+        ImGui::Separator();
+
+        std::string previewC = "Material " + std::to_string(selectedColor);
+        if (ImGui::BeginCombo("##Material", previewC.c_str())) {
+
+            for (int i = 0; i < model.materials.size(); ++i) {
+                bool sel = (selectedColor == i);
+                previewC = "Material " + std::to_string(i);
+                if (ImGui::Selectable(previewC.c_str(), sel)) {
+                    selectedColor = i;
+                }
+                if (sel) ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+
+        if (selectedColor != -1){
+            ImGui::Indent();
+            Material& m = model.materials[selectedColor];
+            vec4 DC = m.getDC();
+            vec4 SC = m.getSC();
+            vec4 GLS = m.getGLS();
+
+            bool emissive = GLS.z > 0;
+            if (ImGui::Checkbox("Emissive", &emissive)) {
+                if (emissive) GLS.z = 1;
+                else GLS.z = 0;
+                changedM = true;
+            }
+
+            if (emissive) {
+                if (model.textureID == -1) changedM |= ColorEdit3("Color", DC);
+                changedM |= ImGui::SliderFloat("Emission Strength", &GLS.z, 0.01f, 250.0f);
+            } else {
+
+                bool isTransparent = (GLS.x > 0);
+                if (ImGui::Checkbox("Transparent", &isTransparent)) {
+                    if (isTransparent) GLS.x = 1;
+                    else GLS.x = 0;
+                    changedM = true;
+                }
+
+                if (isTransparent) {
+                    changedM |= ImGui::SliderFloat("Transparency", &GLS.x, 0.0f, 1.0f);
+
+                    changedM |= ColorEdit3("Color", SC);
+                    changedM |= ColorEdit3("Absorb Color", DC);
+
+                    changedM |= ImGui::SliderFloat("Index of Refraction", &GLS.y, 0.0f, 3.0f);
+                    changedM |= ImGui::SliderFloat("Smoothness", &DC.w, 0.0f, 1.0f);
+                    changedM |= ImGui::SliderFloat("Transparent Smoothness", &GLS.w, 0.0f, 1.0f);
+                    changedM |= ImGui::SliderFloat("Absorb Multiplier", &SC.w, 0.0f, 0.1f);
+                } else {
+                    if (model.textureID == -1) changedM |= ColorEdit3("Diffuse Color", DC);
+
+                    bool specular = SC.w >= 0;
+                    if (ImGui::Checkbox("Specular", &specular)) {
+                        if (specular) SC.w = 0;
+                        else SC.w = -1;
+                        changedM = true;
+                    }
+
+                    if (specular && !isTransparent) changedM |= ColorEdit3("Specular Color", SC);
+
+                    ImGui::Text("Material Properties");
+
+                    changedM |= ImGui::SliderFloat("Smoothness", &DC.w, 0.0f, 1.0f);
+                    if (specular) changedM |= ImGui::SliderFloat("Specular Probability", &SC.w, 0.0f, 1.0f);
+                }
+
+            }
+
+            m.setDC(DC);
+            m.setSC(SC);
+            m.setGLS(GLS);
+            ImGui::Unindent();
+        }
+
+        int textureID = model.textureID;
+        if (textureID != -1) {
+            ImGui::Separator();
+            ImGui::Text("Texture");
+            ImGui::Text(textureLabels[textureID].c_str());
+            ImGui::Text("ID: %i", textureID);
+
+            float s = textureScales[textureID];
+            bool wrapTexture = s > 0;;
+            if (ImGui::Checkbox("Wrap Texture", &wrapTexture)) {
+                if (wrapTexture) {
+                    textureScales[textureID] = 0.001;
+                } else {
+                    textureScales[textureID] = 0;
+                }
+                ui_resetAccum = true;
+            }
+
+            if (wrapTexture) {
+                if (ImGui::DragFloat("Scale", &s, 0.005f, 0.0001f, 2.0f, "%.4f")) {
+                    textureScales[textureID] = s;
+                    ui_resetAccum = true;
+                }
+            }
+        }
+        ImGui::Unindent();
+
+        if (changedT) {
+            transform.rotation = radians(rotDeg);
+
+            transform.setMatrix();
+
+            ssboModelTransformations.update(selectedModel, transform.matrix);
+            ssboModelInvTransformations.update(selectedModel, transform.inverseMatrix);
+
+            ui_resetAccum = true;
+        }
+        // All materials for this model share the same contiguous range:
+
+        if (changedM) {
+            int start = modelOffsets[selectedModel][5];
+            int end = start + int(model.materials.size());
+            ssboMaterials.update(int(start), int(end), model.materials.data());
+            ui_resetAccum = true;
+        }
 
         ImGui::End();
     }
@@ -819,19 +1051,19 @@ void Scene::ImGuiRender() {
 }
 
 
-void Scene::displayStats() {
-    DataPackageSize package = dataSentSize();
+void Scene::displayStats() const {
+    DataPackageSize package = lastSentPackage;
 
-    std::cout << "Triangles: "       << triangles.size()/3     << " (" << bytesToReadable(package.triangleDataSize)  << ")" << std::endl;
-    std::cout << "Vertices: "        << vertices.size()        << " (" << bytesToReadable(package.vertexDataSize)    << ")" << std::endl;
-    std::cout << "Texture Coords: "  << texCoords.size()       << " (" << bytesToReadable(package.texCoordDataSize)  << ")" << std::endl;
-    std::cout << "Normals: "         << normals.size()         << " (" << bytesToReadable(package.normalDataSize)    << ")" << std::endl;
-    std::cout                                                                                                               << std::endl;
-    std::cout << "Models: "          << models.size()                                                                       << std::endl;
-    std::cout << "Materials: "       << materials.size()       << " (" << bytesToReadable(package.materialDataSize)  << ")" << std::endl;
-    std::cout << "Textures: "        << textures.size()        << " (" << bytesToReadable(package.textureDataSize)   << ")" << std::endl;
-    std::cout << "BVH Nodes: "       << BVHnodes.size()        << " (" << bytesToReadable(package.BVHnodesDataSize)  << ")" << std::endl;
-    std::cout << "Transformations: " << modelTransforms.size() << " (" << bytesToReadable(package.transformDataSize) << ")" << std::endl;
+    std::cout << "Triangles: "       << triangles.size()/3 << " (" << bytesToReadable(package.triangleDataSize)  << ")" << std::endl;
+    std::cout << "Vertices: "        << vertices.size()    << " (" << bytesToReadable(package.vertexDataSize)    << ")" << std::endl;
+    std::cout << "Texture Coords: "  << texCoords.size()   << " (" << bytesToReadable(package.texCoordDataSize)  << ")" << std::endl;
+    std::cout << "Normals: "         << normals.size()     << " (" << bytesToReadable(package.normalDataSize)    << ")" << std::endl;
+    std::cout                                                                                                           << std::endl;
+    std::cout << "Models: "          << models.size()                                                                   << std::endl;
+    std::cout << "Materials: "       << getNumMaterials()  << " (" << bytesToReadable(package.materialDataSize)  << ")" << std::endl;
+    std::cout << "Textures: "        << textures.size()    << " (" << bytesToReadable(package.textureDataSize)   << ")" << std::endl;
+    std::cout << "BVH Nodes: "       << BVHnodes.size()    << " (" << bytesToReadable(package.BVHnodesDataSize)  << ")" << std::endl;
+    std::cout << "Transformations: " << models.size()      << " (" << bytesToReadable(package.transformDataSize) << ")" << std::endl;
     std::cout << "Total Data Sent: " << bytesToReadable(package.totalSize) << std::endl;
     std::cout << std::endl;
 }
@@ -839,13 +1071,13 @@ void Scene::displayStats() {
 DataPackageSize Scene::dataSentSize() const {
     DataPackageSize result{};
 
-    result.triangleDataSize  =   int(triangles.size()       * sizeof(ivec4));
-    result.vertexDataSize    =   int(vertices.size()        * sizeof(vec4));
-    result.texCoordDataSize  =   int(texCoords.size()       * sizeof(vec2));
-    result.normalDataSize    =   int(normals.size()         * sizeof(vec4));
-    result.materialDataSize  =   int(materials.size()       * sizeof(Material));
-    result.BVHnodesDataSize  =   int(BVHnodes.size()        * sizeof(BVHnode));
-    result.transformDataSize = 2*int(modelTransforms.size() * sizeof(mat4));
+    result.triangleDataSize  =   int(triangles.size()  * sizeof(ivec4));
+    result.vertexDataSize    =   int(vertices.size()   * sizeof(vec4));
+    result.texCoordDataSize  =   int(texCoords.size()  * sizeof(vec2));
+    result.normalDataSize    =   int(normals.size()    * sizeof(vec4));
+    result.materialDataSize  =   int(getNumMaterials() * sizeof(Material));
+    result.BVHnodesDataSize  =   int(BVHnodes.size()   * sizeof(BVHnode));
+    result.transformDataSize = 2*int(models.size()     * sizeof(mat4));
 
     result.textureDataSize = 0;
     for (const Texture& t : textures) {
@@ -864,6 +1096,186 @@ DataPackageSize Scene::dataSentSize() const {
 
     return result;
 }
+
+
+void Scene::saveJSON(const std::string& filename) const {
+    json j;
+
+    j["Camera"]["position"] = cameraPos;
+    j["Camera"]["forward"] = camForward;
+    j["Camera"]["fovDeg"] = fovDeg;
+    j["Camera"]["aperture"] = aperture;
+    j["Camera"]["focusDistance"] = focusDistance;
+    j["Camera"]["sensitivity"] = sensitivity;
+    j["Camera"]["speed"] = speed;
+
+    j["Settings"]["aa"] = aa;
+    j["Settings"]["bounceLim"] = bounceLim;
+
+    j["Sky"]["active"] = skyActive;
+    j["Sky"]["color"] = skyColor;
+    j["Sky"]["sunDir"] = sunDir;
+    j["Sky"]["sunStrength"] = sunStrength;
+    j["Sky"]["sunColor"] = sunColor;
+
+    j["Floor"]["active"] = floorActive;
+    j["Floor"]["diffuseColor"] = floorDiffuseColor;
+    j["Floor"]["specularColor"] = floorSpecularColor;
+
+    j["Models"] = json::array();
+    for (const Model& m : models) {
+        json jm;
+        jm["Filename"] = m.filename;
+        jm["Transformation"] = m.transformation;
+
+        jm["Materials"] = json::array();
+        for (const Material& mat : m.materials) {
+            jm["Materials"].push_back(mat);
+        }
+
+        jm["TextureID"] = m.textureID;
+
+        j["Models"].push_back(jm);
+    }
+
+    j["Textures"] = json::object();
+    j["Textures"]["Paths"]  = json::array();
+    for (const Texture& t : textures) j["Textures"]["Paths"].push_back(t.getPath());
+
+    j["Textures"]["Scales"] = json::array();
+    for (float s : textureScales) j["Textures"]["Scales"].push_back(s);
+
+    std::ofstream f(filename);
+    f << j.dump(4);
+}
+
+void Scene::loadJSON(const std::string& filename) {
+    std::ifstream f(filename);
+    if (!f.is_open()) {
+        std::cerr << "loadJSON: couldn't open " + filename + "\n";
+        return;
+    }
+
+    json j;
+    f >> j;
+
+    triangles.clear();
+    vertices.clear();
+    texCoords.clear();
+    normals.clear();
+    BVHnodes.clear();
+    models.clear();
+    modelOffsets.clear();
+
+    textures.clear();
+    textureLabels.clear();
+    textureScales.fill(0.0f);
+
+    // precomputedModels.clear();
+
+    // --- Camera ---
+    if (j.contains("Camera")) {
+        const auto& c = j["Camera"];
+        if (c.contains("position"))      cameraPos = c["position"];
+        if (c.contains("forward"))       camForward = c["forward"];
+        if (c.contains("fovDeg"))        fovDeg = c["fovDeg"];
+        if (c.contains("aperture"))      aperture = c["aperture"];
+        if (c.contains("focusDistance")) focusDistance = c["focusDistance"];
+        if (c.contains("sensitivity"))   sensitivity = c["sensitivity"];
+        if (c.contains("speed"))         speed = c["speed"];
+
+    }
+    setBasisVectors(camForward, camUp, camRight);
+
+    // --- Settings ---
+    if (j.contains("Settings")) {
+        const auto& s = j["Settings"];
+        if (s.contains("aa"))        aa = s["aa"].get<int>();
+        if (s.contains("bounceLim")) bounceLim = s["bounceLim"].get<int>();
+    }
+
+    // --- Sky ---
+    if (j.contains("Sky")) {
+        const auto& s = j["Sky"];
+        if (s.contains("active"))      skyActive = s["active"].get<bool>();
+        if (s.contains("color"))       skyColor = s["color"].get<vec3>();
+        if (s.contains("sunDir"))      sunDir = normalize(s["sunDir"].get<vec3>());
+        if (s.contains("sunStrength")) sunStrength = s["sunStrength"].get<float>();
+        if (s.contains("sunColor"))    sunColor = s["sunColor"].get<vec3>();
+    }
+
+    // --- Floor ---
+    if (j.contains("Floor")) {
+        const auto& fl = j["Floor"];
+        if (fl.contains("active"))        floorActive = fl["active"].get<bool>();
+        if (fl.contains("diffuseColor"))  floorDiffuseColor = fl["diffuseColor"].get<vec4>();
+        if (fl.contains("specularColor")) floorSpecularColor = fl["specularColor"].get<vec4>();
+    }
+
+    // --- Textures (paths + scales) ---
+    std::vector<std::string> texPaths;
+    if (j.contains("Textures")) {
+        const auto& t = j["Textures"];
+        if (t.is_object()) {
+            if (t.contains("Paths") && t["Paths"].is_array()) {
+                texPaths = t["Paths"].get<std::vector<std::string>>();
+            }
+            if (t.contains("Scales") && t["Scales"].is_array()) {
+                const auto& scales = t["Scales"];
+                const int n = std::min<int>(64, (int)scales.size());
+                for (int i = 0; i < n; ++i) textureScales[i] = scales[i];
+            }
+        }
+    }
+
+    for (int i = 0; i < (int)texPaths.size(); ++i) {
+        const std::string& path = texPaths[i];
+        if (path.empty()) {
+            continue;
+        }
+
+        textures.emplace_back(window.createTexture("textures[" + std::to_string(i) + "]", path));
+        textures.back().setWrap(TextureWrap::REPEAT, TextureWrap::REPEAT);
+
+        std::string label = path;
+        int count = 0;
+        for (const std::string& existing : textureLabels) {
+            if (existing == label) {
+                count++;
+                label = path + " " + std::to_string(count);
+            }
+        }
+        textureLabels.emplace_back(label);
+    }
+
+    // --- Models ---
+    if (j.contains("Models") && j["Models"].is_array()) {
+        for (const auto& m : j["Models"]) {
+            std::string mf = m.value("Filename", "");
+            if (mf.empty()) continue;
+
+            Transformation t;
+            if (m.contains("Transformation")) t = m["Transformation"];
+
+            int texID = m.value("TextureID", -1);
+            std::string texturePath = (texID >= 0 && texID < (int)texPaths.size()) ? texPaths[texID] : "";
+
+            addModel(mf, t, texturePath);
+
+            if (m.contains("Materials") && m["Materials"].is_array()) {
+                const auto& mats = m["Materials"];
+
+                models.back().materials.clear();
+                for (const auto& mat : mats) models.back().materials.push_back(mat);
+            }
+        }
+    }
+
+    // Reset accumulation after loading
+    frameCount = 0;
+    sampleCount = 0;
+}
+
 
 /*
 int Scene::numTriBelow(int index) {

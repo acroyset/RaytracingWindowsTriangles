@@ -16,12 +16,10 @@ include_directories(glm)
 add_executable(RaytracingWindowsTriangles
         src/main.cpp
         src/Scene.cpp
-        src/Model.cpp
+        src/BaseModel.cpp
         src/Rendering/ShaderWindow.cpp
         src/Rendering/Texture.cpp
-        src/Rendering/Timer.h
-        src/Transformation.h
-        src/Material.h
+        src/JSONextensions.h
 )
 target_include_directories(RaytracingWindowsTriangles PRIVATE
         external/glad/include
@@ -35,7 +33,7 @@ include(FetchContent)
 FetchContent_Declare(
         imgui
         GIT_REPOSITORY https://github.com/ocornut/imgui.git
-        GIT_TAG v1.91.0
+        GIT_TAG docking
 )
 FetchContent_MakeAvailable(imgui)
 
