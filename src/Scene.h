@@ -25,6 +25,7 @@
 #include <map>
 #include "Model.h"
 #include "JSONextensions.h"
+#include "SceneUI.h"
 
 #define GLAD_GL_IMPLEMENTATION
 
@@ -47,9 +48,15 @@ enum DebugMode {
     Depth
 };
 
+class SceneUI;
+
 
 class Scene {
+    friend SceneUI;
+
     ShaderWindow window{};
+
+    SceneUI ui{};
 
     std::vector<ivec4> triangles;
 
@@ -121,15 +128,6 @@ class Scene {
     int aabbTh = 100;
     float depthScale = 1500;
 
-
-    int selectedModel = -1;
-    int selectedColor = 0;
-
-    bool typing = false;
-    bool viewportFullscreen = false;
-    bool skipMouseFrame = false;
-
-    vec2 viewportImgMinScreen{0}, viewportImgMaxScreen{0};
 
     // SSBO
 
@@ -241,10 +239,6 @@ class Scene {
     bool inputHandling(float speed, float sensitivity, float dt);
 
     void updateFrame();
-
-    void ImGuiRender();
-
-    void drawViewportDocked();
 
 
     void displayStats() const;

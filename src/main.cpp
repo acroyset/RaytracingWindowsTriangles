@@ -10,8 +10,7 @@ int main() {
 
     Timer t;
 
-    //scene.loadJSON("scenes/scene3.json");
-    scene.addModel("assets/models/sphere.obj", Transformation(), "assets/textures/wood.png");
+    scene.loadJSON("scenes/scene4.json");
 
     std::cout << std::endl;
     std::cout << "Total build time: " << t.reset() << std::endl;

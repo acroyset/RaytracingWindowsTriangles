@@ -20,6 +20,8 @@ add_executable(RaytracingWindowsTriangles
         src/Rendering/ShaderWindow.cpp
         src/Rendering/Texture.cpp
         src/JSONextensions.h
+        src/SceneUI.cpp
+        src/SceneUI.h
 )
 target_include_directories(RaytracingWindowsTriangles PRIVATE
         external/glad/include
