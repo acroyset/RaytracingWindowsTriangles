@@ -12,26 +12,26 @@ A physically-based path tracer running entirely on the GPU, capable of rendering
 
 ## 🎨 Gallery
 
-### Bull Family
-*Multiple bull renders showcasing different material properties*
+### Model Family (6.3M Triangles)
+*Multiple renders showcasing different material properties*
 
 <div align="center">
-  <img width="2560" height="1440" alt="Base Profile Screenshot 2026 02 06 - 20 35 16 43" src="https://github.com/user-attachments/assets/27498800-eb68-4f8b-b8b5-be11c08f135d" />
-
+  <img width="2560" height="1440" alt="Base Profile Screenshot 2026 02 17 - 12 01 35 50" src="https://github.com/user-attachments/assets/6fc538b5-e297-49ca-a9cd-b904c0cc7168" />
 </div>
 
-### Cathedral Interior
-*Complex architectural lighting with millions of triangles*
+### Bull Family (2.1M Triangles)
+*Complex textures with millions of triangles*
 
 <div align="center">
-  <img width="2560" height="1440" alt="Base Profile Screenshot 2025 07 26 - 19 29 46 83" src="https://github.com/user-attachments/assets/48829c0a-b1e1-45ad-a09f-7704d74701c8" />
+  <img width="2560" height="1440" alt="Base Profile Screenshot 2026 02 11 - 18 16 50 59" src="https://github.com/user-attachments/assets/1ebc96a7-e2e2-4de3-9365-908545cddc64" />
 </div>
 
-### Glossy Black Dragon
+### Glass Dragon
 *High-gloss material demonstrating reflections and light transport*
 
 <div align="center">
-  <img width="2560" height="1440" alt="Base Profile Screenshot 2025 08 26 - 22 03 01 93" src="https://github.com/user-attachments/assets/92518606-5e52-40c5-8038-d08408294036" />
+  <img width="2560" height="1440" alt="Base Profile Screenshot 2026 02 15 - 15 46 10 28" src="https://github.com/user-attachments/assets/523af4a5-8981-4101-8dfb-a333eae51347" />
+
 </div>
 
 ### Bugatti Veyron (1.5M Triangles)
@@ -115,35 +115,17 @@ User Input → Scene Setup → BVH Construction → GPU Upload → Shader Raytra
 - **GLM** (mathematics)
 - **ImGui** (UI framework)
 - **stb_image** (texture loading)
+- **nlohmann/json** (save/load)
 
 ### Build Instructions
 
-#### Linux
-```bash
-# Clone repository with submodules
-git clone --recursive https://github.com/acroyset/RaytracingWindowsTriangles.git
-cd raytracer
-
-# Build
-mkdir build && cd build
-cmake ..
-make -j$(nproc)
-
-# Run
-./RaytracingWindowsTriangles
-```
-
-#### Windows (Visual Studio)
+#### Windows
 ```bash
 # Clone repository
 git clone --recursive https://github.com/acroyset/RaytracingWindowsTriangles.git
-cd raytracer
+cd RaytracingWindowsTriangles
 
-# Generate Visual Studio solution
-mkdir build && cd build
-cmake .. -G "Visual Studio 17 2022"
-
-# Open RaytracingWindowsTriangles.sln and build
+# Open RaytracingWindowsTriangles/cmake-build-debug/RaytracingWindowsTriangles.exe
 ```
 
 ---
@@ -159,24 +141,7 @@ int main() {
     // Create scene (samples per frame, AA level, max bounces)
     Scene scene(1, 3, 16);
     
-    // Add models (path, position, scale, color, smoothness)
-    scene.addModel("models/dragon800K.obj", 
-                   vec3(0, 70, 0),      // position
-                   vec3(100),           // scale
-                   vec3(0.9),           // base color
-                   0.3);                // smoothness (0=rough, 1=mirror)
-    
-    // Optional: Advanced materials
-    scene.addModel("models/sphere.obj",
-                   vec3(200, 50, 0),
-                   vec3(50),
-                   vec3(1, 0.7, 0.3),   // emissive color
-                   0,                    // smoothness
-                   vec3(0),              // specular color
-                   0,                    // specular probability
-                   0,                    // transparency
-                   1,                    // index of refraction
-                   2);                   // emission strength
+    // add models in editor, save/load json files
     
     scene.set_ssbo();
     
@@ -200,15 +165,12 @@ int main() {
 | `Mouse`   | Look around             |
 | `Shift`   | Sprint (2x speed)       |
 | `L`       | Lock / Unlock cursor    |
-| `H`       | Toggle HUD              |
+| `F`       | Toggle Fullscreen       |
 | `Esc`     | Exit application        |
 
 #### UI Controls
-- **Model Selection**: Dropdown to select active model
-- **Position**: 3D slider for model translation
-- **Rotation**: Euler angle controls (degrees)
-- **Scale**: Uniform or per-axis scaling
-- **Material Editor**: Live editing of colors, smoothness, transparency, etc.
+- **Model Selection**: left hand panel to select active model
+- **Inspector**: right hand panel after selecting model
 - **Render Settings**: Samples, AA, bounce limit, debug view
 
 ---
@@ -225,7 +187,7 @@ float smoothness = 0.0;             // pure diffuse
 
 #### Glossy (Microfacet)
 ```cpp
-vec3 color = vec3(0.9);
+vec3 diffuseColor = vec3(0.9);
 float smoothness = 0.7;             // 70% mirror-like
 vec3 specularColor = vec3(1.0);
 float specularProb = 0.5;           // 50% specular lobes
@@ -235,6 +197,7 @@ float specularProb = 0.5;           // 50% specular lobes
 ```cpp
 float transparency = 1.0;
 float ior = 1.5;                    // glass index of refraction
+float transparentSmoothness = 1.0f  // frosted glass
 ```
 
 #### Emissive (Light Source)
@@ -261,12 +224,13 @@ The renderer automatically parses `.mtl` files referenced in OBJ models:
 
 | Scene | Triangles | BVH Nodes | FPS (RTX 4070 Super) | Build Time |
 |-------|-----------|-----------|----------------|------------|
-| Bull Family | 1.5M | 900K | 50 | 7.5s |
-| 4 Dragons | 3.6M | 1.8M | 45 | 12s |
-| Sponza Palace | 1.3M | 500K | 30 | 3s |
-| Bugatti Veyron | 1.5M | 750K | 55 | 8s |
+| Model Family | 6.3M | 12.4M | 30 | 27.9s |
+| 4 Dragons | 3.6M | 8.2M | 45 | 9.2s |
+| Stanford Bunny | 144K | 288K | 180 | 1.3s |
+| Bugatti Veyron | 1.5M | 3.1M | 60 | 10.2s |
+| Lucy | 100K | 199K | 180 | 0.9s |
 
-*Settings: 2560×1440, 1 sample/frame, 3×3 AA, 16 bounces*
+*Settings: 2560×1440, 1 sample/frame, 5x5 AA, 16 bounces*
 
 ---
 
@@ -282,8 +246,12 @@ The renderer uses a Surface Area Heuristic (SAH) based BVH builder with the foll
 4. **Tight Bounds**: Per-triangle min/max precomputation for fast bounding box updates
 
 ```cpp
-float SAH_cost = surface_area(left) * num_tris(left) + 
-                 surface_area(right) * num_tris(right);
+float nodeCost(const BVHnode &node) {
+    int numTris = node.getNumTri();
+    const vec3 size = node.getMax()-node.getMin();
+    const float halfArea = size.x * (size.y + size.z) + size.y * size.z;
+    return halfArea * float(numTris);
+}
 ```
 
 ### Ray-Triangle Intersection
@@ -291,28 +259,40 @@ float SAH_cost = surface_area(left) * num_tris(left) +
 Using the Möller-Trumbore algorithm for watertight intersections:
 
 ```glsl
-bool rayTriangleIntersect(vec3 ro, vec3 rd, vec3 v0, vec3 v1, vec3 v2, 
-                          out float t, out float u, out float v) {
-    vec3 e1 = v1 - v0;
-    vec3 e2 = v2 - v0;
-    vec3 p = cross(rd, e2);
+Hit rayTriangleIntersect(Ray ray, vec3 v1, vec3 v2, vec3 v3){
+    Hit h;
+    h.hit = false;
+
+    const float EPS = 1e-10;
+
+    vec3 e1 = v2 - v1;
+    vec3 e2 = v3 - v1;
+
+    vec3 p  = cross(ray.dir, e2);
+
     float det = dot(e1, p);
-    
-    if (abs(det) < EPS) return false;
-    
-    float invDet = 1.0 / det;
-    vec3 tv = ro - v0;
-    u = dot(tv, p) * invDet;
-    
-    if (u < 0.0 || u > 1.0) return false;
-    
+
+    if (abs(det) < EPS) return h;
+
+    float invDet = 1.0/det;
+    vec3 tv = ray.pos - v1;
+
+    float u = dot(tv, p) * invDet; if (u < 0.0 || u > 1.0) return h;
+
     vec3 q = cross(tv, e1);
-    v = dot(rd, q) * invDet;
-    
-    if (v < 0.0 || (u + v) > 1.0) return false;
-    
-    t = dot(e2, q) * invDet;
-    return t > 0.0005;
+
+    float v = dot(ray.dir, q) * invDet; if (v < 0.0 || (u+v) > 1.0) return h;
+
+    float t = dot(e2, q) * invDet;
+    if (t < 0.0005) return h;
+
+    h.hit = true;
+    h.t = t;
+    h.u = u;
+    h.v = v;
+    h.w = 1-u-v;
+    return h;
+
 }
 ```
 ---
