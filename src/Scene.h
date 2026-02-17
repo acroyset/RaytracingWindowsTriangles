@@ -81,7 +81,7 @@ class Scene {
     float focusDistance = 1000;
     bool focusDistancePlane = false;
 
-    bool lock;
+    bool lock = true;
     float sensitivity = 0.03;
     float speed = 500;
 
@@ -125,8 +125,11 @@ class Scene {
     int selectedModel = -1;
     int selectedColor = 0;
 
-    bool hud = true;
     bool typing = false;
+    bool viewportFullscreen = false;
+    bool skipMouseFrame = false;
+
+    vec2 viewportImgMinScreen{0}, viewportImgMaxScreen{0};
 
     // SSBO
 
@@ -193,7 +196,9 @@ class Scene {
     int selectedTexture = 0;
     std::vector<std::string> textureLabels;
 
-    // Scene save / load
+    std::vector<std::pair<std::string, int>> pendingTextures;
+
+    // Scene save / load / add
 
     std::future<void> job;
     std::atomic<bool> busy{};
@@ -201,10 +206,11 @@ class Scene {
     std::string statusMsg;
     bool statusIsError;
     std::atomic<bool> newData{};
+    std::thread::id mainThreadID = std::this_thread::get_id();
 
     // Keys
 
-    std::map<GLuint, bool> trackedKeysPressed{{GLFW_KEY_L , false}, {GLFW_KEY_H , false}};
+    std::map<GLuint, bool> trackedKeysPressed{};
 
     public:
 
@@ -238,6 +244,8 @@ class Scene {
 
     void ImGuiRender();
 
+    void drawViewportDocked();
+
 
     void displayStats() const;
 
@@ -262,13 +270,13 @@ class Scene {
         item = smoothing * item + (1.0f - smoothing) * value;
     }
 
-    void startAddJob(const std::string& path) {
+    void startAddJob(const std::string& path, const std::string& texturePath) {
         busy = true;
         busyLabel = "Adding Model...";
 
-        job = std::async(std::launch::async, [path, this]() {
+        job = std::async(std::launch::async, [this, path, texturePath]() {
             try {
-                addModel(path, Transformation(vec3(0), vec3(100)));
+                addModel(path, Transformation(), texturePath);
                 statusIsError = false;
                 statusMsg = "Added: " + path;
                 newData = true;

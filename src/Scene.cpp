@@ -41,35 +41,6 @@ static void DrawBusyOverlay(const char* label){
     }
 }
 
-void DrawDockSpace(){
-    ImGuiWindowFlags window_flags =
-        ImGuiWindowFlags_NoDocking |
-        ImGuiWindowFlags_NoTitleBar |
-        ImGuiWindowFlags_NoCollapse |
-        ImGuiWindowFlags_NoResize |
-        ImGuiWindowFlags_NoMove |
-        ImGuiWindowFlags_NoBringToFrontOnFocus |
-        ImGuiWindowFlags_NoNavFocus;
-
-    ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(viewport->Pos);
-    ImGui::SetNextWindowSize(viewport->Size);
-    ImGui::SetNextWindowViewport(viewport->ID);
-
-    // Optional: remove window padding so dockspace fills the viewport
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-
-    ImGui::Begin("DockSpaceRoot", nullptr, window_flags);
-    ImGui::PopStyleVar(3);
-
-    ImGuiID dockspace_id = ImGui::GetID("MainDockSpace");
-    ImGui::DockSpace(dockspace_id, ImVec2(0, 0), ImGuiDockNodeFlags_PassthruCentralNode);
-
-    ImGui::End();
-}
-
 
 std::string bytesToReadable(long long bytes, int sigFigs = 3) {
     if (bytes == 0) return "0 Bytes";
@@ -104,8 +75,6 @@ Scene::Scene() {
     frameCount = 0;
     sampleCount = 0;
 
-    lock = false;
-
     textureScales.fill(0.0f);
 
     busy = false;
@@ -132,8 +101,6 @@ Scene::Scene(const int samples, const int aa, const int bounceLim)
     setBasisVectors(camForward, camUp, camRight);
 
     cameraPos = vec3(0, 0, 0);
-
-    lock = false;
 
     createUniforms();
 
@@ -164,6 +131,7 @@ void Scene::addModel(const std::string& filename, const Transformation &transfor
         addModel(model, texturePath);
     } else {
         BaseModel baseModel(filename);
+        if (!baseModel.valid) return;
         precomputedModels.emplace(filename, baseModel);
 
         std::string name = baseModel.filename;
@@ -180,8 +148,7 @@ void Scene::addModel(const std::string& filename, const Transformation &transfor
         addModel(model, texturePath);
     }
 }
-void Scene::addModel(const Model& m, const std::string& texturePath) {
-    Model model(m);
+void Scene::addModel(const Model& model, const std::string& texturePath) {
 
     int Toffset = int(triangles.size())/3;
     int Voffset = int(vertices.size());
@@ -191,7 +158,7 @@ void Scene::addModel(const Model& m, const std::string& texturePath) {
     int Moffset = getNumMaterials();
 
     bool useTexture = !model.base.texCoords.empty() && !texturePath.empty();
-    int textureID = int(textures.size());
+    int textureID = int(textures.size()) + int(pendingTextures.size());
 
     bool reuse = false;
 
@@ -212,7 +179,7 @@ void Scene::addModel(const Model& m, const std::string& texturePath) {
         reuse = true;
     }
 
-    models.emplace_back(model);
+    models.push_back(model);
     modelOffsets.push_back({Toffset, Voffset, TXoffset, Noffset, BBoffset, Moffset});
 
     for (int i = 0; i < model.base.triangles.size()/3; i++) {
@@ -266,20 +233,22 @@ void Scene::addModel(const Model& m, const std::string& texturePath) {
     }
 
     if (useTexture) {
-        textures.emplace_back(window.createTexture("textures[" + std::to_string(textureID) + "]", texturePath));
-        textures.back().setWrap(TextureWrap::REPEAT, TextureWrap::REPEAT);
-        const std::string& name = texturePath;
-        std::string label = name;
-        int count = 0;
-        for (const std::string& i : textureLabels) {
-            if (i == label) {
-                count++;
-                label = name + (count != 0 ? " " + std::to_string(count) : "");
+        models.back().textureID = textureID;
+        if (std::this_thread::get_id() == mainThreadID) {
+            textures.emplace_back(window.createTexture("textures[" + std::to_string(textureID) + "]", texturePath));
+            textures.back().setWrap(TextureWrap::REPEAT, TextureWrap::REPEAT);
+            const std::string& name = texturePath;
+            std::string label = name;
+            int count = 0;
+            for (const std::string& i : textureLabels) {
+                if (i == label) {
+                    count++;
+                    label = name + (count != 0 ? " " + std::to_string(count) : "");
+                }
             }
-        }
 
-        textureLabels.emplace_back(label);
-        model.textureID = textureID;
+            textureLabels.emplace_back(label);
+        } else pendingTextures.emplace_back(texturePath, textureID);
     }
 }
 
@@ -380,8 +349,9 @@ void Scene::setUniforms() const {
 
     uTextureScales.setArray(textureScales.data(), 64);
 
-    skyTexture.bind();
     uEnvYaw.set(0.0f);
+
+    skyTexture.bind();
 
     for (const Texture &tex : textures) {
         tex.bind();
@@ -389,6 +359,21 @@ void Scene::setUniforms() const {
 }
 
 void Scene::set_ssbo() {
+
+    if (!pendingTextures.empty()) {
+        for (const auto& [path, id] : pendingTextures) {
+            textures.emplace_back(window.createTexture("textures[" + std::to_string(id) + "]", path));
+            textures.back().setWrap(TextureWrap::REPEAT, TextureWrap::REPEAT);
+
+            std::string label = path;
+            int count = 0;
+            for (const std::string& i : textureLabels) {
+                if (i == label) { count++; label = path + " " + std::to_string(count); }
+            }
+            textureLabels.emplace_back(label);
+        }
+        pendingTextures.clear();
+    }
 
     lastSentPackage = dataSentSize();
 
@@ -421,28 +406,47 @@ void Scene::set_ssbo() {
 bool Scene::inputHandling(float speed, float sensitivity, float dt) {
     if (typing) return false;
 
-    sensitivity *= fovDeg;
+    double mx, my;
+    glfwGetCursorPos(window.getWindow(), &mx, &my);
+    vec2 mousePos((float)mx, (float)my);
+
+    // Convert ImGui viewport center to GLFW client space
+    int winX, winY;
+    glfwGetWindowPos(window.getWindow(), &winX, &winY);
+    vec2 imguiCenter = 0.5f * (viewportImgMinScreen + viewportImgMaxScreen);
+    vec2 center = imguiCenter - vec2(winX, winY);  // now in GLFW client space
+
+    // inside check also needs to be in GLFW client space
+    vec2 minClient = viewportImgMinScreen - vec2(winX, winY);
+    vec2 maxClient = viewportImgMaxScreen - vec2(winX, winY);
+    bool inside = mousePos.x >= minClient.x && mousePos.x <= maxClient.x &&
+                  mousePos.y >= minClient.y && mousePos.y <= maxClient.y;
 
     bool moved = false;
-    vec2 mousePos = window.getMousePos();
-    vec2 center = vec2(window.size())/2.0f;
-    vec2 delta = vec2(mousePos.x - center.x, -(mousePos.y - center.y));
-    if (delta.x*delta.x + delta.y*delta.y > 0 and !lock) {
-        delta *= 2.0f/float(window.size().y) * sensitivity;
-        camForward += delta.x * camRight + delta.y * camUp;
-        camForward = normalize(camForward);
-        moved = true;
-        setBasisVectors(camForward, camUp, camRight);
+
+    if (!skipMouseFrame) {
+        if (inside && !lock) {
+            vec2 delta = vec2(mousePos.x - center.x,
+                              -(mousePos.y - center.y));
+
+            float imgH = (viewportImgMaxScreen.y - viewportImgMinScreen.y);
+            if (imgH > 1.0f) {
+                if (delta.x*delta.x + delta.y*delta.y > 0.25f) {
+                    delta *= (2.0f / imgH) * sensitivity * fovDeg;
+
+                    camForward += delta.x * camRight + delta.y * camUp;
+                    camForward = normalize(camForward);
+                    setBasisVectors(camForward, camUp, camRight);
+                    moved = true;
+
+                    window.setMousePos(center);
+                }
+            }
+        }
+    } else {
+        skipMouseFrame = false;
         window.setMousePos(center);
     }
-
-    vec3 change = vec3(0, 0, 0);
-    if (window.keyPressed(GLFW_KEY_W)) change += camForward;
-    if (window.keyPressed(GLFW_KEY_S)) change -= camForward;
-    if (window.keyPressed(GLFW_KEY_A)) change -= camRight;
-    if (window.keyPressed(GLFW_KEY_D)) change += camRight;
-    if (window.keyPressed(GLFW_KEY_E)) change += camUp;
-    if (window.keyPressed(GLFW_KEY_Q)) change -= camUp;
 
     if (window.keyPressed(GLFW_KEY_L)) {
         if (!trackedKeysPressed[GLFW_KEY_L]) {
@@ -452,15 +456,29 @@ bool Scene::inputHandling(float speed, float sensitivity, float dt) {
 
         trackedKeysPressed[GLFW_KEY_L] = true;
     } else trackedKeysPressed[GLFW_KEY_L] = false;
-    if (window.keyPressed(GLFW_KEY_H)) {
-        if (!trackedKeysPressed[GLFW_KEY_H]) hud = !hud;
+    if (window.keyPressed(GLFW_KEY_F)) {
+        if (!trackedKeysPressed[GLFW_KEY_F]) {
+            viewportFullscreen = !viewportFullscreen;
+        }
+        if (!lock) {
+            skipMouseFrame = true;
+        }
+        trackedKeysPressed[GLFW_KEY_F] = true;
+    } else trackedKeysPressed[GLFW_KEY_F] = false;
 
-        trackedKeysPressed[GLFW_KEY_H] = true;
-    } else trackedKeysPressed[GLFW_KEY_H] = false;
+    if (lock) return false;
+
+    vec3 change = vec3(0, 0, 0);
+    if (window.keyPressed(GLFW_KEY_W)) change += camForward;
+    if (window.keyPressed(GLFW_KEY_S)) change -= camForward;
+    if (window.keyPressed(GLFW_KEY_A)) change -= camRight;
+    if (window.keyPressed(GLFW_KEY_D)) change += camRight;
+    if (window.keyPressed(GLFW_KEY_E)) change += camUp;
+    if (window.keyPressed(GLFW_KEY_Q)) change -= camUp;
 
     if (window.keyPressed(GLFW_KEY_LEFT_SHIFT) || window.keyPressed(GLFW_KEY_RIGHT_SHIFT)) speed *= 2;
 
-    if (pow(change.x, 2) + pow(change.y, 2) + pow(change.z, 2) > 0 and !lock) {
+    if (pow(change.x, 2) + pow(change.y, 2) + pow(change.z, 2) > 0) {
         change = normalize(change);
         cameraPos += change*speed*dt;
         moved = true;
@@ -477,11 +495,9 @@ void Scene::updateFrame() {
         newData = false;
     }
 
-    if (hud) {
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-    }
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
 
     float dt = window.getDeltaTime();
     updateItemSmooth(totalTime, dt);
@@ -498,7 +514,7 @@ void Scene::updateFrame() {
     sampleCount += samples;
 
     // --- Controls window ---
-    if (hud) ImGuiRender();
+    ImGuiRender();
 
     updateItemSmooth(cpuTime, float(t.reset()));
 
@@ -514,10 +530,8 @@ void Scene::updateFrame() {
     float s = float(time) / 1e9f;
     updateItemSmooth(gpuTime, s);
 
-    if (hud) {
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    }
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 
     glfwSwapBuffers(window.getWindow());
@@ -528,7 +542,13 @@ void Scene::ImGuiRender() {
 
     bool ui_resetAccum = false;
 
-    DrawDockSpace();
+    ImGui::DockSpaceOverViewport(
+        0,
+        ImGui::GetMainViewport(),
+        ImGuiDockNodeFlags_PassthruCentralNode
+    );
+
+    drawViewportDocked();
 
     // scene
     {
@@ -624,22 +644,25 @@ void Scene::ImGuiRender() {
 
 
         static char filename[256] = "";
+        static bool texture = false;
+        static char textureFilename[256] = "";
 
 
         if (ImGui::Button("Add Model", ImVec2(-FLT_MIN, buttonHeight))) {
             strcpy(filename, "assets/models/");
+            strcpy(textureFilename, "assets/textures/");
 
             ImGui::OpenPopup("Add Model");
         }
 
         if (ImGui::Button("Save JSON", ImVec2(-FLT_MIN, buttonHeight))) {
-            strcpy(filename, "");
+            strcpy(filename, "scenes/");
 
             ImGui::OpenPopup("Save JSON");
         }
 
         if (ImGui::Button("Load JSON", ImVec2(-FLT_MIN, buttonHeight))) {
-            strcpy(filename, "");
+            strcpy(filename, "scenes/");
 
             ImGui::OpenPopup("Load JSON");
         }
@@ -651,11 +674,18 @@ void Scene::ImGuiRender() {
             ImGui::Text("Enter file name:");
             ImGui::InputText("##filename", filename, IM_ARRAYSIZE(filename));
 
+            if (texture) {
+                ImGui::Text("Enter texture path:");
+                ImGui::InputText("##path", textureFilename, IM_ARRAYSIZE(textureFilename));
+            }
+            else texture = ImGui::Button("Texture");
+
             ImGui::Separator();
 
             if (ImGui::Button("Add")) {
-                startAddJob(filename);
+                startAddJob(filename, texture ? textureFilename : "");
                 typing = false;
+                texture = false;
 
                 ImGui::CloseCurrentPopup();
             }
@@ -786,9 +816,9 @@ void Scene::ImGuiRender() {
         ImGui::End();
     }
 
-    // stats
+    // fps stats
     {
-        ImGui::Begin("Stats");
+        ImGui::Begin("FPS Stats");
 
         ImGui::Text("Samples: %d", sampleCount);
         ImGui::Text("Frame: %d", frameCount);
@@ -817,7 +847,12 @@ void Scene::ImGuiRender() {
             dtData.erase(dtData.begin());
         }
 
-        ImGui::Separator();
+        ImGui::End();
+    }
+
+    // scene stats
+    {
+        ImGui::Begin("Scene Stats");
 
         ImGui::Text("Width: %d", window.size().x);
         ImGui::Text("Height: %d", window.size().y);
@@ -913,7 +948,22 @@ void Scene::ImGuiRender() {
         // Rotation UI in degrees (convert to/from radians for nicer UX)
         vec3 rotDeg = degrees(transform.rotation);
         changedT |= DragFloat3("Position", transform.position, 3.0f);
-        changedT |= DragFloat3("Scale",    transform.scale, 1.0f, 0.0f, 1e36);
+
+        static bool uniformScale = false;
+
+        if (uniformScale) {
+            float s = transform.scale.x;
+            if (ImGui::DragFloat("Scale", &s, 1.0f, 0.0f, 1e36f)) {
+                transform.scale = vec3(s);
+                changedT = true;
+            }
+        } else {
+            changedT |= DragFloat3("Scale", transform.scale, 1.0f, 0.0f, 1e36f);
+        }
+
+        ImGui::SameLine();
+        ImGui::Checkbox("Uniform Scale", &uniformScale);
+
         changedT |= DragFloat3("Rotation (deg)", rotDeg, 0.2f);
 
         ImGui::Separator();
@@ -1013,7 +1063,7 @@ void Scene::ImGuiRender() {
             }
 
             if (wrapTexture) {
-                if (ImGui::DragFloat("Scale", &s, 0.005f, 0.0001f, 2.0f, "%.4f")) {
+                if (ImGui::DragFloat("Texture Scale", &s, 0.005f, 0.0001f, 2.0f, "%.4f")) {
                     textureScales[textureID] = s;
                     ui_resetAccum = true;
                 }
@@ -1050,6 +1100,56 @@ void Scene::ImGuiRender() {
     }
 }
 
+void Scene::drawViewportDocked(){
+    window.setPresentMode(PresentMode::Texture);
+
+    static ImGuiID savedDockID = 0;
+    static bool prevFullscreen = false;
+
+    ImGuiWindowFlags flags = 0;
+    if (viewportFullscreen) {
+        ImGuiViewport* vp = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(vp->Pos);
+        ImGui::SetNextWindowSize(vp->Size);
+        ImGui::SetNextWindowViewport(vp->ID);
+        flags |= ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
+                 ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDocking;
+    }
+
+    if (!viewportFullscreen && prevFullscreen && savedDockID != 0) {
+        ImGui::SetNextWindowDockID(savedDockID, ImGuiCond_Always);
+    }
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
+    ImGui::Begin("##Viewport", nullptr, flags);
+
+    // Save every frame while not fullscreen so we always have a valid ID
+    if (!viewportFullscreen) {
+        ImGuiID id = ImGui::GetWindowDockID();
+        if (id != 0) savedDockID = id;
+    }
+
+    prevFullscreen = viewportFullscreen;
+
+    ImVec2 avail = ImGui::GetContentRegionAvail();
+    ImVec2 drawSize = avail;
+    if (window.resizeRenderTarget((int)avail.x, (int)avail.y)) {
+        frameCount = 0;
+        sampleCount = 0;
+    }
+
+    ImVec2 imgMin = ImGui::GetCursorScreenPos();
+    ImVec2 imgMax = ImVec2(imgMin.x + drawSize.x, imgMin.y + drawSize.y);
+
+    viewportImgMinScreen = vec2(imgMin.x, imgMin.y);
+    viewportImgMaxScreen = vec2(imgMax.x, imgMax.y);
+
+    ImGui::Image(window.outputTexture(), drawSize, ImVec2(0,1), ImVec2(1,0));
+
+
+    ImGui::End();
+    ImGui::PopStyleVar();
+}
 
 void Scene::displayStats() const {
     DataPackageSize package = lastSentPackage;

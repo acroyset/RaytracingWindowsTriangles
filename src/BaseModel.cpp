@@ -216,7 +216,7 @@ std::vector<vec3> createNormals(std::vector<ivec3>& triangles, const std::vector
 
 BaseModel::BaseModel() = default;
 
-void BaseModel::parse(const std::string& filename) {
+bool BaseModel::parse(const std::string& filename) {
     std::vector<ivec3> tempTriangles;
     std::vector<int> tempTriMatIndex;
 
@@ -224,7 +224,7 @@ void BaseModel::parse(const std::string& filename) {
 
     if (!model.is_open()) {
         std::cerr << "Failed to open file: " << filename << std::endl;
-        return;
+        return false;
     }
 
     std::unordered_map<std::string,int> materialNameToIndex;
@@ -445,6 +445,8 @@ void BaseModel::parse(const std::string& filename) {
     }
 
     model.close();
+
+    return true;
 }
 
 BaseModel::BaseModel(const std::string &filename) {
@@ -452,7 +454,7 @@ BaseModel::BaseModel(const std::string &filename) {
 
     std::cout << filename << std::endl;
     Timer t;
-    parse(filename);
+    if (parse(filename)) valid = true;
     std::cout << "   Parse Time: " << t.reset() << std::endl;
 
     std::cout << "   Triangles: " << triangles.size()/3 << std::endl;

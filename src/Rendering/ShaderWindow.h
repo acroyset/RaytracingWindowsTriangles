@@ -18,6 +18,7 @@
 #define SHADERWINDOW_H
 
 #include <fstream>
+#include <imgui.h>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -30,6 +31,7 @@
 
 using namespace glm;
 
+enum class PresentMode { Screen, Texture };
 
 class ShaderWindow {
     GLFWwindow* window = nullptr;
@@ -46,6 +48,8 @@ class ShaderWindow {
     GLuint textures[2] = {0, 0};
     int currentBuffer = 0;
     bool useFeedback = false;
+
+    PresentMode presentMode = PresentMode::Screen;
 
     Timer totalTime;
     Timer deltaTime;
@@ -70,6 +74,8 @@ class ShaderWindow {
 
     void render();
 
+    void resize(int w, int h);
+
     void start();
 
     template<typename T>
@@ -91,6 +97,11 @@ class ShaderWindow {
     void setupFramebuffers();
 
     void clearFeedbackBuffers();
+
+    // for ImGui viewport
+    bool resizeRenderTarget(int w, int h);     // only used in Texture mode
+
+    [[nodiscard]] ImTextureID outputTexture() const;         // only valid in Texture mode
 
 
     [[nodiscard]] bool keyPressed(const int key) const {
@@ -118,6 +129,10 @@ class ShaderWindow {
     [[nodiscard]] bool open() const {return !glfwWindowShouldClose(window);}
 
     [[nodiscard]] uvec2 size() const {return {fbWidth, fbHeight};}
+
+    void setPresentMode(PresentMode m) { presentMode = m; }
+    [[nodiscard]] PresentMode getPresentMode() const { return presentMode; }
+
 };
 
 

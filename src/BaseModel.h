@@ -176,6 +176,7 @@ class BaseModel {
     public:
 
     std::string filename;
+    bool valid = false;
 
     std::vector<ivec4> triangles;
     std::vector<vec3> vertices;
@@ -221,7 +222,7 @@ class BaseModel {
         return *this;
     }
 
-    void parse(const std::string& filename);
+    bool parse(const std::string& filename);
 
     explicit BaseModel(const std::string& filename);
 

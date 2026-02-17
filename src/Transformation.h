@@ -14,7 +14,12 @@ struct Transformation {
     mat4 matrix{};
     mat4 inverseMatrix{};
 
-    Transformation() = default;
+    Transformation() {
+        position = vec3(0);
+        rotation = vec3(0);
+        scale = vec3(10);
+        setMatrix();
+    }
 
     Transformation(vec3 position, vec3 scale, vec3 rotation = vec3(0)) : position(position), rotation(rotation), scale(scale) {setMatrix();}
 

@@ -191,20 +191,34 @@ ShaderWindow::ShaderWindow() {
 
 
 void ShaderWindow::render() {
-    if (useFeedback) {
+    glBindVertexArray(vao);
+
+    if (presentMode == PresentMode::Texture)
+    {
+        // Render only into the FBO texture
         glBindFramebuffer(GL_FRAMEBUFFER, fbo[currentBuffer]);
-        glBindVertexArray(vao);
+        glViewport(0, 0, fbWidth, fbHeight);
         glDrawArrays(GL_TRIANGLES, 0, 3);
-
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
 
-        currentBuffer = 1 - currentBuffer;
-    } else {
-        glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        if (useFeedback) currentBuffer = 1 - currentBuffer;
+
+    } else if (presentMode == PresentMode::Screen) {
+
+        // PresentMode::Screen (your current behavior)
+        if (useFeedback) {
+            glBindFramebuffer(GL_FRAMEBUFFER, fbo[currentBuffer]);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+
+            currentBuffer = 1 - currentBuffer;
+        } else {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+        }
     }
-
 }
 
 void ShaderWindow::start() {
@@ -255,3 +269,30 @@ void ShaderWindow::clearFeedbackBuffers() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+bool ShaderWindow::resizeRenderTarget(int w, int h)
+{
+    if (w <= 0 || h <= 0) return false;
+    if (w == fbWidth && h == fbHeight) return false;
+
+    fbWidth = w;
+    fbHeight = h;
+
+    for (int i = 0; i < 2; i++) {
+        glBindTexture(GL_TEXTURE_2D, textures[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, fbWidth, fbHeight, 0, GL_RGBA, GL_FLOAT, nullptr);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo[i]);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textures[i], 0);
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    if (useFeedback) clearFeedbackBuffers();
+    return true;
+}
+
+ImTextureID ShaderWindow::outputTexture() const
+{
+    // show latest completed buffer
+    int idx = useFeedback ? (1 - currentBuffer) : currentBuffer;
+    return static_cast<ImTextureID>(static_cast<intptr_t>(textures[idx]));
+}
