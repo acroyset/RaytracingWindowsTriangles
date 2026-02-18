@@ -15,11 +15,11 @@ struct  Model {
 
     int textureID = -1;
 
-    Model(const std::string &name, const BaseModel& baseModel, const Transformation &transformation){
+    Model(const std::string &name, const BaseModel& baseModel, const Transformation &transformation = {vec3(0), vec3(-1)}){
         this->filename = baseModel.filename;
         this->name = name;
         this->base = baseModel;
-        this->transformation = transformation;
+        this->transformation = transformation.scale == vec3(-1) ? baseModel.baseTransform : transformation;
         this->materials = baseModel.materials;
         textureID = -1;
     }

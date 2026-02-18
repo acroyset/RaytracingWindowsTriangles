@@ -1,8 +1,34 @@
 
+
 struct Material {
-    vec4 diffuseColor; // diffuse color, smoothness
-    vec4 specularColor; // specular color, specular probability
-    vec4 glassLightSettings; // transparency, ior, emission strength, transparent smoothness
+
+    // Opaque
+
+    vec4 diffuseColor;
+    vec4 specularColor;
+
+    float diffuseRoughness;
+    float specularRoughness;
+    float specularProbability;
+
+    // Transparent
+
+    float transparency;
+    float indexOfRefraction;
+    float absorption;
+
+    // absorb color = diffuse color
+    // roughness = diffuse roughness
+
+    // specular color = same
+    // specular roughness = same
+    // specular prob = same
+
+    // Emissive
+
+    float emissionStrength;
+
+    int type;
 };
 
 struct Triangle{
@@ -30,37 +56,20 @@ struct Ray{
     vec3 invDir;
 };
 
+struct ModelOffset {
+    int BVHnodes;
+    int material;
+    int textureID;
+
+    int padding;
+};
+
 struct BVHnode {
     float minX, minY, minZ;// xyz: bbox min
     int childA_TriStart; // childA, -TriStart
     float maxX, maxY, maxZ;// xyz: bbox max
     int childB_NumTri; // childB, -NumTri
 };
-
-vec3 diffuseColor(Material m){
-    return m.diffuseColor.rgb;
-}
-float smoothness(Material m){
-    return m.diffuseColor.w;
-}
-vec3 specularColor(Material m){
-    return m.specularColor.rgb;
-}
-float specularProbability(Material m){
-    return m.specularColor.w;
-}
-float transparency(Material m){
-    return m.glassLightSettings.x;
-}
-float ior(Material m){
-    return m.glassLightSettings.y;
-}
-float emissionStrength(Material m){
-    return m.glassLightSettings.z;
-}
-float transparentSmoothness(Material m){
-    return m.glassLightSettings.w;
-}
 
 vec3 getMin(BVHnode node){
     return vec3(node.minX, node.minY, node.minZ);

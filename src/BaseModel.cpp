@@ -6,10 +6,15 @@
 #include <fstream>
 #include <iostream>
 #include <cstring>
+#include <dinput.h>
 #include <sstream>
 #include <unordered_map>
 
+#include "Transformation.h"
 #include "Rendering/Timer.h"
+
+#define BVH_MAX_DEPTH 48
+#define BVH_TESTS_PER_AXIS 5
 
 inline void splitSlash(const std::string& s, std::string tokens[3]) {
     std::string token;
@@ -89,7 +94,7 @@ void makeBoundingBox(vec3& min, vec3& max, const std::vector<vec3>& vertices) {
     }
 }
 
-void center(std::vector<vec3>& points) {
+Transformation center(std::vector<vec3>& points) {
     auto min = vec3(std::numeric_limits<float>::infinity()), max = vec3(-std::numeric_limits<float>::infinity());
     makeBoundingBox(min, max, points);
 
@@ -101,6 +106,8 @@ void center(std::vector<vec3>& points) {
         point -= offset;
         point *= scaler;
     }
+
+    return {-offset, vec3(biggestDiff/2.0f)};
 }
 
 inline float nodeCost(const BVHnode &node) {
@@ -129,7 +136,7 @@ void loadMTL(const std::string& mtlPath, std::unordered_map<std::string, int>& n
 
     std::string line, curName;
     vec3 Kd, Ks, Ke;
-    float smoothness, specularProb, transparency, ior, emission;
+    float roughness, specularProb, transparency, ior, emission;
 
     auto flushMaterial = [&](){
         if (curName.empty()) return;
@@ -148,14 +155,21 @@ void loadMTL(const std::string& mtlPath, std::unordered_map<std::string, int>& n
             emission = length(Ke);
 
             Material material;
+
+
+            if (emission > 0) material.setType(Emissive);
+            else if (transparency > 0) material.setType(Transparent);
+            else if (specularProb > 0) material.setType(Specular);
+            else material.setType(Opaque);
+
             material.setDiffuseColor(emission == 0 ? Kd : Ke);
-            material.setSmoothness(smoothness);
+            material.setDiffuseRoughness(1);
             material.setSpecularColor(Ks);
+            material.setSpecularRoughness(roughness);
             material.setSpecularProbability(specularProb);
             material.setTransparency(transparency);
-            material.setIOR(ior);
+            material.setIndexOfRefraction(ior);
             material.setEmissionStrength(emission);
-            material.setTransparentSmoothness(1.0f);
 
             materials.push_back(material);
         }
@@ -177,8 +191,7 @@ void loadMTL(const std::string& mtlPath, std::unordered_map<std::string, int>& n
         } else if (key == "Ns") {
             float ns;
             iss >> ns;
-            float roughness = sqrtf(2.0f / (ns + 2.0f));
-            smoothness = 1.0f - roughness;
+            roughness = sqrtf(2.0f / (ns + 2.0f));
         } else if (key == "Ni") {
             iss >> ior;
         } else if (key == "d") {
@@ -282,7 +295,6 @@ bool BaseModel::parse(const std::string& filename) {
 
             if (ptr >= end) break;
 
-            // Quick check for line type
             if (*ptr == 'v' && *(ptr + 1) == ' ') {
                 ptr += 2; // Skip "v "
 
@@ -395,7 +407,7 @@ bool BaseModel::parse(const std::string& filename) {
                     // unseen name: push a default color and remember it
                     int idx = int(materials.size());
                     materialNameToIndex[matName] = idx;
-                    materials.emplace_back(vec3(1), 0);
+                    materials.emplace_back();
                     currentMaterial = idx;
                 }
             }
@@ -409,7 +421,7 @@ bool BaseModel::parse(const std::string& filename) {
 
     // Handle any remaining leftover
     if (!leftover.empty()) {
-        std::cerr << "leftover" << std::endl;
+        std::cerr << "leftover (add newline to end of obj file)" << std::endl;
         std::cerr << leftover << std::endl;
         // Process final incomplete line if needed
         // (similar parsing logic as above)
@@ -430,7 +442,7 @@ bool BaseModel::parse(const std::string& filename) {
         }
     }
 
-    center(vertices);
+    baseTransform = center(vertices);
 
     if (normals.empty()) {
         normals = createNormals(tempTriangles, vertices);
@@ -462,12 +474,8 @@ BaseModel::BaseModel(const std::string &filename) {
     std::cout << "   TexCoords: " << texCoords.size() << std::endl;
     std::cout << "   Normals: " << normals.size() << std::endl;
 
-
-
-    int testPerAxis = 3;
-
     t.reset();
-    createBVH(47, testPerAxis, 0, int(triangles.size())/3);
+    createBVH(BVH_MAX_DEPTH, BVH_TESTS_PER_AXIS, 0, int(triangles.size())/3);
     std::cout << "   BVH Nodes: " << BVHnodes.size() << std::endl;
     std::cout << "   BVH Construction Time: " << t.reset() << std::endl;
 }
@@ -543,14 +551,15 @@ float BaseModel::evaluateSplit(const int triStart, const int numTri, const int a
     return nodeCost(nodeA) + nodeCost(nodeB);
 }
 
-void BaseModel::chooseSplit(const int numTestsPerAxis, const BVHnode &node, int& bestAxis, float& bestPos, float& bestCost) {
+Split BaseModel::chooseSplit(const int numTestsPerAxis, const BVHnode &node) {
 
     int triStart = node.getTriStart();
     int numTri = node.getNumTri();
 
+    auto best = Split();
+    std::mutex bestLock;
+
     for (int axis = 0; axis < 3; ++axis) {
-        float bStart = node.getMin()[axis];
-        float bEnd = node.getMax()[axis];
 
         float centerMin = std::numeric_limits<float>::max();
         float centerMax = -std::numeric_limits<float>::max();
@@ -562,39 +571,38 @@ void BaseModel::chooseSplit(const int numTestsPerAxis, const BVHnode &node, int&
         }
 
         for (int i = 0; i < numTestsPerAxis; ++i) {
+            float splitT = float(i+1) / float(numTestsPerAxis+1);
+            float pos = centerMin + (centerMax - centerMin) * splitT;
 
-            if (numTri > 500) {
+            if (numTri > 200) {
 
-                for (int i = 0; i < numTestsPerAxis; ++i) {
-                    float splitT = float(i+1) / float(numTestsPerAxis+1);
-                    float pos = centerMin + (centerMax - centerMin) * splitT;
-                    float cost = evaluateSplit(triStart, numTri, axis, pos);
+                pool.enqueue([this, &best, triStart, numTri, &bestLock](int a, float p) {
+                  float cost = evaluateSplit(triStart, numTri, a, p);
 
-                    if (cost < bestCost) {
-                        bestPos = pos;
-                        bestCost = cost;
-                        bestAxis = axis;
-                    }
-                }
+                  std::lock_guard lock(bestLock);
+                  if (cost < best.cost) {
+                    best.cost = cost;
+                    best.pos  = p;
+                    best.axis = a;
+                  }
+                }, axis, pos);
+
 
             } else {
+                float cost = evaluateSplit(triStart, numTri, axis, pos);
 
-                for (int i = 0; i < numTestsPerAxis; ++i) {
-                    float splitT = float(i+1) / float(numTestsPerAxis+1);
-                    float pos = centerMin + (centerMax - centerMin) * splitT;
-                    float cost = evaluateSplit(triStart, numTri, axis, pos);
-
-                    if (cost < bestCost) {
-                        bestPos = pos;
-                        bestCost = cost;
-                        bestAxis = axis;
-                    }
+                if (cost < best.cost) {
+                    best.pos = pos;
+                    best.cost = cost;
+                    best.axis = axis;
                 }
             }
         }
-
-        pool.wait_for_tasks();
     }
+
+    pool.wait_for_tasks();
+
+    return best;
 
 }
 
@@ -604,7 +612,7 @@ void BaseModel::split(int numTestsPerAxis, int BVHindex, int depth) {
     int triStart = node.getTriStart();
     int numTris = node.getNumTri();
 
-    if (depth <= 0) {
+    if (depth <= 1) {
         if (numTris > 10) {
             std::cerr << "Hit depth limit with " << numTris << " tri" << std::endl;
         }
@@ -619,30 +627,26 @@ void BaseModel::split(int numTestsPerAxis, int BVHindex, int depth) {
     int numA = 0, numB = 0;
     int startA = triStart, startB = triStart;
 
-    int splitAxis = -1;
-    float splitPos = 0;
-    float bestCost = std::numeric_limits<float>::max();
-    chooseSplit(numTestsPerAxis, node, splitAxis, splitPos, bestCost);
-    if (bestCost >= nodeCost(node)) {return;}
+    Split bestSplit = chooseSplit(numTestsPerAxis, node);
+    if (bestSplit.cost >= nodeCost(node)) {return;}
 
-    if (splitAxis == -1) {
+    if (bestSplit.axis == -1) {
         vec3 min = node.getMin();
         vec3 max = node.getMax();
         vec3 size = max - min;
 
         if (size.x > size.y && size.x > size.z) {
-            splitAxis = 0;
+            bestSplit.axis = 0;
         } else if (size.y > size.z && size.y > size.x) {
-            splitAxis = 1;
+            bestSplit.axis = 1;
         } else {
-            splitAxis = 2;
+            bestSplit.axis = 2;
         }
 
-        splitPos = (min[splitAxis]+max[splitAxis])/2;
+        bestSplit.pos = (min[bestSplit.axis]+max[bestSplit.axis])/2;
 
         std::cerr << "Fallback to center split" << std::endl;
     }
-
     //std::cout << depth << ' ' << splitAxix << ' ' << splitPos << std::endl;
 
     for (int i = triStart; i < triStart+numTris; i++) {
@@ -650,7 +654,7 @@ void BaseModel::split(int numTestsPerAxis, int BVHindex, int depth) {
         const vec3& tMax = triangleMax[i];
 
         vec3 center = triangleCenters[i];
-        bool triInA = center[splitAxis] < splitPos;
+        bool triInA = center[bestSplit.axis] < bestSplit.pos;
         if (triInA) {
             childA.growToInclude(tMin, tMax);
             numA++;

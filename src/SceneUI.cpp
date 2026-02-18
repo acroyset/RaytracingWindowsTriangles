@@ -20,6 +20,134 @@ inline bool ColorEdit3(const char* label, vec4& v) {
     return out;
 }
 
+static const char* MaterialTypeLabel(MaterialType t) {
+    switch (t) {
+        case Opaque:      return "Opaque";
+        case Specular:    return "Specular";
+        case Transparent: return "Transparent";
+        case Emissive:    return "Emissive";
+        default:          return "Unknown";
+    }
+}
+
+static bool DrawMaterialInspector(Material& m, int matIndex, int textureID){
+    bool changed = false;
+
+    // Pull values once (edit locals, then write back at end)
+    MaterialType type            = m.getType();
+    vec3  diffuseColor           = m.getDiffuseColor();
+    float diffuseRoughness       = m.getDiffuseRoughness();
+
+    vec3  specularColor          = m.getSpecularColor();
+    float specularRoughness      = m.getSpecularRoughness();
+    float specularProbability    = m.getSpecularProbability();
+
+    float transparency           = m.getTransparency();
+    float ior                    = m.getIndexOfRefraction();
+    float absorption             = m.getAbsorption();
+
+    float emissionStrength       = m.getEmissionStrength();
+
+    // --- Header ---
+    ImGui::Text("Material #%d", matIndex);
+    ImGui::SameLine();
+    ImGui::TextDisabled("(%s)", MaterialTypeLabel(type));
+    ImGui::Separator();
+
+    // --- Type selector drives everything ---
+    const char* items[] = {"Opaque", "Specular", "Transparent", "Emissive"};
+    int t = int(type);
+    if (ImGui::Combo("Type", &t, items, IM_ARRAYSIZE(items))) {
+        type = MaterialType(t);
+        changed = true;
+
+        // Coerce defaults when switching to reduce “broken” states
+        if (type == Emissive) {
+            if (emissionStrength <= 0.0f) emissionStrength = 1.0f;
+            transparency = 0.0f;
+        } else if (type == Transparent) {
+            if (transparency <= 0.0f) transparency = 1.0f;
+            if (ior <= 1.0f) ior = 1.3f;
+            if (specularProbability <= 0.0f) specularProbability = 1.0f; // glass usually specular
+            emissionStrength = 0.0f;
+        } else if (type == Specular) {
+            if (specularProbability < 0.05f) specularProbability = 1.0f;
+            transparency = 0.0f;
+            emissionStrength = 0.0f;
+        } else { // Opaque
+            transparency = 0.0f;
+            absorption = 0.0f;
+            ior = 1.0f;
+            emissionStrength = 0.0f;
+        }
+    }
+
+    ImGui::Spacing();
+
+    // --- Common group: Base color (and texture info) ---
+    if (textureID != -1) {
+        ImGui::TextDisabled("Texture bound (ID %d). Diffuse color UI hidden.", textureID);
+    } else {
+        if (type == Emissive) {
+            changed |= ImGui::ColorEdit3("Emission Color", &diffuseColor.x);
+        } else if (type == Transparent) {
+            changed |= ImGui::ColorEdit3("Absorb Color", &diffuseColor.x);
+        } else {
+            changed |= ImGui::ColorEdit3("Base Color", &diffuseColor.x);
+        }
+    }
+
+    // --- Type-specific controls ---
+    if (type == Emissive) {
+        changed |= ImGui::SliderFloat("Emission Strength", &emissionStrength, 0.0f, 250.0f);
+
+    } else if (type == Transparent) {
+        changed |= ImGui::SliderFloat("Transparency", &transparency, 0.0f, 1.0f);
+        changed |= ImGui::SliderFloat("Index of Refraction", &ior, 1.0f, 3.0f);
+
+        changed |= ImGui::SliderFloat("Roughness", &diffuseRoughness, 0.0f, 1.0f);
+
+        // Specular for dielectric surface
+        changed |= ImGui::ColorEdit3("Specular Color", &specularColor.x);
+        changed |= ImGui::SliderFloat("Specular Roughness", &specularRoughness, 0.0f, 1.0f);
+
+        changed |= ImGui::SliderFloat("Absorption", &absorption, 0.0f, 0.1f);
+
+    } else if (type == Specular) {
+        ImGui::SeparatorText("Surface");
+
+        changed |= ImGui::SliderFloat("Diffuse Roughness", &diffuseRoughness, 0.0f, 1.0f);
+
+        changed |= ImGui::ColorEdit3("Specular Color", &specularColor.x);
+        changed |= ImGui::SliderFloat("Specular Roughness", &specularRoughness, 0.0f, 1.0f);
+
+        changed |= ImGui::SliderFloat("Specular Probability", &specularProbability, 0.0f, 1.0f);
+    } else if (type == Opaque) {
+        ImGui::SeparatorText("Surface");
+
+        changed |= ImGui::SliderFloat("Roughness", &diffuseRoughness, 0.0f, 1.0f);
+    }
+
+    if (changed) {
+        m.setType(type);
+
+        m.setDiffuseColor(diffuseColor);
+        m.setDiffuseRoughness(diffuseRoughness);
+
+        m.setSpecularColor(type == Specular || type == Transparent ? specularColor : vec3(0));
+        m.setSpecularRoughness(type == Specular || type == Transparent ? specularRoughness : 0.0f);
+        m.setSpecularProbability(type == Specular ? specularProbability : 0.0f);
+
+        m.setTransparency(type == Transparent ? transparency : 0.0f);
+        m.setIndexOfRefraction(type == Transparent ? ior : 1.0f);
+        m.setAbsorption(type == Transparent ? absorption : 0.0f);
+
+        m.setEmissionStrength(type == Emissive ? emissionStrength : 0.0f);
+    }
+
+    return changed;
+}
+
 static void DrawBusyOverlay(const char* label){
     ImGui::OpenPopup("Working...");
     if (ImGui::BeginPopupModal("Working...", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
@@ -356,69 +484,78 @@ void SceneUI::ImGuiRender(Scene& scene) {
         ImGui::Text("Position: %.2f, %.2f, %.2f", scene.cameraPos.x, scene.cameraPos.y, scene.cameraPos.z);
         ImGui::Text("Forward: %.2f, %.2f, %.2f", scene.camForward.x, scene.camForward.y, scene.camForward.z);
 
-        ImGui::Separator();
+        ImGui::End();
+    }
 
-        if (ImGui::CollapsingHeader("Scene Statistics"))
+    // scene data
+    {
+        ImGui::Begin("Scene Data");
+
+        DataPackage package = scene.lastSentPackage;
+
+        if (ImGui::BeginTable("##StatsTable", 4,
+            ImGuiTableFlags_SizingStretchProp |
+            ImGuiTableFlags_BordersInnerV))
         {
-            DataPackageSize package = scene.lastSentPackage;
+            ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn("Count", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn("Sent", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn("Size",  ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableHeadersRow();
 
-            if (ImGui::BeginTable("StatsTable", 3,
-                ImGuiTableFlags_SizingStretchProp |
-                ImGuiTableFlags_BordersInnerV))
+            auto Row = [&](const char* label, int count, int sent, const std::string& size)
             {
-                ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthStretch);
-                ImGui::TableSetupColumn("Count", ImGuiTableColumnFlags_WidthFixed, 80.0f);
-                ImGui::TableSetupColumn("Size",  ImGuiTableColumnFlags_WidthFixed, 100.0f);
-                ImGui::TableHeadersRow();
-
-                auto Row = [&](const char* label, int count, const std::string& size)
-                {
-                    ImGui::TableNextRow();
-
-                    ImGui::TableSetColumnIndex(0);
-                    ImGui::TextUnformatted(label);
-
-                    ImGui::TableSetColumnIndex(1);
-                    ImGui::Text("%d", count);
-
-                    ImGui::TableSetColumnIndex(2);
-                    ImGui::Text("%s", size.c_str());
-                };
-
-                Row("Triangles", int(scene.triangles.size())/3,
-                    bytesToReadable(package.triangleDataSize));
-
-                Row("Vertices", int(scene.vertices.size()),
-                    bytesToReadable(package.vertexDataSize));
-
-                Row("Texture Coords", int(scene.texCoords.size()),
-                    bytesToReadable(package.texCoordDataSize));
-
-                Row("Normals", int(scene.normals.size()),
-                    bytesToReadable(package.normalDataSize));
-
-                Row("Materials", scene.getNumMaterials(),
-                    bytesToReadable(package.materialDataSize));
-
-                Row("Textures", int(scene.textures.size()),
-                    bytesToReadable(package.textureDataSize));
-
-                Row("BVH Nodes", int(scene.BVHnodes.size()),
-                    bytesToReadable(package.BVHnodesDataSize));
-
-                Row("Transformations", int(scene.models.size()),
-                    bytesToReadable(package.transformDataSize));
-
                 ImGui::TableNextRow();
+
                 ImGui::TableSetColumnIndex(0);
-                ImGui::TextColored(ImVec4(1,1,0.4f,1), "Total");
+                ImGui::TextUnformatted(label);
+
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Text("%d", count);
 
                 ImGui::TableSetColumnIndex(2);
-                ImGui::TextColored(ImVec4(1,1,0.4f,1),
-                    "%s", bytesToReadable(package.totalSize).c_str());
+                ImGui::Text("%d", sent);
 
-                ImGui::EndTable();
-            }
+                ImGui::TableSetColumnIndex(3);
+                ImGui::Text("%s", size.c_str());
+            };
+
+            auto RowNoSent = [&](const char* label, int count, const std::string& size)
+            {
+                ImGui::TableNextRow();
+
+                ImGui::TableSetColumnIndex(0);
+                ImGui::TextUnformatted(label);
+
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Text("%d", count);
+
+                ImGui::TableSetColumnIndex(2);
+                ImGui::Text("%d", count);
+
+                ImGui::TableSetColumnIndex(3);
+                ImGui::Text("%s", size.c_str());
+            };
+
+            Row("Triangles", package.triangles, package.trianglesSent, bytesToReadable(package.triangleBytes));
+            Row("Vertices", package.vertices, package.verticesSent, bytesToReadable(package.verticesBytes));
+            Row("Tex Coords", package.texCoords, package.texCoordsSent, bytesToReadable(package.texCoordsBytes));
+            Row("Normals", package.normals, package.normalsSent, bytesToReadable(package.normalsBytes));
+            Row("BVH Nodes", package.BVHNodes, package.BVHNodesSent, bytesToReadable(package.BVHNodesBytes));
+            RowNoSent("Models", int(scene.models.size()), "");
+            RowNoSent("Materials", package.materials, bytesToReadable(package.materialsBytes));
+            RowNoSent("Textures", package.textures, bytesToReadable(package.texturesBytes));
+            RowNoSent("Transforms", package.transforms, bytesToReadable(package.transformsBytes));
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::TextColored(ImVec4(1,1,0.4f,1), "Total");
+
+            ImGui::TableSetColumnIndex(3);
+            ImGui::TextColored(ImVec4(1,1,0.4f,1),
+                "%s", bytesToReadable(package.totalSize).c_str());
+
+            ImGui::EndTable();
         }
 
         ImGui::End();
@@ -476,67 +613,12 @@ void SceneUI::ImGuiRender(Scene& scene) {
             ImGui::EndCombo();
         }
 
-        if (selectedColor != -1){
-            ImGui::Indent();
-            Material& m = model.materials[selectedColor];
-            vec4 DC = m.getDC();
-            vec4 SC = m.getSC();
-            vec4 GLS = m.getGLS();
+        ImGui::Indent();
+        Material& m = model.materials[selectedColor];
 
-            bool emissive = GLS.z > 0;
-            if (ImGui::Checkbox("Emissive", &emissive)) {
-                if (emissive) GLS.z = 1;
-                else GLS.z = 0;
-                changedM = true;
-            }
+        changedM |= DrawMaterialInspector(m, selectedColor, model.textureID);
 
-            if (emissive) {
-                if (model.textureID == -1) changedM |= ColorEdit3("Color", DC);
-                changedM |= ImGui::SliderFloat("Emission Strength", &GLS.z, 0.01f, 250.0f);
-            } else {
-
-                bool isTransparent = (GLS.x > 0);
-                if (ImGui::Checkbox("Transparent", &isTransparent)) {
-                    if (isTransparent) GLS.x = 1;
-                    else GLS.x = 0;
-                    changedM = true;
-                }
-
-                if (isTransparent) {
-                    changedM |= ImGui::SliderFloat("Transparency", &GLS.x, 0.0f, 1.0f);
-
-                    changedM |= ColorEdit3("Color", SC);
-                    changedM |= ColorEdit3("Absorb Color", DC);
-
-                    changedM |= ImGui::SliderFloat("Index of Refraction", &GLS.y, 0.0f, 3.0f);
-                    changedM |= ImGui::SliderFloat("Smoothness", &DC.w, 0.0f, 1.0f);
-                    changedM |= ImGui::SliderFloat("Transparent Smoothness", &GLS.w, 0.0f, 1.0f);
-                    changedM |= ImGui::SliderFloat("Absorb Multiplier", &SC.w, 0.0f, 0.1f);
-                } else {
-                    if (model.textureID == -1) changedM |= ColorEdit3("Diffuse Color", DC);
-
-                    bool specular = SC.w >= 0;
-                    if (ImGui::Checkbox("Specular", &specular)) {
-                        if (specular) SC.w = 0;
-                        else SC.w = -1;
-                        changedM = true;
-                    }
-
-                    if (specular && !isTransparent) changedM |= ColorEdit3("Specular Color", SC);
-
-                    ImGui::Text("Material Properties");
-
-                    changedM |= ImGui::SliderFloat("Smoothness", &DC.w, 0.0f, 1.0f);
-                    if (specular) changedM |= ImGui::SliderFloat("Specular Probability", &SC.w, 0.0f, 1.0f);
-                }
-
-            }
-
-            m.setDC(DC);
-            m.setSC(SC);
-            m.setGLS(GLS);
-            ImGui::Unindent();
-        }
+        ImGui::Unindent();
 
         int textureID = model.textureID;
         if (textureID != -1) {
@@ -588,10 +670,7 @@ void SceneUI::ImGuiRender(Scene& scene) {
     }
 
 
-    if (ui_resetAccum) {
-        scene.frameCount = 0;
-        scene.sampleCount = 0;
-    }
+    if (ui_resetAccum) scene.resetAccumulation();
 }
 
 void SceneUI::drawViewportDocked(Scene& scene){
@@ -615,7 +694,7 @@ void SceneUI::drawViewportDocked(Scene& scene){
     }
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
-    ImGui::Begin("##Viewport", nullptr, flags);
+    ImGui::Begin(viewportFullscreen ? "##Viewport" : "Viewport", nullptr, flags);
 
     // Save every frame while not fullscreen so we always have a valid ID
     if (!viewportFullscreen) {
@@ -627,10 +706,7 @@ void SceneUI::drawViewportDocked(Scene& scene){
 
     ImVec2 avail = ImGui::GetContentRegionAvail();
     ImVec2 drawSize = avail;
-    if (scene.window.resizeRenderTarget((int)avail.x, (int)avail.y)) {
-        scene.frameCount = 0;
-        scene.sampleCount = 0;
-    }
+    if (scene.window.resizeRenderTarget((int)avail.x, (int)avail.y, false)) scene.resetAccumulation();
 
     ImVec2 imgMin = ImGui::GetCursorScreenPos();
     ImVec2 imgMax = ImVec2(imgMin.x + drawSize.x, imgMin.y + drawSize.y);
@@ -639,6 +715,46 @@ void SceneUI::drawViewportDocked(Scene& scene){
     viewportImgMaxScreen = vec2(imgMax.x, imgMax.y);
 
     ImGui::Image(scene.window.outputTexture(), drawSize, ImVec2(0,1), ImVec2(1,0));
+
+
+    // ---- Safe frame overlay (dims outside) ----
+    if (!viewportFullscreen) {
+        // Target aspect = fullscreen (monitor) aspect
+        ImGuiViewport* vp = ImGui::GetMainViewport();
+        float targetAspect = vp->Size.x / vp->Size.y;
+
+        float availW = drawSize.x;
+        float availH = drawSize.y;
+
+        float safeW = availW;
+        float safeH = safeW / targetAspect;
+        if (safeH > availH) {
+            safeH = availH;
+            safeW = safeH * targetAspect;
+        }
+
+        ImVec2 safeMin(
+            imgMin.x + 0.5f * (availW - safeW),
+            imgMin.y + 0.5f * (availH - safeH)
+        );
+        ImVec2 safeMax(safeMin.x + safeW, safeMin.y + safeH);
+
+        ImDrawList* dl = ImGui::GetWindowDrawList();
+        ImU32 dimCol    = IM_COL32(0, 0, 0, 120);   // outside opacity
+        ImU32 borderCol = IM_COL32(255, 255, 255, 200);
+
+        // Dim outside safe rect
+        dl->AddRectFilled(ImVec2(imgMin.x, imgMin.y), ImVec2(imgMax.x, safeMin.y), dimCol);      // top
+        dl->AddRectFilled(ImVec2(imgMin.x, safeMax.y), ImVec2(imgMax.x, imgMax.y), dimCol);      // bottom
+        dl->AddRectFilled(ImVec2(imgMin.x, safeMin.y), ImVec2(safeMin.x, safeMax.y), dimCol);    // left
+        dl->AddRectFilled(ImVec2(safeMax.x, safeMin.y), ImVec2(imgMax.x, safeMax.y), dimCol);    // right
+
+        // Border
+        dl->AddRect(safeMin, safeMax, borderCol, 0.0f, 0, 2.0f);
+
+        // Optional label
+        dl->AddText(ImVec2(safeMin.x + 6, safeMin.y + 6), IM_COL32(255,255,255,180), "FRAME");
+    }
 
 
     ImGui::End();

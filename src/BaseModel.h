@@ -10,10 +10,13 @@
 #include <thread>
 #include <atomic>
 #include <condition_variable>
+#include <future>
 #include <iostream>
 #include <mutex>
 
 #include "Material.h"
+#include "Transformation.h"
+
 
 class ThreadPool {
     std::vector<std::thread> workers;
@@ -71,13 +74,28 @@ public:
             worker.join();
     }
 
-    void enqueue(std::function<void()> task) {
+    template <class F, class... Args>
+    std::future<std::invoke_result_t<F, Args...>> enqueue(F&& f, Args&&... args) {
+        using R = std::invoke_result_t<F, Args...>;
+
+        auto job = std::make_shared<std::packaged_task<R()>>(
+            std::bind(std::forward<F>(f), std::forward<Args>(args)...)
+        );
+
+        std::future<R> fut = job->get_future();
+
         {
             std::unique_lock<std::mutex> lock(queue_mutex);
-            tasks.push_back(std::move(task));
+            if (stop) {
+                throw std::runtime_error("enqueue on stopped ThreadPool");
+            }
+
+            tasks.emplace_back([job]() { (*job)(); });
             ++total_enqueued;
         }
+
         cv.notify_one();
+        return fut;
     }
 
     // Wait for all tasks to finish
@@ -172,11 +190,18 @@ public:
     }
 };
 
+struct Split {
+    int axis = -1;
+    float pos = 0.0f;
+    float cost = std::numeric_limits<float>::infinity();
+};
+
 class BaseModel {
     public:
 
     std::string filename;
     bool valid = false;
+    Transformation baseTransform;
 
     std::vector<ivec4> triangles;
     std::vector<vec3> vertices;
@@ -195,6 +220,9 @@ class BaseModel {
 
     BaseModel(const BaseModel& model) {
         filename = model.filename;
+        valid = model.valid;
+        baseTransform = model.baseTransform;
+
         triangles = model.triangles;
         vertices = model.vertices;
         texCoords = model.texCoords;
@@ -202,6 +230,7 @@ class BaseModel {
         materials = model.materials;
 
         BVHnodes = model.BVHnodes;
+
         triangleCenters = model.triangleCenters;
         triangleMin = model.triangleMin;
         triangleMax = model.triangleMax;
@@ -209,6 +238,9 @@ class BaseModel {
 
     BaseModel& operator = (const BaseModel& model) {
         filename = model.filename;
+        valid = model.valid;
+        baseTransform = model.baseTransform;
+
         triangles = model.triangles;
         vertices = model.vertices;
         texCoords = model.texCoords;
@@ -216,6 +248,7 @@ class BaseModel {
         materials = model.materials;
 
         BVHnodes = model.BVHnodes;
+
         triangleCenters = model.triangleCenters;
         triangleMin = model.triangleMin;
         triangleMax = model.triangleMax;
@@ -230,7 +263,7 @@ class BaseModel {
 
     [[nodiscard]] float evaluateSplit(int triStart, int numTri, int axis, float pos) const;
 
-    void chooseSplit(int numTestsPerAxis, const BVHnode &node, int& bestAxis, float& bestPos, float& bestCost);
+    Split chooseSplit(int numTestsPerAxis, const BVHnode &node);
 
     void split(int numTestsPerAxis, int BVHindex, int depth);
 

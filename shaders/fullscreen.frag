@@ -1,3 +1,4 @@
+#line 1
 
 out vec4 FragColor;
 
@@ -15,7 +16,7 @@ layout(std430, binding = 2) buffer ssboTexCoords { vec2 texCoords[]; };
 layout(std430, binding = 3) buffer ssboNormals { vec4 normals[]; };
 layout(std430, binding = 4) buffer ssboMaterials { Material materials[]; };
 layout(std430, binding = 5) buffer ssboBoundingBoxMin { BVHnode BVHnodes[]; };
-layout(std430, binding = 6) buffer ssboModels { int models[]; };
+layout(std430, binding = 6) buffer ssboModelOffsets { ModelOffset modelOffsets[]; };
 layout(std430, binding = 7) buffer ssboModelTransformations { mat4 modelTransformations[]; };
 layout(std430, binding = 8) buffer ssboModelInvTransformations { mat4 modelInvTransformations[]; };
 
@@ -69,16 +70,16 @@ int   iorSize = 1;
 
 Material floorMaterial;
 
-Triangle createTri(int triIndex){
+Triangle createTri(int triIndex, int modelIdx){
     Triangle tri;
 
     ivec4 idx1 = triangles[triIndex*3+0];
     ivec4 idx2 = triangles[triIndex*3+1];
     ivec4 idx3 = triangles[triIndex*3+2];
 
-    tri.material = materials[int(idx1.w)];
-    tri.useTexture = idx2.w != -1.0;
-    tri.textureID = int(idx2.w);
+    tri.material = materials[int(idx1.w) + modelOffsets[modelIdx].material];
+    tri.textureID = modelOffsets[modelIdx].textureID;
+    tri.useTexture = tri.textureID != -1.0;
     tri.useNormals = idx1.z != -1.0 && idx2.z != -1.0 && idx3.z != -1.0;
 
     tri.v1 = vertices[idx1.x].xyz;
@@ -283,12 +284,12 @@ vec3 getEnviormentLight(vec3 dir){
 // BRDF / Directions
 vec3 calculateRandDir(vec3 normal, inout uint state){ return normalize(randPointSphere(state) + normal); }
 vec3 calculateReflectDir(vec3 normal, vec3 dir){ return dir - normal*2.0*dot(dir,normal); }
-vec3 calculateOpaqueDir(vec3 normal, vec3 dir, float smoothness, inout uint state){
+vec3 calculateOpaqueDir(vec3 normal, vec3 dir, float roughness, inout uint state){
     vec3 random = calculateRandDir(normal, state);
     vec3 reflect = calculateReflectDir(normal, dir);
-    return normalize(mix(random, reflect, smoothness));
+    return normalize(mix(reflect, random, roughness));
 }
-vec3 calculateRefractionDir(vec3 normal, vec3 dir, Material material, inout uint state, inout vec3 color){
+vec3 calculateRefractionDir(vec3 normal, vec3 dir, float diffuseRoughness, float specularRoughness, float ior, inout uint state, inout vec3 color){
     bool entering;
     float m1, m2;
     vec3 n = normal;
@@ -301,7 +302,7 @@ vec3 calculateRefractionDir(vec3 normal, vec3 dir, Material material, inout uint
     } else {
         entering = true;
         m1 = (iorSize >= 1) ? iorStack[iorSize-1] : 1.0;
-        m2 = ior(material);
+        m2 = ior;
         n  = normal;
     }
 
@@ -311,32 +312,31 @@ vec3 calculateRefractionDir(vec3 normal, vec3 dir, Material material, inout uint
     float reflect_prob = r0 + (1.0-r0)*pow(1.0-cos_i,5.0);
 
     if (randomValue(state) < reflect_prob)
-    return calculateOpaqueDir(normal, dir, smoothness(material), state);
+    return calculateOpaqueDir(normal, dir, specularRoughness, state);
 
     float disc = 1.0 - eta*eta*(1.0 - cos_i*cos_i);
     if (disc < 0.0)
-    return calculateOpaqueDir(normal, dir, smoothness(material), state);
+    return calculateOpaqueDir(normal, dir, specularRoughness, state);
 
     float cos_t = sqrt(disc);
     vec3 refr = eta*dir + (eta*cos_i - cos_t)*n;
 
-    if (entering) iorStack[iorSize++] = ior(material); else iorSize--;
+    if (entering) iorStack[iorSize++] = ior; else iorSize--;
 
-    float rough = 1.0 - transparentSmoothness(material);
     vec3 jitter = randPointSphere(state);
-    vec3 dir2   = normalize(refr + rough * 0.5 * jitter);
+    vec3 dir2   = normalize(refr + diffuseRoughness * 0.5 * jitter);
     return dir2;
 }
 vec3 calculateNewDirection(vec3 normal, vec3 dir, Material material, bool isSpcular, inout uint state, inout vec3 color){
 
-    bool isTransparent = randomValue(state) <= transparency(material);
+    bool isTransparent = material.type == 2 && randomValue(state) <= material.transparency;
 
     if (isTransparent){
-        return calculateRefractionDir(normal, dir, material, state, color);
+        return calculateRefractionDir(normal, dir, material.diffuseRoughness, material.specularRoughness, material.indexOfRefraction, state, color);
     }
 
-    float smoothness = isSpcular ? smoothness(material) : 0.0;
-    return calculateOpaqueDir(normal, dir, smoothness, state);
+    float roughness = isSpcular ? material.specularRoughness : material.diffuseRoughness;
+    return calculateOpaqueDir(normal, dir, roughness, state);
 }
 
 // Material / Hit
@@ -407,20 +407,20 @@ vec3 getTextureColor(Hit hitInfo, mat4 mat){
     return texture(textures[hitInfo.tri.textureID], texCoord).xyz;
 }
 
-bool updateColor(Hit hit, inout vec3 color, bool isSpecular, bool diffuseOnly, mat4 mat){
+bool updateColor(Hit hit, inout vec3 color, bool isSpecular, mat4 mat){
     Material material = hit.tri.material;
-    bool isTransparent = transparency(material) > 0;
+    bool isTransparent = material.type == 2;
+    bool isEmissive = material.type == 3;
 
-    vec3 diffuseColor = hit.tri.useTexture ? getTextureColor(hit, mat) : diffuseColor(material);
-
-    vec3 selected = ((isSpecular && !diffuseOnly) || isTransparent) ? specularColor(material) : diffuseColor;
-
-    color *= selected;
-
-    if (emissionStrength(material) > 0.0) {
-        color *= emissionStrength(material);
+    if (isEmissive){
+        color *= material.diffuseColor.rgb * material.emissionStrength;
         return true;
     }
+
+    vec3 diffuseColor = hit.tri.useTexture ? getTextureColor(hit, mat) : material.diffuseColor.rgb;
+
+    color *= (isSpecular || isTransparent) ? material.specularColor.rgb : diffuseColor;
+
 
     return false;
 }
@@ -525,7 +525,7 @@ Hit findBestTri(Ray ray, out int triTest, out int aabbTest){
         Ray rayLocal = worldToLocalRay(ray, invM);
 
         // Get root AABB bounds in local space
-        BVHnode root = BVHnodes[models[i]];
+        BVHnode root = BVHnodes[modelOffsets[i].BVHnodes];
 
         aabbTest++;
         float tLocal = intersectAABB(rayLocal, getMin(root), getMax(root));
@@ -565,7 +565,7 @@ Hit findBestTri(Ray ray, out int triTest, out int aabbTest){
         mat4 invM = modelInvTransformations[modelIdx];
 
         Hit h = traverseBVH(
-            models[modelIdx], ray, M, invM, hit.t,
+            modelOffsets[modelIdx].BVHnodes, ray, M, invM, hit.t,
             triTest, aabbTest
         );
 
@@ -575,7 +575,7 @@ Hit findBestTri(Ray ray, out int triTest, out int aabbTest){
         }
     }
 
-    hit.tri = createTri(hit.triID);
+    hit.tri = createTri(hit.triID, hit.modelID);
 
     return hit;
 }
@@ -610,7 +610,7 @@ bool hitTriangleUpdate(Hit hit, inout Ray ray, inout vec3 color, inout uint stat
     vec3 normalWorld = toWorldNormal(normalLocal, invMat);
     if (dot(normalWorld, ray.dir) > 0.0) {
         //normalWorld = -normalWorld;
-        color *= exp(-hit.t*specularProbability(material) * (1-diffuseColor(material)));
+        if (material.type == 2) color *= exp(-hit.t*material.absorption * (1-material.diffuseColor.rgb));
     }
 
     if (debugView){
@@ -619,13 +619,13 @@ bool hitTriangleUpdate(Hit hit, inout Ray ray, inout vec3 color, inout uint stat
         return true;
     }
 
-    bool  diffuseOnly         = (specularProbability(material) == -1.0);
-    bool  isSpecular          = randomValue(state) <= specularProbability(material);
+    bool isSpecular = randomValue(state) <= material.specularProbability;
+    isSpecular = isSpecular && (material.type != 0);
 
-    if (updateColor(hit, color, isSpecular, diffuseOnly, mat)) return true;
+    if (updateColor(hit, color, isSpecular, mat)) return true;
 
     float eps = 1e-3;
-    ray.dir   = calculateNewDirection(normalWorld, ray.dir, material, isSpecular || diffuseOnly, state, color);
+    ray.dir   = calculateNewDirection(normalWorld, ray.dir, material, isSpecular, state, color);
     ray.pos += normalWorld * eps * sign(dot(ray.dir, normalWorld));
     ray.invDir = 1.0/ray.dir;
     return false;
@@ -639,11 +639,11 @@ bool hitFloorUpdate(inout Ray ray, inout vec3 color, inout uint state){
 
         vec3 n = vec3(0,1,0);
 
-        float specularProbability = floorSpecularColor.w;
-        bool diffuseOnly = specularProbability == -1;
+        float specularProbability = floorMaterial.specularProbability;
         bool isSpecular = randomValue(state) <= specularProbability;
+        isSpecular = isSpecular && (floorMaterial.type != 0);
 
-        color *= (isSpecular && !diffuseOnly) ? floorSpecularColor.rgb : floorDiffuseColor.rgb;
+        color *= isSpecular ? floorMaterial.specularColor.rgb : floorMaterial.diffuseColor.rgb;
 
         ray.dir = calculateNewDirection(n, ray.dir, floorMaterial, isSpecular, state, color);
         ray.invDir = 1.0/ray.dir;
@@ -704,11 +704,24 @@ vec3 trace(Ray ray, inout uint state){
 
 // Main
 void main(){
-    floorMaterial.diffuseColor = floorDiffuseColor;
-    floorMaterial.specularColor = floorSpecularColor;
+    floorMaterial.diffuseColor = vec4(floorDiffuseColor.rgb, 0);
+    floorMaterial.diffuseRoughness = 1.0;
+    floorMaterial.specularColor = vec4(floorSpecularColor.rgb, 0);
+    floorMaterial.specularRoughness = 1-floorDiffuseColor.w;
+    floorMaterial.specularProbability = floorSpecularColor.w;
+    floorMaterial.transparency = 0.0;
+    floorMaterial.indexOfRefraction = 1.0;
+    floorMaterial.absorption = 0.0;
+    floorMaterial.emissionStrength = 0.0;
+    floorMaterial.type = floorSpecularColor.w == -1 ? 0 : 1;
+
+    float targetAspect = 16./9.;
 
     float aspect = float(resolution.x)/float(resolution.y);
     vec2  screen = vec2((2.0*fragCoord.x-1.0)*aspect, 2.0*fragCoord.y-1.0);
+    if (aspect < targetAspect){
+        screen *= targetAspect/vec2(aspect);
+    }
 
     uvec2 pix = uvec2(fragCoord.x*resolution.x, fragCoord.y*resolution.y);
     uint  state = pixelFrameSeed(pix);

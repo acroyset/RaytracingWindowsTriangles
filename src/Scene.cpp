@@ -117,11 +117,11 @@ void Scene::addModel(const Model& model, const std::string& texturePath) {
     if (loc != models.end()) {
         int index = int(loc - models.begin());
         std::vector<int> offsets = modelOffsets[index];
-        //Toffset need to work out material
+        Toffset = offsets[0];
         Voffset = offsets[1];
         TXoffset = offsets[2];
         Noffset = offsets[3];
-        //BBoffsets relies on triangle idx so have to do Toffset first
+        BBoffset = offsets[4];
 
         reuse = true;
     }
@@ -129,25 +129,25 @@ void Scene::addModel(const Model& model, const std::string& texturePath) {
     models.push_back(model);
     modelOffsets.push_back({Toffset, Voffset, TXoffset, Noffset, BBoffset, Moffset});
 
-    for (int i = 0; i < model.base.triangles.size()/3; i++) {
-        ivec4 triangle1 = model.base.triangles[i*3+0];
-        ivec4 triangle2 = model.base.triangles[i*3+1];
-        ivec4 triangle3 = model.base.triangles[i*3+2];
-
-        ivec4 offsets1 = ivec4(Voffset, triangle1.y == -1 ? 0 : TXoffset, triangle1.z == -1 ? 0 : Noffset, Moffset);
-        ivec4 offsets2 = ivec4(Voffset, triangle2.y == -1 ? 0 : TXoffset, triangle2.z == -1 ? 0 : Noffset, useTexture ? textureID : -1);
-        ivec4 offsets3 = ivec4(Voffset, triangle3.y == -1 ? 0 : TXoffset, triangle3.z == -1 ? 0 : Noffset, 0);
-
-        triangle1 += offsets1;
-        triangle2 += offsets2;
-        triangle3 += offsets3;
-
-        triangles.emplace_back(triangle1);
-        triangles.emplace_back(triangle2);
-        triangles.emplace_back(triangle3);
-    }
-
     if (!reuse) {
+        for (int i = 0; i < model.base.triangles.size()/3; i++) {
+            ivec4 triangle1 = model.base.triangles[i*3+0];
+            ivec4 triangle2 = model.base.triangles[i*3+1];
+            ivec4 triangle3 = model.base.triangles[i*3+2];
+
+            ivec4 offsets1 = ivec4(Voffset, triangle1.y == -1 ? 0 : TXoffset, triangle1.z == -1 ? 0 : Noffset, 0);
+            ivec4 offsets2 = ivec4(Voffset, triangle2.y == -1 ? 0 : TXoffset, triangle2.z == -1 ? 0 : Noffset, 0);
+            ivec4 offsets3 = ivec4(Voffset, triangle3.y == -1 ? 0 : TXoffset, triangle3.z == -1 ? 0 : Noffset, 0);
+
+            triangle1 += offsets1;
+            triangle2 += offsets2;
+            triangle3 += offsets3;
+
+            triangles.emplace_back(triangle1);
+            triangles.emplace_back(triangle2);
+            triangles.emplace_back(triangle3);
+        }
+
         for (vec3 vertex : model.base.vertices) {
             vertices.emplace_back(vertex, 0);
         }
@@ -157,22 +157,22 @@ void Scene::addModel(const Model& model, const std::string& texturePath) {
         for (vec3 normal : model.base.normals) {
             normals.emplace_back(normal, 0);
         }
-    }
 
-    for (auto node : model.base.BVHnodes) {
+        for (auto node : model.base.BVHnodes) {
 
-        BVHnode newNode;
-        newNode.setMin(node.getMin());
-        newNode.setMax(node.getMax());
-        if (node.leaf()) {
-            newNode.setTriStart(node.getTriStart()+Toffset);
-            newNode.setNumTri(node.getNumTri());
-        } else {
-            newNode.setChildA(node.getChildA()+BBoffset);
-            newNode.setChildB(node.getChildB()+BBoffset);
+            BVHnode newNode;
+            newNode.setMin(node.getMin());
+            newNode.setMax(node.getMax());
+            if (node.leaf()) {
+                newNode.setTriStart(node.getTriStart()+Toffset);
+                newNode.setNumTri(node.getNumTri());
+            } else {
+                newNode.setChildA(node.getChildA()+BBoffset);
+                newNode.setChildB(node.getChildB()+BBoffset);
+            }
+
+            BVHnodes.emplace_back(newNode);
         }
-
-        BVHnodes.emplace_back(newNode);
     }
 
     if (model.materials.empty()) {
@@ -307,35 +307,21 @@ void Scene::setUniforms() const {
 
 void Scene::set_ssbo() {
 
-    if (!pendingTextures.empty()) {
-        for (const auto& [path, id] : pendingTextures) {
-            textures.emplace_back(window.createTexture("textures[" + std::to_string(id) + "]", path));
-            textures.back().setWrap(TextureWrap::REPEAT, TextureWrap::REPEAT);
-
-            std::string label = path;
-            int count = 0;
-            for (const std::string& i : textureLabels) {
-                if (i == label) { count++; label = path + " " + std::to_string(count); }
-            }
-            textureLabels.emplace_back(label);
-        }
-        pendingTextures.clear();
-    }
-
-    lastSentPackage = dataSentSize();
-
-    std::vector<int> modelBVHoffset;
-    for (const std::vector<int>& offsets : modelOffsets) {
-        modelBVHoffset.push_back(offsets[4]);
-    }
+    lastSentPackage = dataSent();
 
     std::vector<Material> materials;
     std::vector<mat4> modelTransforms;
     std::vector<mat4> modelInvTransforms;
-    for (const Model& model : models) {
+    std::vector<ModelOffset> modelOffsetsTemp;
+    for (int i = 0; i < models.size(); i++) {
+        std::vector<int> offsets = modelOffsets[i];
+        Model model = models[i];
+
         for (const Material& m : model.materials) materials.emplace_back(m);
         modelTransforms.emplace_back(model.transformation.matrix);
         modelInvTransforms.emplace_back(model.transformation.inverseMatrix);
+
+        modelOffsetsTemp.emplace_back(offsets[4], offsets[5], model.textureID);
     }
 
     ssboTriangles.set(triangles, 0);
@@ -344,7 +330,7 @@ void Scene::set_ssbo() {
     ssboNormals.set(normals, 3);
     ssboMaterials.set(materials, 4);
     ssboBVHnodes.set(BVHnodes, 5);
-    ssboModels.set(modelBVHoffset, 6);
+    ssboModelOffsets.set(modelOffsetsTemp, 6);
     ssboModelTransformations.set(modelTransforms, 7);
     ssboModelInvTransformations.set(modelInvTransforms, 8);
 
@@ -429,8 +415,26 @@ void Scene::updateFrame() {
     window.start();
 
     if (newData) {
+        if (!pendingTextures.empty()) {
+            for (const auto& [path, id] : pendingTextures) {
+                textures.emplace_back(window.createTexture("textures[" + std::to_string(id) + "]", path));
+                textures.back().setWrap(TextureWrap::REPEAT, TextureWrap::REPEAT);
+
+                std::string label = path;
+                int count = 0;
+                for (const std::string& i : textureLabels) {
+                    if (i == label) { count++; label = path + " " + std::to_string(count); }
+                }
+                textureLabels.emplace_back(label);
+            }
+            pendingTextures.clear();
+        }
+
         set_ssbo();
         newData = false;
+    }
+    if (busy) {
+        lastSentPackage = dataSent();
     }
 
     ImGui_ImplOpenGL3_NewFrame();
@@ -441,10 +445,7 @@ void Scene::updateFrame() {
     updateItemSmooth(totalTime, dt);
     dtData.emplace_back(dt);
 
-    if (inputHandling(speed, sensitivity, dt)) {
-        frameCount = 0;
-        sampleCount = 0;
-    }
+    if (inputHandling(speed, sensitivity, dt)) resetAccumulation();
 
     setUniforms();
 
@@ -477,47 +478,64 @@ void Scene::updateFrame() {
 }
 
 void Scene::displayStats() const {
-    DataPackageSize package = lastSentPackage;
+    DataPackage package = lastSentPackage;
 
-    std::cout << "Triangles: "       << triangles.size()/3 << " (" << bytesToReadable(package.triangleDataSize)  << ")" << std::endl;
-    std::cout << "Vertices: "        << vertices.size()    << " (" << bytesToReadable(package.vertexDataSize)    << ")" << std::endl;
-    std::cout << "Texture Coords: "  << texCoords.size()   << " (" << bytesToReadable(package.texCoordDataSize)  << ")" << std::endl;
-    std::cout << "Normals: "         << normals.size()     << " (" << bytesToReadable(package.normalDataSize)    << ")" << std::endl;
-    std::cout                                                                                                           << std::endl;
-    std::cout << "Models: "          << models.size()                                                                   << std::endl;
-    std::cout << "Materials: "       << getNumMaterials()  << " (" << bytesToReadable(package.materialDataSize)  << ")" << std::endl;
-    std::cout << "Textures: "        << textures.size()    << " (" << bytesToReadable(package.textureDataSize)   << ")" << std::endl;
-    std::cout << "BVH Nodes: "       << BVHnodes.size()    << " (" << bytesToReadable(package.BVHnodesDataSize)  << ")" << std::endl;
-    std::cout << "Transformations: " << models.size()      << " (" << bytesToReadable(package.transformDataSize) << ")" << std::endl;
+    std::cout << "Triangles: "       << lastSentPackage.triangles  << " (" << bytesToReadable(package.triangleBytes)   << ")" << std::endl;
+    std::cout << "Vertices: "        << lastSentPackage.vertices   << " (" << bytesToReadable(package.verticesBytes)   << ")" << std::endl;
+    std::cout << "Texture Coords: "  << lastSentPackage.texCoords  << " (" << bytesToReadable(package.texCoordsBytes)  << ")" << std::endl;
+    std::cout << "Normals: "         << lastSentPackage.normals    << " (" << bytesToReadable(package.normalsBytes)    << ")" << std::endl;
+    std::cout << "BVH Nodes: "       << lastSentPackage.BVHNodes   << " (" << bytesToReadable(package.BVHNodesBytes)   << ")" << std::endl;
+    std::cout                                                                                                                 << std::endl;
+    std::cout << "Models: "          << models.size()                                                                         << std::endl;
+    std::cout << "Materials: "       << lastSentPackage.materials  << " (" << bytesToReadable(package.materialsBytes)  << ")" << std::endl;
+    std::cout << "Textures: "        << lastSentPackage.textures   << " (" << bytesToReadable(package.texturesBytes)   << ")" << std::endl;
+    std::cout << "Transformations: " << lastSentPackage.transforms << " (" << bytesToReadable(package.transformsBytes) << ")" << std::endl;
     std::cout << "Total Data Sent: " << bytesToReadable(package.totalSize) << std::endl;
     std::cout << std::endl;
 }
 
-DataPackageSize Scene::dataSentSize() const {
-    DataPackageSize result{};
+DataPackage Scene::dataSent() const {
+    DataPackage result{};
 
-    result.triangleDataSize  =   int(triangles.size()  * sizeof(ivec4));
-    result.vertexDataSize    =   int(vertices.size()   * sizeof(vec4));
-    result.texCoordDataSize  =   int(texCoords.size()  * sizeof(vec2));
-    result.normalDataSize    =   int(normals.size()    * sizeof(vec4));
-    result.materialDataSize  =   int(getNumMaterials() * sizeof(Material));
-    result.BVHnodesDataSize  =   int(BVHnodes.size()   * sizeof(BVHnode));
-    result.transformDataSize = 2*int(models.size()     * sizeof(mat4));
+    for (const Model& model : models) {
+        result.triangles += int(model.base.triangles.size())/3;
+        result.vertices += int(model.base.vertices.size());
+        result.texCoords += int(model.base.texCoords.size());
+        result.normals += int(model.base.normals.size());
+        result.materials += int(model.materials.size());
+        result.BVHNodes += int(model.base.BVHnodes.size());
+        result.transforms ++;
+    }
+    result.textures = int(textures.size());
 
-    result.textureDataSize = 0;
+    result.trianglesSent = int(triangles.size())/3;
+    result.verticesSent = int(vertices.size());
+    result.texCoordsSent = int(texCoords.size());
+    result.normalsSent = int(normals.size());
+    result.BVHNodesSent = int(BVHnodes.size());
+
+    result.triangleBytes = result.trianglesSent * int(sizeof(ivec4)) * 3;
+    result.verticesBytes = result.verticesSent * int(sizeof(vec4));
+    result.texCoordsBytes = result.texCoordsSent * int(sizeof(vec2));
+    result.normalsBytes = result.normalsSent * int(sizeof(vec4));
+    result.materialsBytes = result.materials * int(sizeof(Material));
+    result.BVHNodesBytes = result.BVHNodesSent * int(sizeof(BVHnode));
+    result.transformsBytes = result.transforms * int(sizeof(Transformation));
+
+    result.texturesBytes = 0;
     for (const Texture& t : textures) {
-        result.textureDataSize += int(t.gpuSizeBytes());
+        result.texturesBytes += int(t.gpuSizeBytes());
     }
 
     result.totalSize =
-        result.triangleDataSize +
-        result.vertexDataSize +
-        result.texCoordDataSize +
-        result.normalDataSize +
-        result.materialDataSize +
-        result.BVHnodesDataSize +
-        result.transformDataSize +
-        result.textureDataSize;
+        result.triangleBytes +
+        result.verticesBytes +
+        result.texCoordsBytes +
+        result.normalsBytes +
+        result.materialsBytes +
+        result.BVHNodesBytes +
+        result.transformsBytes +
+        result.texturesBytes;
 
     return result;
 }
@@ -676,9 +694,7 @@ void Scene::loadJSON(const std::string& filename) {
         }
     }
 
-    // Reset accumulation after loading
-    frameCount = 0;
-    sampleCount = 0;
+    resetAccumulation();
 }
 
 

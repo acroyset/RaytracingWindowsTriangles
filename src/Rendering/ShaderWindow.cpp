@@ -269,7 +269,7 @@ void ShaderWindow::clearFeedbackBuffers() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-bool ShaderWindow::resizeRenderTarget(int w, int h)
+bool ShaderWindow::resizeRenderTarget(int w, int h, bool resetFrameBuffers)
 {
     if (w <= 0 || h <= 0) return false;
     if (w == fbWidth && h == fbHeight) return false;
@@ -286,7 +286,7 @@ bool ShaderWindow::resizeRenderTarget(int w, int h)
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    if (useFeedback) clearFeedbackBuffers();
+    if (useFeedback && resetFrameBuffers) clearFeedbackBuffers();
     return true;
 }
 

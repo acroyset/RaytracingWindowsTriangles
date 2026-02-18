@@ -1,17 +1,17 @@
 {
     "Camera": {
         "aperture": 0.0,
-        "focusDistance": 1000.0,
+        "focusDistance": 195.531005859375,
         "forward": [
-            -0.1247154027223587,
-            -0.3226492404937744,
-            -0.9382663369178772
+            0.8792561888694763,
+            0.4167061746120453,
+            0.23079127073287964
         ],
-        "fovDeg": 60.0,
+        "fovDeg": 41.89899826049805,
         "position": [
-            42.61083984375,
-            130.38101196289063,
-            348.2150573730469
+            -188.05502319335938,
+            5.187267303466797,
+            -121.82835388183594
         ],
         "sensitivity": 0.029999999329447746,
         "speed": 500.0
@@ -33,34 +33,77 @@
     },
     "Models": [
         {
-            "Filename": "assets/models/sphere.obj",
+            "Filename": "assets/models/cube.obj",
             "Materials": [
                 {
+                    "absorption": 0.0,
                     "diffuseColor": [
                         1.0,
                         1.0,
-                        1.0,
-                        0.0
-                    ],
-                    "glassLightSettings": [
-                        0.0,
-                        1.0,
-                        0.0,
                         1.0
                     ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
                     "specularColor": [
                         0.0,
                         0.0,
-                        0.0,
                         0.0
-                    ]
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 0.0,
+                    "type": "Opaque"
                 }
             ],
-            "TextureID": 0,
+            "TextureID": -1,
             "Transformation": {
                 "position": [
                     0.0,
+                    -10.0,
+                    0.0
+                ],
+                "rotation": [
                     0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    300.0,
+                    10.0,
+                    300.0
+                ]
+            }
+        },
+        {
+            "Filename": "assets/models/dragon800K.obj",
+            "Materials": [
+                {
+                    "absorption": 0.04600000008940697,
+                    "diffuseColor": [
+                        0.0,
+                        0.6438871026039124,
+                        0.9950980544090271
+                    ],
+                    "diffuseRoughness": 0.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.2999999523162842,
+                    "specularColor": [
+                        0.9264705777168274,
+                        0.9264705777168274,
+                        0.9264705777168274
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 1.0,
+                    "type": "Transparent"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    0.0,
+                    70.0,
                     0.0
                 ],
                 "rotation": [
@@ -78,7 +121,7 @@
     ],
     "Settings": {
         "aa": 5,
-        "bounceLim": 8
+        "bounceLim": 16
     },
     "Sky": {
         "active": true,
@@ -100,9 +143,7 @@
         "sunStrength": 1000.0
     },
     "Textures": {
-        "Paths": [
-            "assets/textures/wood.png"
-        ],
+        "Paths": [],
         "Scales": [
             0.0,
             0.0,

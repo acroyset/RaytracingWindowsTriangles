@@ -30,16 +30,47 @@
 #define GLAD_GL_IMPLEMENTATION
 
 
-struct DataPackageSize {
+struct DataPackage {
     int totalSize;
-    int triangleDataSize;
-    int vertexDataSize;
-    int texCoordDataSize;
-    int normalDataSize;
-    int materialDataSize;
-    int BVHnodesDataSize;
-    int transformDataSize;
-    int textureDataSize;
+
+    int trianglesSent;
+    int triangles;
+    int triangleBytes;
+
+    int verticesSent;
+    int vertices;
+    int verticesBytes;
+
+    int texCoordsSent;
+    int texCoords;
+    int texCoordsBytes;
+
+    int normalsSent;
+    int normals;
+    int normalsBytes;
+
+    int materials;
+    int materialsBytes;
+
+    int BVHNodesSent;
+    int BVHNodes;
+    int BVHNodesBytes;
+
+    int transforms;
+    int transformsBytes;
+
+    int textures;
+    int texturesBytes;
+};
+
+struct ModelOffset {
+    int BVHnodes;
+    int material;
+    int textureID;
+
+    int padding = 0;
+
+    ModelOffset(int BVHnodes, int material, int textureID) : BVHnodes(BVHnodes), material(material), textureID(textureID) {}
 };
 
 enum DebugMode {
@@ -137,11 +168,11 @@ class Scene {
     SSBO<vec4> ssboNormals;
     SSBO<Material> ssboMaterials;
     SSBO<BVHnode> ssboBVHnodes;
-    SSBO<int> ssboModels;
+    SSBO<ModelOffset> ssboModelOffsets;
     SSBO<mat4> ssboModelTransformations;
     SSBO<mat4> ssboModelInvTransformations;
 
-    DataPackageSize lastSentPackage{};
+    DataPackage lastSentPackage{};
 
 
     // Uniforms
@@ -243,7 +274,8 @@ class Scene {
 
     void displayStats() const;
 
-    [[nodiscard]] DataPackageSize dataSentSize() const;
+    [[nodiscard]] DataPackage dataSent() const;
+
 
     void saveJSON(const std::string& filename) const;
     void loadJSON(const std::string& filename);
@@ -260,17 +292,23 @@ class Scene {
         return window.open();
     }
 
+    void resetAccumulation() {
+        frameCount = 0;
+        sampleCount = 0;
+    }
+
     void updateItemSmooth(float& item, const float value) const {
         item = smoothing * item + (1.0f - smoothing) * value;
     }
 
     void startAddJob(const std::string& path, const std::string& texturePath) {
         busy = true;
+        resetAccumulation();
         busyLabel = "Adding Model...";
 
         job = std::async(std::launch::async, [this, path, texturePath]() {
             try {
-                addModel(path, Transformation(), texturePath);
+                addModel(path, Transformation(vec3(0), vec3(-1)), texturePath);
                 statusIsError = false;
                 statusMsg = "Added: " + path;
                 newData = true;
@@ -287,6 +325,7 @@ class Scene {
 
     void startLoadJob(const std::string& path){
         busy = true;
+        resetAccumulation();
         busyLabel = "Loading JSON...";
 
         job = std::async(std::launch::async, [path, this]() {

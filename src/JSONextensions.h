@@ -36,15 +36,56 @@ namespace glm {
     }
 }
 
+inline void to_json(json& j, const MaterialType& t) {
+    switch (t) {
+        case Opaque:
+            j = "Opaque";
+            return;
+        case Specular:
+            j = "Specular";
+            return;
+        case Transparent:
+            j = "Transparent";
+            return;
+        case Emissive:
+            j = "Emissive";
+    }
+}
+inline void from_json(const json& j, MaterialType& t) {
+    if (j == "Opaque") {
+        t = Opaque;
+    } else if (j == "Specular") {
+        t = Specular;
+    } else if (j == "Transparent") {
+        t = Transparent;
+    } else if (j == "Emissive") {
+        t = Emissive;
+    }
+}
+
 inline void to_json(json& j, const Material& m) {
-    j["diffuseColor"] = m.getDC();
-    j["specularColor"] = m.getSC();
-    j["glassLightSettings"] = m.getGLS();
+    j["type"] = m.getType();
+    j["diffuseColor"] = m.getDiffuseColor();
+    j["diffuseRoughness"] = m.getDiffuseRoughness();
+    j["specularColor"] = m.getSpecularColor();
+    j["specularRoughness"] = m.getSpecularRoughness();
+    j["specularProbability"] = m.getSpecularProbability();
+    j["transparency"] = m.getTransparency();
+    j["indexOfRefraction"] = m.getIndexOfRefraction();
+    j["absorption"] = m.getAbsorption();
+    j["emissionStrength"] = m.getEmissionStrength();
 }
 inline void from_json(const json& j, Material& m) {
-    m.setDC(j.at("diffuseColor"));
-    m.setSC(j.at("specularColor"));
-    m.setGLS(j.at("glassLightSettings"));
+    m.setType(j.at("type"));
+    m.setDiffuseColor(j.at("diffuseColor"));
+    m.setDiffuseRoughness(j.at("diffuseRoughness"));
+    m.setSpecularColor(j.at("specularColor"));
+    m.setSpecularRoughness(j.at("specularRoughness"));
+    m.setSpecularProbability(j.at("specularProbability"));
+    m.setTransparency(j.at("transparency"));
+    m.setIndexOfRefraction(j.at("indexOfRefraction"));
+    m.setAbsorption(j.at("absorption"));
+    m.setEmissionStrength(j.at("emissionStrength"));
 }
 
 inline void to_json(json& j, const Transformation& t) {

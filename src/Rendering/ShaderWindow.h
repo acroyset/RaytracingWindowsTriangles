@@ -98,10 +98,9 @@ class ShaderWindow {
 
     void clearFeedbackBuffers();
 
-    // for ImGui viewport
-    bool resizeRenderTarget(int w, int h);     // only used in Texture mode
+    bool resizeRenderTarget(int w, int h, bool resetFrameBuffers = true);
 
-    [[nodiscard]] ImTextureID outputTexture() const;         // only valid in Texture mode
+    [[nodiscard]] ImTextureID outputTexture() const;
 
 
     [[nodiscard]] bool keyPressed(const int key) const {
