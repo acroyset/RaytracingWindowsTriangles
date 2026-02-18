@@ -64,6 +64,11 @@ struct ModelOffset {
     int padding;
 };
 
+struct ModelDistance {
+    int index;
+    float dist2;
+};
+
 struct BVHnode {
     float minX, minY, minZ;// xyz: bbox min
     int childA_TriStart; // childA, -TriStart

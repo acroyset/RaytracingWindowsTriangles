@@ -28,6 +28,7 @@
 #include "Texture.h"
 #include "Uniform.h"
 #include "Timer.h"
+#include <GLFW/glfw3native.h>
 
 using namespace glm;
 
@@ -98,7 +99,7 @@ class ShaderWindow {
 
     void clearFeedbackBuffers();
 
-    bool resizeRenderTarget(int w, int h, bool resetFrameBuffers = true);
+    bool resizeRenderTarget(int w, int h);
 
     [[nodiscard]] ImTextureID outputTexture() const;
 

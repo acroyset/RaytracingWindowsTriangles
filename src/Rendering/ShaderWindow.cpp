@@ -143,11 +143,12 @@ ShaderWindow::ShaderWindow() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     #endif
     glfwWindowHint(GLFW_REFRESH_RATE, 180);
-
-    // Fullscreen on primary monitor
     GLFWmonitor* mon = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = glfwGetVideoMode(mon);
-    window = glfwCreateWindow(mode->width, mode->height, "Fullscreen Shader", mon, nullptr);
+
+    glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+    window = glfwCreateWindow(mode->width, mode->height, "Raytracer", nullptr, nullptr);
+    glfwSetWindowPos(window, 0, 0);
     if (!window) {
         std::cerr << "Failed to create window\n";
         glfwTerminate();
@@ -162,7 +163,8 @@ ShaderWindow::ShaderWindow() {
     }
 
 
-    glfwSetKeyCallback(window, keyCallback);
+    //glfwSetKeyCallback(window, keyCallback);
+
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
     glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
     glViewport(0, 0, fbWidth, fbHeight);
@@ -179,12 +181,8 @@ ShaderWindow::ShaderWindow() {
             "shaders/structs.glsl"
         });
 
-    // Empty VAO required for core profile when using gl_VertexID
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
-
-    // Cursor hidden for screensaver feel
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
     glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &maxTextureUnits);
 }
@@ -269,24 +267,56 @@ void ShaderWindow::clearFeedbackBuffers() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-bool ShaderWindow::resizeRenderTarget(int w, int h, bool resetFrameBuffers)
-{
+bool ShaderWindow::resizeRenderTarget(int w, int h) {
     if (w <= 0 || h <= 0) return false;
     if (w == fbWidth && h == fbHeight) return false;
 
+    int oldW = fbWidth;
+    int oldH = fbHeight;
+
+    // --- Copy old content to a temp texture ---
+    GLuint tmpFBO, tmpTex;
+    glGenFramebuffers(1, &tmpFBO);
+    glGenTextures(1, &tmpTex);
+
+    glBindTexture(GL_TEXTURE_2D, tmpTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, oldW, oldH, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, tmpFBO);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tmpTex, 0);
+
+    // Blit the current display buffer into tmp
+    int displayIdx = useFeedback ? (1 - currentBuffer) : currentBuffer;
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo[displayIdx]);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, tmpFBO);
+    glBlitFramebuffer(0, 0, oldW, oldH, 0, 0, oldW, oldH, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+    // --- Resize both main textures ---
     fbWidth = w;
     fbHeight = h;
 
     for (int i = 0; i < 2; i++) {
         glBindTexture(GL_TEXTURE_2D, textures[i]);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, fbWidth, fbHeight, 0, GL_RGBA, GL_FLOAT, nullptr);
-
         glBindFramebuffer(GL_FRAMEBUFFER, fbo[i]);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textures[i], 0);
     }
+
+    // --- Blit old content scaled into both FBOs ---
+    for (unsigned int i : fbo) {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, tmpFBO);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, i);
+        glBlitFramebuffer(0, 0, oldW, oldH, 0, 0, fbWidth, fbHeight, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+    }
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    if (useFeedback && resetFrameBuffers) clearFeedbackBuffers();
+    // Cleanup
+    glDeleteFramebuffers(1, &tmpFBO);
+    glDeleteTextures(1, &tmpTex);
+
     return true;
 }
 

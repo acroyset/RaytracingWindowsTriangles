@@ -512,10 +512,6 @@ Hit findBestTri(Ray ray, out int triTest, out int aabbTest){
     triTest = 0; aabbTest = 0;
 
     // Build sorted list of models by distance
-    struct ModelDistance {
-        int index;
-        float dist2;
-    };
     ModelDistance modelDists[MAX_MODELS];
 
     for (int i = 0; i < numModels; i++){

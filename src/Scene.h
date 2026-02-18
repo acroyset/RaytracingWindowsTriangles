@@ -26,6 +26,7 @@
 #include "Model.h"
 #include "JSONextensions.h"
 #include "SceneUI.h"
+#include <nfd.hpp>
 
 #define GLAD_GL_IMPLEMENTATION
 
@@ -88,6 +89,7 @@ class Scene {
     ShaderWindow window{};
 
     SceneUI ui{};
+    bool isOpen = true;
 
     std::vector<ivec4> triangles;
 
@@ -289,7 +291,7 @@ class Scene {
     void displayBVH(int index, std::string prefix);
 
     [[nodiscard]] bool open() const {
-        return window.open();
+        return window.open() && isOpen;
     }
 
     void resetAccumulation() {

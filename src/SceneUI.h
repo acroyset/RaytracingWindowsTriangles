@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <ios>
 #include <string>
+#include "FileBrowser.h"
 
 using namespace glm;
 
@@ -48,6 +49,12 @@ class SceneUI {
 
     vec2 viewportImgMinScreen{0}, viewportImgMaxScreen{0};
 
+    FileBrowser fileBrowser;
+    enum class BrowserMode { None, AddModel, AddTexture, LoadJSON, SaveJSON };
+    BrowserMode browserMode = BrowserMode::None;
+    std::string pendingModelPath;
+    bool showTexturePrompt = false;
+
     public:
 
     SceneUI() = default;
@@ -56,13 +63,16 @@ class SceneUI {
     bool viewportFullscreen = false;
     bool skipMouseFrame = false;
 
-    void ImGuiRender(Scene& scene);
+    void render(Scene& scene);
 
-    void drawViewportDocked(Scene& scene);
+    void renderViewport(Scene& scene);
+
+    void drawFileBrowser();
 
     [[nodiscard]] vec2 getCenter() const {
         return 0.5f * (viewportImgMinScreen + viewportImgMaxScreen);
     }
+
 };
 
 

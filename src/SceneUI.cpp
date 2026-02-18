@@ -160,7 +160,7 @@ static void DrawBusyOverlay(const char* label){
     }
 }
 
-void SceneUI::ImGuiRender(Scene& scene) {
+void SceneUI::render(Scene& scene) {
 
     bool ui_resetAccum = false;
 
@@ -170,7 +170,36 @@ void SceneUI::ImGuiRender(Scene& scene) {
         ImGuiDockNodeFlags_PassthruCentralNode
     );
 
-    drawViewportDocked(scene);
+    if (browserMode == BrowserMode::AddTexture && !fileBrowser.open && !showTexturePrompt) {
+        showTexturePrompt = true;
+        ImGui::OpenPopup("Texture");
+    }
+
+    if (ImGui::BeginPopupModal("Texture", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Add a texture to this model?");
+        ImGui::Separator();
+
+        if (ImGui::Button("Yes")) {
+            showTexturePrompt = false;
+            ImGui::CloseCurrentPopup();
+            Scene* s = &scene;
+            fileBrowser.openAt(PROJECT_DIR "assets/textures", ".png", [this, s](const std::string& texPath) {
+                s->startAddJob(pendingModelPath, std::filesystem::relative(texPath, PROJECT_DIR).string());
+                browserMode = BrowserMode::None;
+            });
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("No")) {
+            scene.startAddJob(pendingModelPath, "");
+            showTexturePrompt = false;
+            browserMode = BrowserMode::None;
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+
+    renderViewport(scene);
 
     // scene
     {
@@ -264,105 +293,28 @@ void SceneUI::ImGuiRender(Scene& scene) {
         if (y > ImGui::GetCursorPosY())  // avoid moving up if not enough room
             ImGui::SetCursorPosY(y);
 
-
-        static char filename[256] = "";
-        static bool texture = false;
-        static char textureFilename[256] = "";
-
-
         if (ImGui::Button("Add Model", ImVec2(-FLT_MIN, buttonHeight))) {
-            strcpy(filename, "assets/models/");
-            strcpy(textureFilename, "assets/textures/");
-
-            ImGui::OpenPopup("Add Model");
-        }
-
-        if (ImGui::Button("Save JSON", ImVec2(-FLT_MIN, buttonHeight))) {
-            strcpy(filename, "scenes/");
-
-            ImGui::OpenPopup("Save JSON");
+            browserMode = BrowserMode::AddModel;
+            fileBrowser.openAt(PROJECT_DIR "assets/models", ".obj", [this](const std::string& path) {
+                pendingModelPath = std::filesystem::relative(path, PROJECT_DIR).string();
+                browserMode = BrowserMode::AddTexture;
+            });
         }
 
         if (ImGui::Button("Load JSON", ImVec2(-FLT_MIN, buttonHeight))) {
-            strcpy(filename, "scenes/");
-
-            ImGui::OpenPopup("Load JSON");
+            Scene* s = &scene;
+            fileBrowser.openAt(PROJECT_DIR "scenes", ".json", [this, s](const std::string& path) {
+                s->startLoadJob(std::filesystem::relative(path, PROJECT_DIR).string());
+                browserMode = BrowserMode::None;
+            });
         }
 
-        if (ImGui::BeginPopupModal("Add Model", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-            scene.lock = true;
-            typing = true;
-
-            ImGui::Text("Enter file name:");
-            ImGui::InputText("##filename", filename, IM_ARRAYSIZE(filename));
-
-            if (texture) {
-                ImGui::Text("Enter texture path:");
-                ImGui::InputText("##path", textureFilename, IM_ARRAYSIZE(textureFilename));
-            }
-            else texture = ImGui::Button("Texture");
-
-            ImGui::Separator();
-
-            if (ImGui::Button("Add")) {
-                scene.startAddJob(filename, texture ? textureFilename : "");
-                typing = false;
-                texture = false;
-
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Cancel")) {
-                ImGui::CloseCurrentPopup();
-            }
-
-            ImGui::EndPopup();
-        }
-
-        if (ImGui::BeginPopupModal("Save JSON", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-            scene.lock = true;
-            typing = true;
-
-            ImGui::Text("Enter file name:");
-            ImGui::InputText("##filename", filename, IM_ARRAYSIZE(filename));
-
-            ImGui::Separator();
-
-            if (ImGui::Button("Save")) {
-                scene.saveJSON(filename);
-                typing = false;
-
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Cancel")) {
-                ImGui::CloseCurrentPopup();
-            }
-
-            ImGui::EndPopup();
-        }
-
-        if (ImGui::BeginPopupModal("Load JSON", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-            scene.lock = true;
-            typing = true;
-
-            ImGui::Text("Enter file name:");
-            ImGui::InputText("##filename", filename, IM_ARRAYSIZE(filename));
-
-            ImGui::Separator();
-
-            if (ImGui::Button("Load")) {
-                scene.startLoadJob(filename);
-                typing = false;
-
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Cancel")) {
-                ImGui::CloseCurrentPopup();
-            }
-
-            ImGui::EndPopup();
+        if (ImGui::Button("Save JSON", ImVec2(-FLT_MIN, buttonHeight))) {
+            Scene* s = &scene;
+            fileBrowser.openAt(PROJECT_DIR "scenes", ".json", [this, s](const std::string& path) {
+                s->saveJSON(std::filesystem::relative(path, PROJECT_DIR).string());
+                browserMode = BrowserMode::None;
+            });
         }
 
         if (scene.busy) {
@@ -669,11 +621,13 @@ void SceneUI::ImGuiRender(Scene& scene) {
         ImGui::End();
     }
 
+    drawFileBrowser();
+
 
     if (ui_resetAccum) scene.resetAccumulation();
 }
 
-void SceneUI::drawViewportDocked(Scene& scene){
+void SceneUI::renderViewport(Scene& scene){
     scene.window.setPresentMode(PresentMode::Texture);
 
     static ImGuiID savedDockID = 0;
@@ -706,7 +660,7 @@ void SceneUI::drawViewportDocked(Scene& scene){
 
     ImVec2 avail = ImGui::GetContentRegionAvail();
     ImVec2 drawSize = avail;
-    if (scene.window.resizeRenderTarget((int)avail.x, (int)avail.y, false)) scene.resetAccumulation();
+    if (scene.window.resizeRenderTarget((int)avail.x, (int)avail.y)) scene.resetAccumulation();
 
     ImVec2 imgMin = ImGui::GetCursorScreenPos();
     ImVec2 imgMax = ImVec2(imgMin.x + drawSize.x, imgMin.y + drawSize.y);
@@ -759,4 +713,100 @@ void SceneUI::drawViewportDocked(Scene& scene){
 
     ImGui::End();
     ImGui::PopStyleVar();
+}
+
+void SceneUI::drawFileBrowser() {
+    if (!fileBrowser.open) return;
+
+    ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
+    ImGui::Begin("File Browser", &fileBrowser.open);
+
+    // Current path display
+    ImGui::TextDisabled("%s", fileBrowser.currentPath.c_str());
+    ImGui::Separator();
+
+    // Up button
+    if (ImGui::Button("..")) {
+        auto parent = std::filesystem::path(fileBrowser.currentPath).parent_path().string();
+        fileBrowser.currentPath = parent;
+        fileBrowser.refresh();
+    }
+
+    ImGui::BeginChild("##files", ImVec2(0, -40), true);
+
+    // Folders first
+    for (const std::string& folder : fileBrowser.folders) {
+        ImGui::TextDisabled("[folder]");
+        ImGui::SameLine();
+        if (ImGui::Selectable(folder.c_str(), false)) {
+            fileBrowser.currentPath += "/" + folder;
+            fileBrowser.refresh();
+        }
+    }
+
+    // Files
+    for (const std::string& file : fileBrowser.files) {
+        bool selected = (fileBrowser.selectedFile == file);
+        if (ImGui::Selectable(file.c_str(), selected)) {
+            fileBrowser.selectedFile = file;
+        }
+        if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+            std::string full = fileBrowser.currentPath + "/" + file;
+            fileBrowser.onSelect(full);
+            fileBrowser.open = false;
+        }
+    }
+
+    ImGui::EndChild();
+
+    if (browserMode == BrowserMode::SaveJSON) {
+        static char saveName[128] = "scene";
+
+        // Show current path
+        ImGui::Text("Save to: %s/", fileBrowser.currentPath.c_str());
+
+        // Filename input
+        ImGui::SetNextItemWidth(200);
+        ImGui::InputText("##savename", saveName, IM_ARRAYSIZE(saveName));
+        ImGui::SameLine();
+
+        if (ImGui::Button("Save")) {
+            std::string full = fileBrowser.currentPath + "/" + std::string(saveName);
+            fileBrowser.onSelect(full);
+            fileBrowser.open = false;
+            browserMode = BrowserMode::None;
+        }
+
+        // Clicking an existing file populates the name field
+        // (already handled by Selectable in the file list above)
+        if (!fileBrowser.selectedFile.empty()) {
+            // strip .json for display
+            std::string stripped = fileBrowser.selectedFile;
+            if (stripped.find(".json") != std::string::npos)
+                stripped = stripped.substr(0, stripped.size() - 5);
+            strncpy(saveName, stripped.c_str(), IM_ARRAYSIZE(saveName));
+            fileBrowser.selectedFile = ""; // consume it
+        }
+    } else {
+        // Bottom bar
+        ImGui::Separator();
+        ImGui::Text("%s", fileBrowser.selectedFile.c_str());
+        ImGui::SameLine();
+
+        bool hasSelection = !fileBrowser.selectedFile.empty();
+        if (!hasSelection) ImGui::BeginDisabled();
+        if (ImGui::Button("Open")) {
+            std::string full = fileBrowser.currentPath + "/" + fileBrowser.selectedFile;
+            fileBrowser.onSelect(full);
+            fileBrowser.open = false;
+        }
+        if (!hasSelection) ImGui::EndDisabled();
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button("Cancel")) {
+        fileBrowser.open = false;
+    }
+
+    ImGui::End();
 }

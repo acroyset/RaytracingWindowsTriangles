@@ -337,6 +337,15 @@ void Scene::set_ssbo() {
 }
 
 bool Scene::inputHandling(float speed, float sensitivity, float dt) {
+    if (window.keyPressed(GLFW_KEY_ESCAPE)) {
+        if (!trackedKeysPressed[GLFW_KEY_ESCAPE]) {
+            if (ui.viewportFullscreen) ui.viewportFullscreen = false;
+            else isOpen = false;
+        }
+
+        trackedKeysPressed[GLFW_KEY_ESCAPE] = true;
+    } else trackedKeysPressed[GLFW_KEY_ESCAPE] = false;
+
     if (ui.typing) return false;
 
     double mx, my;
@@ -411,6 +420,7 @@ bool Scene::inputHandling(float speed, float sensitivity, float dt) {
 }
 
 void Scene::updateFrame() {
+
     Timer t;
     window.start();
 
@@ -430,12 +440,15 @@ void Scene::updateFrame() {
             pendingTextures.clear();
         }
 
+        resetAccumulation();
+
         set_ssbo();
         newData = false;
     }
     if (busy) {
         lastSentPackage = dataSent();
     }
+
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -447,13 +460,14 @@ void Scene::updateFrame() {
 
     if (inputHandling(speed, sensitivity, dt)) resetAccumulation();
 
+
+    ui.render(*this);
+
     setUniforms();
 
     frameCount++;
     sampleCount += samples;
 
-    // --- Controls window ---
-    ui.ImGuiRender(*this);
 
     updateItemSmooth(cpuTime, float(t.reset()));
 

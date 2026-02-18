@@ -22,6 +22,7 @@ add_executable(RaytracingWindowsTriangles
         src/JSONextensions.h
         src/SceneUI.cpp
         src/SceneUI.h
+        src/FileBrowser.h
 )
 target_include_directories(RaytracingWindowsTriangles PRIVATE
         external/glad/include
@@ -53,8 +54,19 @@ target_include_directories(imgui_glfw_opengl3 PUBLIC
         external/glad/include
         external/glfw/include
 )
+target_compile_definitions(RaytracingWindowsTriangles PRIVATE
+        PROJECT_DIR="${CMAKE_SOURCE_DIR}/")
 target_compile_definitions(imgui_glfw_opengl3 PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLAD)
 target_link_libraries(imgui_glfw_opengl3 PUBLIC glfw glad)
 
 # Link ImGui to your app (now that the app target exists)
 target_link_libraries(RaytracingWindowsTriangles PRIVATE imgui_glfw_opengl3)
+
+FetchContent_Declare(
+        nfd
+        GIT_REPOSITORY https://github.com/btzy/nativefiledialog-extended.git
+        GIT_TAG master
+)
+FetchContent_MakeAvailable(nfd)
+
+target_link_libraries(RaytracingWindowsTriangles PRIVATE nfd)
