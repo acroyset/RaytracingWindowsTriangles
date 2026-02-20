@@ -37,28 +37,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cd06d447-a7c8-42f4-a8e5-4bf88ac1888b" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/shaders/postProcessing.frag" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/Rendering/Shader.cpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/Rendering/Shader.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/imgui.ini" beforeDir="false" afterPath="$PROJECT_DIR$/imgui.ini" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/scenes/scene1.json" beforeDir="false" afterPath="$PROJECT_DIR$/scenes/scene1.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scenes/scene2.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/shaders/fullscreen.frag" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/raytracer.frag" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/shaders/structs.glsl" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/structs.glsl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/BaseModel.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/BaseModel.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/BaseModel.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/BaseModel.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Model.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Model.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Rendering/ShaderWindow.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/ShaderWindow.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Rendering/ShaderWindow.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/ShaderWindow.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Rendering/Texture.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/Texture.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Rendering/Uniform.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/Uniform.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shaders/postProcessing.frag" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/postProcessing.frag" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shaders/raytracer.frag" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/raytracer.frag" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Rendering/Shader.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/Shader.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Rendering/Shader.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/Shader.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/SceneUI.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/SceneUI.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -115,7 +102,7 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "CMake Application.RaytracingWindowsTriangles.executor": "Run",
+    "CMake Application.RaytracingWindowsTriangles.executor": "Debug",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.RadMigrateCodeStyle": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
@@ -154,11 +141,6 @@
     </key>
   </component>
   <component name="RunManager" selected="CMake Application.RaytracingWindowsTriangles">
-    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="RaytracingWindowsTriangles" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="RaytracingWindowsTriangles" TARGET_NAME="RaytracingWindowsTriangles" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="RaytracingWindowsTriangles" RUN_TARGET_NAME="RaytracingWindowsTriangles">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -290,7 +272,8 @@
       <workItem from="1771352206698" duration="7446000" />
       <workItem from="1771367462968" duration="26568000" />
       <workItem from="1771460529431" duration="16302000" />
-      <workItem from="1771545673896" duration="7949000" />
+      <workItem from="1771545673896" duration="11420000" />
+      <workItem from="1771562536671" duration="352000" />
     </task>
     <servers />
   </component>

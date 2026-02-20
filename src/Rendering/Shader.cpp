@@ -153,7 +153,6 @@ void Shader::clearFeedback() const {
 }
 
 bool Shader::reload() {
-    // Compile a new program without touching the old one
     GLuint newProgram = 0;
 
     std::string vsrc = injectVersion(readFile(vertPath.c_str()), glslVersion);
@@ -177,7 +176,7 @@ bool Shader::reload() {
         glGetProgramInfoLog(newProgram, len, nullptr, log.data());
         std::cerr << "Reload failed:\n" << log << "\n";
         glDeleteProgram(newProgram);
-        return false; // old program still running — no disruption
+        return false;
     }
 
     // Swap only on success
@@ -188,12 +187,7 @@ bool Shader::reload() {
     locInput    = glGetUniformLocation(program, "u_input");
     locPrevious = glGetUniformLocation(program, "u_previousFrame");
 
-    // Re-apply texture unit bindings — the units haven't changed,
-    // but the new program's sampler locations need to be re-pointed.
-    // Caller is responsible for calling bind() on their Textures again,
-    // OR you can store weak refs to them here (see note below).
 
-    std::cout << "Shader reloaded: " << fragPath << "\n";
     return true;
 }
 

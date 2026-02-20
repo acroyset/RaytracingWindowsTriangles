@@ -630,9 +630,10 @@ bool hitTriangleUpdate(Hit hit, inout Ray ray, inout vec3 color, inout uint stat
     return false;
 }
 
-bool hitFloorUpdate(inout Ray ray, inout vec3 color, inout uint state){
+bool hitFloorUpdate(inout Ray ray, inout vec3 color, out float depth, inout uint state){
     float floorY = -1000.0;
     float t = (floorY - ray.pos.y)/ray.dir.y;
+    depth = t;
     if (t > 0.01 && t < 1e30){
         ray.pos += ray.dir*t;
 
@@ -665,9 +666,10 @@ bool hitFloorUpdate(inout Ray ray, inout vec3 color, inout uint state){
     return false;
 }
 
-vec3 trace(Ray ray, inout uint state){
+vec4 trace(Ray ray, inout uint state){
     iorStack[0] = 1.0; iorSize = 1;
     vec3 color  = vec3(1.0);
+    float depth = 3.4e38;
 
     for (int bounce = 0; bounce <= bounceLim; bounce++){
         int triTest = 0, aabbTest = 0;
@@ -677,28 +679,32 @@ vec3 trace(Ray ray, inout uint state){
         if (debugView && debugMode == 1) {
             vec3 heatmap = triTest > triTh || aabbTest > aabbTh ? vec3(1) : vec3(float(triTest)/float(triTh), 0.0, float(aabbTest)/float(aabbTh));
 
-            return heatmap;
+            return vec4(heatmap, depth);
         }
 
         if (hit.hit){
             if (focusDistancePlane && hit.t > focusDistance && bounce == 0) color *= vec3(0.75, 1, 0.75);
 
+            if (bounce == 0) depth = hit.t;
+
             if (hitTriangleUpdate(hit, ray, color, state)) break;
         } else if (floorActive && ray.dir.y < 0.0){
-            if (hitFloorUpdate(ray, color, state)) break;
+            float d;
+            if (hitFloorUpdate(ray, color, d, state)) break;
+            if (bounce == 0) depth = d;
         } else {
             if (debugView){
-                return vec3(1);
+                return vec4(vec3(1), depth);
             }
             color *= getEnviormentLight(ray.dir);
             break;
         }
 
-        if (russianRoulet(color, state) && bounce >= 1) return vec3(0.0);
-        if (bounce == bounceLim) return vec3(0.0);
+        if (russianRoulet(color, state) && bounce >= 1) return vec4(vec3(0), depth);
+        if (bounce == bounceLim) return vec4(vec3(0), depth);
     }
 
-    return color;
+    return vec4(color, depth);
 }
 
 // Main
@@ -725,15 +731,15 @@ void main(){
     uvec2 pix = uvec2(fragCoord.x*resolution.x, fragCoord.y*resolution.y);
     uint  state = pixelFrameSeed(pix);
 
-    vec3 total = vec3(0.0);
+    vec4 total = vec4(0.0);
     int aaCycle = frameCount % (aa*aa);
 
     for (int s=0; s<samples; ++s) {
         Ray ray = calculateInitialRay(aaCycle, screen, state);
 
-        vec3 color = min(trace(ray, state), vec3(25.));
+        vec4 color = trace(ray, state);
 
-        total += color;
+        total += min(color, vec4(50, 50, 50, 3.4e38));
 
         aaCycle = (aaCycle+1) % (aa*aa);
     }
@@ -741,9 +747,9 @@ void main(){
     total /= float(samples);
 
 
-    vec3 prev = texture(u_previousFrame, fragCoord).rgb;
+    vec4 prev = texture(u_previousFrame, fragCoord);
 
-    vec3 accum = mix(prev, total, float(samples)/(float(sampleCount+samples)));
+    vec4 accum = mix(prev, total, float(samples)/(float(sampleCount+samples)));
 
-    FragColor = vec4(accum, 1.0);
+    FragColor = accum;
 }

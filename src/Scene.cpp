@@ -275,7 +275,8 @@ void Scene::createUniforms() {
     uFocusDistance      = raytracer.createUniform<float>("focusDistance");
     uFocusDistancePlane = raytracer.createUniform<bool>("focusDistancePlane");
 
-    uResolution     = raytracer.createUniform<uvec2>("resolution");
+    uResolutionRTX  = raytracer.createUniform<uvec2>("resolution");
+    uResolutionPP   = postProcessing.createUniform<uvec2>("u_resolution");
     uFrameCount     = raytracer.createUniform<int>("frameCount");
     uTimeSinceStart = raytracer.createUniform<float>("timeSinceStart");
     uSampleCount    = raytracer.createUniform<int>("sampleCount");
@@ -305,7 +306,7 @@ void Scene::createUniforms() {
     uEnvYaw = raytracer.createUniform<float>("uEnvYaw");
 }
 
-void Scene::setUniforms() const {
+void Scene::setUniformsRTX() const {
 
     uNumModels.set(int(models.size()));
 
@@ -318,7 +319,7 @@ void Scene::setUniforms() const {
     uFocusDistance.set(focusDistance);
     uFocusDistancePlane.set(focusDistancePlane);
 
-    uResolution.set(window.size());
+    uResolutionRTX.set(window.size());
     uFrameCount.set(frameCount);
     uTimeSinceStart.set(window.getTimeSinceStart());
     uSampleCount.set(sampleCount);
@@ -352,6 +353,9 @@ void Scene::setUniforms() const {
     for (const Texture &tex : textures) {
         tex.bind();
     }
+}
+void Scene::setUniformsPP() const {
+    uResolutionPP.set(window.size());
 }
 
 void Scene::set_ssbo() {
@@ -516,7 +520,10 @@ void Scene::updateFrame() {
 
     ui.render(*this);
 
-    setUniforms();
+    raytracer.bind();
+    setUniformsRTX();
+    postProcessing.bind();
+    setUniformsPP();
 
     frameCount++;
     sampleCount += samples;

@@ -204,7 +204,8 @@ class Scene {
     Uniform<float> uFocusDistance;
     Uniform<bool> uFocusDistancePlane;
 
-    Uniform<uvec2> uResolution;
+    Uniform<uvec2> uResolutionRTX;
+    Uniform<uvec2> uResolutionPP;
     Uniform<int> uFrameCount;
     Uniform<float> uTimeSinceStart;
     Uniform<int> uSampleCount;
@@ -282,7 +283,8 @@ class Scene {
 
     void createUniforms();
 
-    void setUniforms() const;
+    void setUniformsRTX() const;
+    void setUniformsPP() const;
 
     void set_ssbo();
 

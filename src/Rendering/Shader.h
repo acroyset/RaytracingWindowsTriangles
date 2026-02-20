@@ -90,8 +90,11 @@ public:
     // inputTex = 0 means "no input" (first shader in chain)
     void execute(GLuint inputTex, bool toScreen);
 
-    [[nodiscard]] GLuint outputTexture() const { return tex[1 - write]; }
+    [[nodiscard]] GLuint outputTexture() const {
+       return hasFeedback ? tex[1 - write] : tex[write];
+    }
     [[nodiscard]] GLuint getProgram()    const { return program; }
+    void bind() const { glUseProgram(program); }
 };
 
 #endif //SHADER_H
