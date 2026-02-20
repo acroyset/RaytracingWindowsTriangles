@@ -86,7 +86,7 @@ static bool DrawMaterialInspector(Material& m, int matIndex, int textureID){
 
     // --- Common group: Base color (and texture info) ---
     if (textureID != -1) {
-        ImGui::TextDisabled("Texture bound (ID %d). Diffuse color UI hidden.", textureID);
+        ImGui::TextDisabled("Texture bound (ID %d).", textureID);
     } else {
         if (type == Emissive) {
             changed |= ImGui::ColorEdit3("Emission Color", &diffuseColor.x);
@@ -283,8 +283,8 @@ void SceneUI::render(Scene& scene) {
         float buttonHeight = 30.0f;
         float spacing      = ImGui::GetStyle().ItemSpacing.y;
 
-        // total height of the bottom block: 3 buttons + 2 gaps
-        float blockHeight = 3.0f * buttonHeight + 2.0f * spacing;
+        // total height of the bottom block: 4 buttons + 3 gaps
+        float blockHeight = 4.0f * buttonHeight + 3.0f * spacing;
 
         float availY = ImGui::GetContentRegionAvail().y;
 
@@ -301,21 +301,55 @@ void SceneUI::render(Scene& scene) {
             });
         }
 
+        if (ImGui::Button("Remove Model", ImVec2(-FLT_MIN, buttonHeight))) {
+            ImGui::OpenPopup("RemoveModelPopup");
+        }
+
         if (ImGui::Button("Load JSON", ImVec2(-FLT_MIN, buttonHeight))) {
+            browserMode = BrowserMode::LoadJSON;
             Scene* s = &scene;
             fileBrowser.openAt(PROJECT_DIR "scenes", ".json", [this, s](const std::string& path) {
                 s->startLoadJob(std::filesystem::relative(path, PROJECT_DIR).string());
+                selectedModel = -1;
+                selectedColor = 0;
                 browserMode = BrowserMode::None;
             });
         }
 
         if (ImGui::Button("Save JSON", ImVec2(-FLT_MIN, buttonHeight))) {
+            browserMode = BrowserMode::SaveJSON;
             Scene* s = &scene;
             fileBrowser.openAt(PROJECT_DIR "scenes", ".json", [this, s](const std::string& path) {
                 s->saveJSON(std::filesystem::relative(path, PROJECT_DIR).string());
                 browserMode = BrowserMode::None;
             });
         }
+
+
+
+
+        if (ImGui::BeginPopupModal("RemoveModelPopup", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("Are you sure?");
+            ImGui::Separator();
+
+            if (ImGui::Button("Yes")) {
+
+                ImGui::CloseCurrentPopup();
+
+                scene.removeModel(selectedModel);
+                selectedModel = -1;
+                selectedColor = 0;
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("No")) {
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+
 
         if (scene.busy) {
             DrawBusyOverlay(scene.busyLabel.c_str());
@@ -355,6 +389,13 @@ void SceneUI::render(Scene& scene) {
             if (ImGui::SliderFloat("Sensitivity", &s, 0.1, 10)) scene.sensitivity = s/100;
 
             ImGui::SliderFloat("Speed", &scene.speed, 0.01, 1000);
+        }
+
+        ImGui::Separator();
+
+        if (ImGui::Button("Reload Shaders")) {
+            scene.window.reloadShaders();
+            ui_resetAccum = true;
         }
 
         ImGui::Separator();
@@ -522,6 +563,7 @@ void SceneUI::render(Scene& scene) {
         bool changedM = false;
 
         Model& model = scene.models[selectedModel];
+        ModelOffset offsets = scene.modelOffsets[selectedModel];
 
         // Local aliases
         Transformation& transform = model.transformation;
@@ -551,12 +593,12 @@ void SceneUI::render(Scene& scene) {
 
         ImGui::Separator();
 
-        std::string previewC = "Material " + std::to_string(selectedColor);
+        std::string previewC = model.materialNames[selectedColor];
         if (ImGui::BeginCombo("##Material", previewC.c_str())) {
 
             for (int i = 0; i < model.materials.size(); ++i) {
                 bool sel = (selectedColor == i);
-                previewC = "Material " + std::to_string(i);
+                previewC = model.materialNames[i];
                 if (ImGui::Selectable(previewC.c_str(), sel)) {
                     selectedColor = i;
                 }
@@ -568,31 +610,30 @@ void SceneUI::render(Scene& scene) {
         ImGui::Indent();
         Material& m = model.materials[selectedColor];
 
-        changedM |= DrawMaterialInspector(m, selectedColor, model.textureID);
+        changedM |= DrawMaterialInspector(m, selectedColor, offsets.textureID);
 
         ImGui::Unindent();
 
-        int textureID = model.textureID;
-        if (textureID != -1) {
+        if (offsets.textureID != -1) {
             ImGui::Separator();
             ImGui::Text("Texture");
-            ImGui::Text(scene.textureLabels[textureID].c_str());
-            ImGui::Text("ID: %i", textureID);
+            ImGui::Text(scene.textureLabels[offsets.textureID].c_str());
+            ImGui::Text("ID: %i", offsets.textureID);
 
-            float s = scene.textureScales[textureID];
+            float s = scene.textureScales[offsets.textureID];
             bool wrapTexture = s > 0;;
             if (ImGui::Checkbox("Wrap Texture", &wrapTexture)) {
                 if (wrapTexture) {
-                    scene.textureScales[textureID] = 0.001;
+                    scene.textureScales[offsets.textureID] = 0.001;
                 } else {
-                    scene.textureScales[textureID] = 0;
+                    scene.textureScales[offsets.textureID] = 0;
                 }
                 ui_resetAccum = true;
             }
 
             if (wrapTexture) {
                 if (ImGui::DragFloat("Texture Scale", &s, 0.005f, 0.0001f, 2.0f, "%.4f")) {
-                    scene.textureScales[textureID] = s;
+                    scene.textureScales[offsets.textureID] = s;
                     ui_resetAccum = true;
                 }
             }
@@ -609,10 +650,9 @@ void SceneUI::render(Scene& scene) {
 
             ui_resetAccum = true;
         }
-        // All materials for this model share the same contiguous range:
 
         if (changedM) {
-            int start = scene.modelOffsets[selectedModel][5];
+            int start = scene.modelOffsets[selectedModel].material;
             int end = start + int(model.materials.size());
             scene.ssboMaterials.update(int(start), int(end), model.materials.data());
             ui_resetAccum = true;
@@ -628,7 +668,6 @@ void SceneUI::render(Scene& scene) {
 }
 
 void SceneUI::renderViewport(Scene& scene){
-    scene.window.setPresentMode(PresentMode::Texture);
 
     static ImGuiID savedDockID = 0;
     static bool prevFullscreen = false;
@@ -660,7 +699,7 @@ void SceneUI::renderViewport(Scene& scene){
 
     ImVec2 avail = ImGui::GetContentRegionAvail();
     ImVec2 drawSize = avail;
-    if (scene.window.resizeRenderTarget((int)avail.x, (int)avail.y)) scene.resetAccumulation();
+    if (scene.window.resizeAll((int)avail.x, (int)avail.y)) scene.resetAccumulation();
 
     ImVec2 imgMin = ImGui::GetCursorScreenPos();
     ImVec2 imgMax = ImVec2(imgMin.x + drawSize.x, imgMin.y + drawSize.y);

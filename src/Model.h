@@ -12,8 +12,7 @@ struct  Model {
     BaseModel base;
     Transformation transformation;
     std::vector<Material> materials;
-
-    int textureID = -1;
+    std::vector<std::string> materialNames;
 
     Model(const std::string &name, const BaseModel& baseModel, const Transformation &transformation = {vec3(0), vec3(-1)}){
         this->filename = baseModel.filename;
@@ -21,7 +20,7 @@ struct  Model {
         this->base = baseModel;
         this->transformation = transformation.scale == vec3(-1) ? baseModel.baseTransform : transformation;
         this->materials = baseModel.materials;
-        textureID = -1;
+        this->materialNames = baseModel.materialNames;
     }
 
     Model(const Model& other){
@@ -30,7 +29,7 @@ struct  Model {
         this->base = other.base;
         this->transformation = other.transformation;
         this->materials = other.materials;
-        this->textureID = other.textureID;
+        this->materialNames = other.materialNames;
     }
 };
 

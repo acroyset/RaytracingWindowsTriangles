@@ -40,7 +40,7 @@ uniform int       numNodes;
 uniform int       samples;
 uniform int       aa;
 uniform int       bounceLim;
-uniform sampler2D previousFrame;
+uniform sampler2D u_previousFrame;
 
 uniform vec3  skyColor;
 uniform vec3  sunDir;
@@ -73,29 +73,31 @@ Material floorMaterial;
 Triangle createTri(int triIndex, int modelIdx){
     Triangle tri;
 
-    ivec4 idx1 = triangles[triIndex*3+0];
-    ivec4 idx2 = triangles[triIndex*3+1];
-    ivec4 idx3 = triangles[triIndex*3+2];
+    ModelOffset offset = modelOffsets[modelIdx];
 
-    tri.material = materials[int(idx1.w) + modelOffsets[modelIdx].material];
+    ivec4 idx1 = triangles[triIndex*3+0 + offset.triangle*3];
+    ivec4 idx2 = triangles[triIndex*3+1 + offset.triangle*3];
+    ivec4 idx3 = triangles[triIndex*3+2 + offset.triangle*3];
+
+    tri.material = materials[int(idx1.w) + offset.material];
     tri.textureID = modelOffsets[modelIdx].textureID;
     tri.useTexture = tri.textureID != -1.0;
     tri.useNormals = idx1.z != -1.0 && idx2.z != -1.0 && idx3.z != -1.0;
 
-    tri.v1 = vertices[idx1.x].xyz;
-    tri.v2 = vertices[idx2.x].xyz;
-    tri.v3 = vertices[idx3.x].xyz;
+    tri.v1 = vertices[idx1.x + offset.vertex].xyz;
+    tri.v2 = vertices[idx2.x + offset.vertex].xyz;
+    tri.v3 = vertices[idx3.x + offset.vertex].xyz;
 
     if (tri.useTexture){
-        tri.t1 = texCoords[idx1.y];
-        tri.t2 = texCoords[idx2.y];
-        tri.t3 = texCoords[idx3.y];
+        tri.t1 = texCoords[idx1.y + offset.texCoord];
+        tri.t2 = texCoords[idx2.y + offset.texCoord];
+        tri.t3 = texCoords[idx3.y + offset.texCoord];
     }
 
     if (tri.useNormals){
-        tri.n1 = normals[idx1.z].xyz;
-        tri.n2 = normals[idx2.z].xyz;
-        tri.n3 = normals[idx3.z].xyz;
+        tri.n1 = normals[idx1.z + offset.normal].xyz;
+        tri.n2 = normals[idx2.z + offset.normal].xyz;
+        tri.n3 = normals[idx3.z + offset.normal].xyz;
     }
 
     return tri;
@@ -169,10 +171,12 @@ vec2 seamSafeUV(vec2 uv){
     return uv;
 }
 
-void getTriangle(int triIndex, out ivec4 t1, out ivec4 t2, out ivec4 t3){
-    t1 = triangles[3*triIndex+0];
-    t2 = triangles[3*triIndex+1];
-    t3 = triangles[3*triIndex+2];
+void getTriangle(int triIndex, int modelIndex, out ivec4 t1, out ivec4 t2, out ivec4 t3){
+    ModelOffset offset = modelOffsets[modelIndex];
+
+    t1 = triangles[3*triIndex+0 + offset.triangle*3];
+    t2 = triangles[3*triIndex+1 + offset.triangle*3];
+    t3 = triangles[3*triIndex+2 + offset.triangle*3];
 }
 
 // Camera / Path
@@ -435,7 +439,7 @@ Ray worldToLocalRay(Ray ray, mat4 invM){
 }
 
 // Traverse one model’s BVH entirely in LOCAL space. Returns the best WORLD distance and indices via out params.
-Hit traverseBVH(int nodeOffset, Ray ray, mat4 M, mat4 invM, float bestTW, inout int triTest, inout int aabbTest){
+Hit traverseBVH(int modelIndex, Ray ray, mat4 M, mat4 invM, float bestTW, inout int triTest, inout int aabbTest){
 
     Hit hit;
     hit.hit = false;
@@ -449,8 +453,10 @@ Hit traverseBVH(int nodeOffset, Ray ray, mat4 M, mat4 invM, float bestTW, inout 
         hit.t = length(bestHitPosL - rayLocal.pos);
     }
 
+    ModelOffset offset = modelOffsets[modelIndex];
+
     int sp = 0;
-    stack[sp++] = nodeOffset;
+    stack[sp++] = offset.BVHnodes;
 
     while (sp > 0){
         BVHnode node = BVHnodes[stack[--sp]];
@@ -461,10 +467,10 @@ Hit traverseBVH(int nodeOffset, Ray ray, mat4 M, mat4 invM, float bestTW, inout 
             for (int j = start; j < start+num; ++j){
                 triTest++;
                 ivec4 tri1, tri2, tri3;
-                getTriangle(j, tri1, tri2, tri3);
-                vec3 v0 = vertices[tri1.x].xyz;
-                vec3 v1 = vertices[tri2.x].xyz;
-                vec3 v2 = vertices[tri3.x].xyz;
+                getTriangle(j, modelIndex, tri1, tri2, tri3);
+                vec3 v0 = vertices[tri1.x + offset.vertex].xyz;
+                vec3 v1 = vertices[tri2.x + offset.vertex].xyz;
+                vec3 v2 = vertices[tri3.x + offset.vertex].xyz;
                 Hit h = rayTriangleIntersect(rayLocal, v0, v1, v2);
 
                 if (h.hit && h.t < hit.t){
@@ -473,14 +479,14 @@ Hit traverseBVH(int nodeOffset, Ray ray, mat4 M, mat4 invM, float bestTW, inout 
                 }
             }
         } else {
-            int A = childA(node);
-            int B = childB(node);
-            BVHnode childA = BVHnodes[A];
-            BVHnode childB = BVHnodes[B];
+            int A = childA(node) + offset.BVHnodes;
+            int B = childB(node) + offset.BVHnodes;
+            BVHnode childA_Idx = BVHnodes[A];
+            BVHnode childB_Idx = BVHnodes[B];
 
             aabbTest += 2;
-            float dA = intersectAABB(rayLocal, getMin(childA), getMax(childA));
-            float dB = intersectAABB(rayLocal, getMin(childB), getMax(childB));
+            float dA = intersectAABB(rayLocal, getMin(childA_Idx), getMax(childA_Idx));
+            float dB = intersectAABB(rayLocal, getMin(childB_Idx), getMax(childB_Idx));
 
             bool nearA = (dA <= dB);
             float dNear = nearA ? dA : dB;
@@ -560,10 +566,7 @@ Hit findBestTri(Ray ray, out int triTest, out int aabbTest){
         mat4 M    = modelTransformations[modelIdx];
         mat4 invM = modelInvTransformations[modelIdx];
 
-        Hit h = traverseBVH(
-            modelOffsets[modelIdx].BVHnodes, ray, M, invM, hit.t,
-            triTest, aabbTest
-        );
+        Hit h = traverseBVH(modelIdx, ray, M, invM, hit.t, triTest, aabbTest);
 
         if (h.hit && h.t < hit.t){
             hit = h;
@@ -605,7 +608,7 @@ bool hitTriangleUpdate(Hit hit, inout Ray ray, inout vec3 color, inout uint stat
     vec3 normalLocal = calculateNormalLocal(hit);
     vec3 normalWorld = toWorldNormal(normalLocal, invMat);
     if (dot(normalWorld, ray.dir) > 0.0) {
-        //normalWorld = -normalWorld;
+        normalWorld = -normalWorld;
         if (material.type == 2) color *= exp(-hit.t*material.absorption * (1-material.diffuseColor.rgb));
     }
 
@@ -725,9 +728,6 @@ void main(){
     vec3 total = vec3(0.0);
     int aaCycle = frameCount % (aa*aa);
 
-    vec3 prev = texture(previousFrame, fragCoord).rgb;
-    prev *= prev;
-
     for (int s=0; s<samples; ++s) {
         Ray ray = calculateInitialRay(aaCycle, screen, state);
 
@@ -740,8 +740,10 @@ void main(){
 
     total /= float(samples);
 
+
+    vec3 prev = texture(u_previousFrame, fragCoord).rgb;
+
     vec3 accum = mix(prev, total, float(samples)/(float(sampleCount+samples)));
-    accum = sqrt(accum);
 
     FragColor = vec4(accum, 1.0);
 }

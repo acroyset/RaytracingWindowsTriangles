@@ -208,6 +208,7 @@ class BaseModel {
     std::vector<vec2> texCoords;
     std::vector<vec3> normals;
     std::vector<Material> materials;
+    std::vector<std::string> materialNames;
 
     std::vector<BVHnode> BVHnodes;
 
@@ -254,6 +255,8 @@ class BaseModel {
         triangleMax = model.triangleMax;
         return *this;
     }
+
+    void loadMTL(const std::string& filename);
 
     bool parse(const std::string& filename);
 

@@ -15,6 +15,12 @@ void setBasisVectors(const vec3& forward, vec3& up, vec3& right) {
 }
 
 Scene::Scene() {
+
+    raytracer.enableFeedback();
+    window.addShader(&raytracer);
+    window.addShader(&postProcessing);
+
+
     samples = 1;
     aa = 1;
     bounceLim = 8;
@@ -32,7 +38,9 @@ Scene::Scene() {
 Scene::Scene(const int samples, const int aa, const int bounceLim)
     : samples(samples), aa(aa), bounceLim(bounceLim), frameCount(0), sampleCount(0){
 
-    window.setFeedbackMode(true);
+    raytracer.enableFeedback();
+    window.addShader(&raytracer);
+    window.addShader(&postProcessing);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -51,7 +59,7 @@ Scene::Scene(const int samples, const int aa, const int bounceLim)
 
     createUniforms();
 
-    skyTexture = window.createTexture("skyTex", "assets/textures/sky.png");
+    skyTexture = raytracer.createTexture("skyTex", "assets/textures/sky.png");
 
     textureScales.fill(0.0f);
 
@@ -105,7 +113,7 @@ void Scene::addModel(const Model& model, const std::string& texturePath) {
     int Moffset = getNumMaterials();
 
     bool useTexture = !model.base.texCoords.empty() && !texturePath.empty();
-    int textureID = int(textures.size()) + int(pendingTextures.size());
+    int textureID = useTexture ? (pendingClearTextures ? 0 : int(textures.size())) + int(pendingTextures.size()) : -1;
 
     bool reuse = false;
 
@@ -116,36 +124,22 @@ void Scene::addModel(const Model& model, const std::string& texturePath) {
 
     if (loc != models.end()) {
         int index = int(loc - models.begin());
-        std::vector<int> offsets = modelOffsets[index];
-        Toffset = offsets[0];
-        Voffset = offsets[1];
-        TXoffset = offsets[2];
-        Noffset = offsets[3];
-        BBoffset = offsets[4];
+        ModelOffset o = modelOffsets[index];
+        Toffset = o.triangle;
+        Voffset = o.vertex;
+        TXoffset = o.texCoord;
+        Noffset = o.normal;
+        BBoffset = o.BVHnodes;
 
         reuse = true;
     }
 
     models.push_back(model);
-    modelOffsets.push_back({Toffset, Voffset, TXoffset, Noffset, BBoffset, Moffset});
+    modelOffsets.emplace_back(Toffset, Voffset, TXoffset, Noffset, BBoffset, Moffset, textureID);
 
     if (!reuse) {
-        for (int i = 0; i < model.base.triangles.size()/3; i++) {
-            ivec4 triangle1 = model.base.triangles[i*3+0];
-            ivec4 triangle2 = model.base.triangles[i*3+1];
-            ivec4 triangle3 = model.base.triangles[i*3+2];
-
-            ivec4 offsets1 = ivec4(Voffset, triangle1.y == -1 ? 0 : TXoffset, triangle1.z == -1 ? 0 : Noffset, 0);
-            ivec4 offsets2 = ivec4(Voffset, triangle2.y == -1 ? 0 : TXoffset, triangle2.z == -1 ? 0 : Noffset, 0);
-            ivec4 offsets3 = ivec4(Voffset, triangle3.y == -1 ? 0 : TXoffset, triangle3.z == -1 ? 0 : Noffset, 0);
-
-            triangle1 += offsets1;
-            triangle2 += offsets2;
-            triangle3 += offsets3;
-
-            triangles.emplace_back(triangle1);
-            triangles.emplace_back(triangle2);
-            triangles.emplace_back(triangle3);
+        for (ivec4 t : model.base.triangles) {
+            triangles.emplace_back(t);
         }
 
         for (vec3 vertex : model.base.vertices) {
@@ -159,30 +153,19 @@ void Scene::addModel(const Model& model, const std::string& texturePath) {
         }
 
         for (auto node : model.base.BVHnodes) {
-
-            BVHnode newNode;
-            newNode.setMin(node.getMin());
-            newNode.setMax(node.getMax());
-            if (node.leaf()) {
-                newNode.setTriStart(node.getTriStart()+Toffset);
-                newNode.setNumTri(node.getNumTri());
-            } else {
-                newNode.setChildA(node.getChildA()+BBoffset);
-                newNode.setChildB(node.getChildB()+BBoffset);
-            }
-
-            BVHnodes.emplace_back(newNode);
+            BVHnodes.emplace_back(node);
         }
     }
 
     if (model.materials.empty()) {
         models.back().materials.emplace_back();
+        models.back().materialNames.emplace_back("Material " + std::to_string(model.materials.size()));
     }
 
     if (useTexture) {
-        models.back().textureID = textureID;
+        modelOffsets.back().textureID = textureID;
         if (std::this_thread::get_id() == mainThreadID) {
-            textures.emplace_back(window.createTexture("textures[" + std::to_string(textureID) + "]", texturePath));
+            textures.emplace_back(raytracer.createTexture("textures[" + std::to_string(textureID) + "]", texturePath));
             textures.back().setWrap(TextureWrap::REPEAT, TextureWrap::REPEAT);
             const std::string& name = texturePath;
             std::string label = name;
@@ -197,6 +180,72 @@ void Scene::addModel(const Model& model, const std::string& texturePath) {
             textureLabels.emplace_back(label);
         } else pendingTextures.emplace_back(texturePath, textureID);
     }
+}
+
+void Scene::removeModel(int index) {
+    if (index < 0 || index >= models.size()) return;
+    Model model = models[index];
+
+    bool otherModels = false;
+    for (int i = 0; i < models.size(); ++i) {
+        if (i == index) continue;
+
+        if (model.filename == models[i].filename) {
+            otherModels = true;
+            break;
+        }
+    }
+
+    ModelOffset offsets = modelOffsets[index];
+
+    int numTriangles = int(model.base.triangles.size())/3;
+    int numVertices = int(model.base.vertices.size());
+    int numTexCoords = int(model.base.texCoords.size());
+    int numNormals = int(model.base.normals.size());
+    int numBVHnodes = int(model.base.BVHnodes.size());
+    int numMaterials = int(model.materials.size());
+
+    if (otherModels) {
+        for (int i = index+1; i < models.size(); ++i) {
+            modelOffsets[i].material -= numMaterials;
+        }
+
+    } else {
+
+
+        triangles.erase(triangles.begin() + offsets.triangle*3,
+                        triangles.begin() + offsets.triangle*3 + numTriangles*3);
+
+        vertices.erase(vertices.begin() + offsets.vertex,
+                       vertices.begin() + offsets.vertex + numVertices);
+
+        texCoords.erase(texCoords.begin() + offsets.texCoord,
+                        texCoords.begin() + offsets.texCoord+ numTexCoords);
+
+        normals.erase(normals.begin() + offsets.normal,
+                      normals.begin() + offsets.normal + numNormals);
+
+
+        BVHnodes.erase(BVHnodes.begin() + offsets.BVHnodes,
+                       BVHnodes.begin() + offsets.BVHnodes + numBVHnodes);
+
+
+        for (int i = index+1; i < models.size(); ++i) {
+            ModelOffset& o = modelOffsets[i];
+
+            if (o.triangle > offsets.triangle) o.triangle -= numTriangles;
+            if (o.vertex > offsets.vertex) o.vertex -= numVertices;
+            if (o.texCoord > offsets.texCoord) o.texCoord -= numTexCoords;
+            if (o.normal > offsets.normal) o.normal -= numNormals;
+            if (o.BVHnodes > offsets.BVHnodes) o.BVHnodes -= numBVHnodes;
+            o.material -= numMaterials;
+        }
+    }
+
+    models.erase(models.begin()+index);
+    modelOffsets.erase(modelOffsets.begin()+index);
+
+    newData = true;
 }
 
 int Scene::getNumBVHNodes() const {
@@ -215,45 +264,45 @@ int Scene::getNumMaterials() const {
 
 
 void Scene::createUniforms() {
-    uNumModels = window.createUniform<int>("numModels");
+    uNumModels = raytracer.createUniform<int>("numModels");
 
-    uCameraPos          = window.createUniform<vec3>("cameraPos");
-    uCameraForward      = window.createUniform<vec3>("camForward");
-    uCameraUp           = window.createUniform<vec3>("camUp");
-    uCameraRight        = window.createUniform<vec3>("camRight");
-    uFovDeg             = window.createUniform<float>("fovDeg");
-    uAperture           = window.createUniform<float>("aperture");
-    uFocusDistance      = window.createUniform<float>("focusDistance");
-    uFocusDistancePlane = window.createUniform<bool>("focusDistancePlane");
+    uCameraPos          = raytracer.createUniform<vec3>("cameraPos");
+    uCameraForward      = raytracer.createUniform<vec3>("camForward");
+    uCameraUp           = raytracer.createUniform<vec3>("camUp");
+    uCameraRight        = raytracer.createUniform<vec3>("camRight");
+    uFovDeg             = raytracer.createUniform<float>("fovDeg");
+    uAperture           = raytracer.createUniform<float>("aperture");
+    uFocusDistance      = raytracer.createUniform<float>("focusDistance");
+    uFocusDistancePlane = raytracer.createUniform<bool>("focusDistancePlane");
 
-    uResolution     = window.createUniform<uvec2>("resolution");
-    uFrameCount     = window.createUniform<int>("frameCount");
-    uTimeSinceStart = window.createUniform<float>("timeSinceStart");
-    uSampleCount    = window.createUniform<int>("sampleCount");
+    uResolution     = raytracer.createUniform<uvec2>("resolution");
+    uFrameCount     = raytracer.createUniform<int>("frameCount");
+    uTimeSinceStart = raytracer.createUniform<float>("timeSinceStart");
+    uSampleCount    = raytracer.createUniform<int>("sampleCount");
 
-    uNumNodes  = window.createUniform<int>("numNodes");
-    uSamples   = window.createUniform<int>("samples");
-    uAA        = window.createUniform<int>("aa");
-    uBounceLim = window.createUniform<int>("bounceLim");
+    uNumNodes  = raytracer.createUniform<int>("numNodes");
+    uSamples   = raytracer.createUniform<int>("samples");
+    uAA        = raytracer.createUniform<int>("aa");
+    uBounceLim = raytracer.createUniform<int>("bounceLim");
 
-    uSkyActive = window.createUniform<bool>("skyActive");
-    uSkyColor  = window.createUniform<vec3>("skyColor");
-    uSunDir    = window.createUniform<vec3>("sunDir");
-    uSunColor  = window.createUniform<vec3>("sunColor");
+    uSkyActive = raytracer.createUniform<bool>("skyActive");
+    uSkyColor  = raytracer.createUniform<vec3>("skyColor");
+    uSunDir    = raytracer.createUniform<vec3>("sunDir");
+    uSunColor  = raytracer.createUniform<vec3>("sunColor");
 
-    uFloorActive        = window.createUniform<bool>("floorActive");
-    uFloorDiffuseColor  = window.createUniform<vec4>("floorDiffuseColor");
-    uFloorSpecularColor = window.createUniform<vec4>("floorSpecularColor");
+    uFloorActive        = raytracer.createUniform<bool>("floorActive");
+    uFloorDiffuseColor  = raytracer.createUniform<vec4>("floorDiffuseColor");
+    uFloorSpecularColor = raytracer.createUniform<vec4>("floorSpecularColor");
 
-    uDebugView     = window.createUniform<bool>("debugView");
-    uDebugMode     = window.createUniform<int>("debugMode");
-    uTriThreshold  = window.createUniform<int>("triTh");
-    uAABBThreshold = window.createUniform<int>("aabbTh");
-    uDepthScale    = window.createUniform<float>("depthScale");
+    uDebugView     = raytracer.createUniform<bool>("debugView");
+    uDebugMode     = raytracer.createUniform<int>("debugMode");
+    uTriThreshold  = raytracer.createUniform<int>("triTh");
+    uAABBThreshold = raytracer.createUniform<int>("aabbTh");
+    uDepthScale    = raytracer.createUniform<float>("depthScale");
 
-    uTextureScales = window.createUniform<float>("textureScales");
+    uTextureScales = raytracer.createUniform<float>("textureScales");
 
-    uEnvYaw = window.createUniform<float>("uEnvYaw");
+    uEnvYaw = raytracer.createUniform<float>("uEnvYaw");
 }
 
 void Scene::setUniforms() const {
@@ -312,16 +361,12 @@ void Scene::set_ssbo() {
     std::vector<Material> materials;
     std::vector<mat4> modelTransforms;
     std::vector<mat4> modelInvTransforms;
-    std::vector<ModelOffset> modelOffsetsTemp;
     for (int i = 0; i < models.size(); i++) {
-        std::vector<int> offsets = modelOffsets[i];
         Model model = models[i];
 
         for (const Material& m : model.materials) materials.emplace_back(m);
         modelTransforms.emplace_back(model.transformation.matrix);
         modelInvTransforms.emplace_back(model.transformation.inverseMatrix);
-
-        modelOffsetsTemp.emplace_back(offsets[4], offsets[5], model.textureID);
     }
 
     ssboTriangles.set(triangles, 0);
@@ -330,7 +375,7 @@ void Scene::set_ssbo() {
     ssboNormals.set(normals, 3);
     ssboMaterials.set(materials, 4);
     ssboBVHnodes.set(BVHnodes, 5);
-    ssboModelOffsets.set(modelOffsetsTemp, 6);
+    ssboModelOffsets.set(modelOffsets, 6);
     ssboModelTransformations.set(modelTransforms, 7);
     ssboModelInvTransformations.set(modelInvTransforms, 8);
 
@@ -425,9 +470,17 @@ void Scene::updateFrame() {
     window.start();
 
     if (newData) {
+        if (pendingClearTextures) {
+            for (const Texture& tex : textures) {
+                raytracer.releaseTexture(tex);
+            }
+            textures.clear();
+            textureLabels.clear();
+            pendingClearTextures = false;
+        }
         if (!pendingTextures.empty()) {
             for (const auto& [path, id] : pendingTextures) {
-                textures.emplace_back(window.createTexture("textures[" + std::to_string(id) + "]", path));
+                textures.emplace_back(raytracer.createTexture("textures[" + std::to_string(id) + "]", path));
                 textures.back().setWrap(TextureWrap::REPEAT, TextureWrap::REPEAT);
 
                 std::string label = path;
@@ -580,7 +633,8 @@ void Scene::saveJSON(const std::string& filename) const {
     j["Floor"]["specularColor"] = floorSpecularColor;
 
     j["Models"] = json::array();
-    for (const Model& m : models) {
+    for (int i = 0; i < models.size(); ++i) {
+        Model m = models[i];
         json jm;
         jm["Filename"] = m.filename;
         jm["Transformation"] = m.transformation;
@@ -590,7 +644,7 @@ void Scene::saveJSON(const std::string& filename) const {
             jm["Materials"].push_back(mat);
         }
 
-        jm["TextureID"] = m.textureID;
+        jm["TextureID"] = modelOffsets[i].textureID;
 
         j["Models"].push_back(jm);
     }
@@ -624,8 +678,7 @@ void Scene::loadJSON(const std::string& filename) {
     models.clear();
     modelOffsets.clear();
 
-    textures.clear();
-    textureLabels.clear();
+    pendingClearTextures = true;
     textureScales.fill(0.0f);
 
     // precomputedModels.clear();

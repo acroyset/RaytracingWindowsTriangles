@@ -1,5 +1,7 @@
 // Uniform.h
-#pragma once
+#ifndef UNIFORM_H
+#define UNIFORM_H
+
 #include <string>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -177,3 +179,5 @@ inline void Uniform<glm::mat4>::setArray(const glm::mat4* data, GLsizei n) const
     if (!valid()) return;
     glUniformMatrix4fv(location, n, GL_FALSE, glm::value_ptr(data[0]));
 }
+
+#endif // UNIFORM_H

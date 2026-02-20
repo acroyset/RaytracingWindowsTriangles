@@ -130,9 +130,36 @@ std::string dirOf(const std::string& path) {
     return (p == std::string::npos) ? std::string() : path.substr(0, p+1);
 }
 
-void loadMTL(const std::string& mtlPath, std::unordered_map<std::string, int>& nameToIndex, std::vector<Material>& materials) {
-    std::ifstream f(mtlPath);
-    if (!f) { std::cerr << "WARN: could not open MTL: " << mtlPath << "\n"; return; }
+std::vector<vec3> createNormals(std::vector<ivec3>& triangles, const std::vector<vec3>& vertices) {
+    std::vector<vec3> normals(triangles.size()/3);
+    for (int i = 0; i < triangles.size()/3; ++i) {
+        ivec3 tri1 = triangles[3*i+0];
+        ivec3 tri2 = triangles[3*i+1];
+        ivec3 tri3 = triangles[3*i+2];
+
+        vec3 v1 = vertices[tri1.x];
+        vec3 v2 = vertices[tri2.x];
+        vec3 v3 = vertices[tri3.x];
+
+        vec3 e1 = v2-v1;
+        vec3 e2 = v3-v1;
+
+        vec3 normal = normalize(cross(e1, e2));
+        triangles[3*i+0].z = i;
+        triangles[3*i+1].z = i;
+        triangles[3*i+2].z = i;
+        normals[i] = normal;
+    }
+
+    return normals;
+}
+
+
+BaseModel::BaseModel() = default;
+
+void BaseModel::loadMTL(const std::string& filename) {
+    std::ifstream f(filename);
+    if (!f) { std::cerr << "WARN: could not open MTL: " << filename << "\n"; return; }
 
     std::string line, curName;
     vec3 Kd, Ks, Ke;
@@ -140,39 +167,37 @@ void loadMTL(const std::string& mtlPath, std::unordered_map<std::string, int>& n
 
     auto flushMaterial = [&](){
         if (curName.empty()) return;
-        if (nameToIndex.find(curName) == nameToIndex.end()) {
-            int idx = int(materials.size());
-            nameToIndex[curName] = idx;
-            auto luminance = [](vec3 c) {
-                return 0.2126f*c.r + 0.7152f*c.g + 0.0722f*c.b;
-            };
+        materialNames.push_back(curName);
+        auto luminance = [](vec3 c) {
+            return 0.2126f*c.r + 0.7152f*c.g + 0.0722f*c.b;
+        };
 
-            float Ld = luminance(Kd);
-            float Ls = luminance(Ks);
+        float Ld = luminance(Kd);
+        float Ls = luminance(Ks);
 
-            specularProb = (Ld + Ls > 0.0f) ? (Ls / (Ld + Ls)) : 0.0f;
+        specularProb = (Ld + Ls > 0.0f) ? (Ls / (Ld + Ls)) : 0.0f;
 
-            emission = length(Ke);
+        emission = length(Ke);
 
-            Material material;
+        Material material;
 
 
-            if (emission > 0) material.setType(Emissive);
-            else if (transparency > 0) material.setType(Transparent);
-            else if (specularProb > 0) material.setType(Specular);
-            else material.setType(Opaque);
+        if (emission > 0) material.setType(Emissive);
+        else if (transparency > 0) material.setType(Transparent);
+        else if (specularProb > 0) material.setType(Specular);
+        else material.setType(Opaque);
 
-            material.setDiffuseColor(emission == 0 ? Kd : Ke);
-            material.setDiffuseRoughness(1);
-            material.setSpecularColor(Ks);
-            material.setSpecularRoughness(roughness);
-            material.setSpecularProbability(specularProb);
-            material.setTransparency(transparency);
-            material.setIndexOfRefraction(ior);
-            material.setEmissionStrength(emission);
+        material.setDiffuseColor(emission == 0 ? Kd : Ke);
+        material.setDiffuseRoughness(1);
+        material.setSpecularColor(Ks);
+        material.setSpecularRoughness(roughness);
+        material.setSpecularProbability(specularProb);
+        material.setTransparency(transparency);
+        material.setIndexOfRefraction(ior);
+        material.setEmissionStrength(emission);
 
-            materials.push_back(material);
-        }
+        materials.push_back(material);
+
     };
 
     while (std::getline(f, line)) {
@@ -202,33 +227,6 @@ void loadMTL(const std::string& mtlPath, std::unordered_map<std::string, int>& n
     flushMaterial();
 }
 
-std::vector<vec3> createNormals(std::vector<ivec3>& triangles, const std::vector<vec3>& vertices) {
-    std::vector<vec3> normals(triangles.size()/3);
-    for (int i = 0; i < triangles.size()/3; ++i) {
-        ivec3 tri1 = triangles[3*i+0];
-        ivec3 tri2 = triangles[3*i+1];
-        ivec3 tri3 = triangles[3*i+2];
-
-        vec3 v1 = vertices[tri1.x];
-        vec3 v2 = vertices[tri2.x];
-        vec3 v3 = vertices[tri3.x];
-
-        vec3 e1 = v2-v1;
-        vec3 e2 = v3-v1;
-
-        vec3 normal = normalize(cross(e1, e2));
-        triangles[3*i+0].z = i;
-        triangles[3*i+1].z = i;
-        triangles[3*i+2].z = i;
-        normals[i] = normal;
-    }
-
-    return normals;
-}
-
-
-BaseModel::BaseModel() = default;
-
 bool BaseModel::parse(const std::string& filename) {
     std::vector<ivec3> tempTriangles;
     std::vector<int> tempTriMatIndex;
@@ -240,8 +238,7 @@ bool BaseModel::parse(const std::string& filename) {
         return false;
     }
 
-    std::unordered_map<std::string,int> materialNameToIndex;
-    int currentMaterial = 0;                 // -1 = no material; we’ll map it to a default color later if needed
+    int currentMaterial = 0;
     bool mtlLoaded = false;
     std::string baseDir = dirOf(filename);
 
@@ -387,7 +384,7 @@ bool BaseModel::parse(const std::string& filename) {
 
                 if (!mtlLoaded) {
                     std::string full = baseDir + mtlName;
-                    loadMTL(full, materialNameToIndex, materials);
+                    loadMTL(full);
                     mtlLoaded = true;
                 }
             }
@@ -401,12 +398,12 @@ bool BaseModel::parse(const std::string& filename) {
                 while (ptr<end && *ptr!='\n' && *ptr!='\r') ptr++;
                 std::string matName(start, ptr);
 
-                auto it = materialNameToIndex.find(matName);
-                if (it != materialNameToIndex.end()) currentMaterial = it->second;
+                auto it = std::find_if(materialNames.begin(), materialNames.end(), [matName](const std::string& name) {return matName == name;});
+                if (it != materialNames.end()) currentMaterial = it - materialNames.begin();
                 else {
                     // unseen name: push a default color and remember it
                     int idx = int(materials.size());
-                    materialNameToIndex[matName] = idx;
+                    materialNames.push_back(matName);
                     materials.emplace_back();
                     currentMaterial = idx;
                 }

@@ -65,13 +65,25 @@ struct DataPackage {
 };
 
 struct ModelOffset {
+    int triangle;
+    int vertex;
+    int texCoord;
+    int normal;
     int BVHnodes;
     int material;
     int textureID;
 
     int padding = 0;
 
-    ModelOffset(int BVHnodes, int material, int textureID) : BVHnodes(BVHnodes), material(material), textureID(textureID) {}
+    ModelOffset(int triangle, int vertex, int texCoord, int normal, int BVHnodes, int material, int textureID) {
+        this->triangle = triangle;
+        this->vertex = vertex;
+        this->texCoord = texCoord;
+        this->normal = normal;
+        this->BVHnodes = BVHnodes;
+        this->material = material;
+        this->textureID = textureID;
+    }
 };
 
 enum DebugMode {
@@ -86,7 +98,9 @@ class SceneUI;
 class Scene {
     friend SceneUI;
 
-    ShaderWindow window{};
+    ShaderWindow window{"Raytracer"};
+    Shader raytracer{"shaders/fullscreen.vert", "shaders/raytracer.frag", window.getGLSLVersion(), {"shaders/structs.glsl"}};
+    Shader postProcessing{"shaders/fullscreen.vert", "shaders/postProcessing.frag", window.getGLSLVersion()};
 
     SceneUI ui{};
     bool isOpen = true;
@@ -104,7 +118,7 @@ class Scene {
 
     // Model Info
 
-    std::vector<std::vector<int>> modelOffsets; // Toffset, Voffset, TXoffset, Noffset, BVHoffset, Moffset
+    std::vector<ModelOffset> modelOffsets;
 
     // BVH
 
@@ -228,6 +242,7 @@ class Scene {
     std::vector<std::string> textureLabels;
 
     std::vector<std::pair<std::string, int>> pendingTextures;
+    bool pendingClearTextures = false;
 
     // Scene save / load / add
 
@@ -256,6 +271,8 @@ class Scene {
 
     void addModel(const std::string &filename, const Transformation& transformation, const std::string& texturePath = "");
     void addModel(const Model& model, const std::string& texturePath = "");
+
+    void removeModel(int index);
 
     [[nodiscard]] int getNumBVHNodes() const;
 

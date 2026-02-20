@@ -60,7 +60,6 @@ public:
         if (textureID != 0) {
             glDeleteTextures(1, &textureID);
         }
-        // Future: cancel any pending async loads here
     }
 
     Texture(Texture&& other) noexcept;

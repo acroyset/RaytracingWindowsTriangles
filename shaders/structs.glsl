@@ -57,6 +57,10 @@ struct Ray{
 };
 
 struct ModelOffset {
+    int triangle;
+    int vertex;
+    int texCoord;
+    int normal;
     int BVHnodes;
     int material;
     int textureID;

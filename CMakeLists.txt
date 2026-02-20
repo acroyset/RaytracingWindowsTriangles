@@ -19,10 +19,9 @@ add_executable(RaytracingWindowsTriangles
         src/BaseModel.cpp
         src/Rendering/ShaderWindow.cpp
         src/Rendering/Texture.cpp
-        src/JSONextensions.h
         src/SceneUI.cpp
-        src/SceneUI.h
-        src/FileBrowser.h
+        src/Rendering/Shader.cpp
+        src/Rendering/Shader.h
 )
 target_include_directories(RaytracingWindowsTriangles PRIVATE
         external/glad/include

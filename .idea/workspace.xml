@@ -37,18 +37,27 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cd06d447-a7c8-42f4-a8e5-4bf88ac1888b" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/FileBrowser.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/shaders/postProcessing.frag" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Rendering/Shader.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Rendering/Shader.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/imgui.ini" beforeDir="false" afterPath="$PROJECT_DIR$/imgui.ini" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/shaders/fullscreen.frag" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/fullscreen.frag" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scenes/scene1.json" beforeDir="false" afterPath="$PROJECT_DIR$/scenes/scene1.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scenes/scene2.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/shaders/fullscreen.frag" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/raytracer.frag" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/shaders/structs.glsl" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/structs.glsl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/BaseModel.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/BaseModel.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/BaseModel.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/BaseModel.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Model.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Model.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Rendering/ShaderWindow.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/ShaderWindow.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Rendering/ShaderWindow.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/ShaderWindow.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Rendering/Texture.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/Texture.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Rendering/Uniform.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/Uniform.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/SceneUI.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/SceneUI.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/SceneUI.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/SceneUI.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -77,6 +86,10 @@
   }
 }</component>
   <component name="HighlightingSettingsPerFile">
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/BaseModel.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/Scene.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/Scene.h" root0="FORCE_HIGHLIGHTING" />
@@ -276,6 +289,8 @@
       <workItem from="1771303422043" duration="17308000" />
       <workItem from="1771352206698" duration="7446000" />
       <workItem from="1771367462968" duration="26568000" />
+      <workItem from="1771460529431" duration="16302000" />
+      <workItem from="1771545673896" duration="7949000" />
     </task>
     <servers />
   </component>
@@ -286,16 +301,5 @@
     <isAutomaticCheckingOnLaunch value="false" />
     <isAutomaticFoundErrors value="true" />
     <isAutomaticReloadCMake value="true" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/src/SceneUI.cpp</url>
-          <line>4</line>
-          <option name="timeStamp" value="12" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
   </component>
 </project>
