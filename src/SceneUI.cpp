@@ -148,20 +148,17 @@ static bool DrawMaterialInspector(Material& m, int matIndex, int textureID){
     return changed;
 }
 
-static void DrawBusyOverlay(const char* label){
+static void DrawBusyOverlay(const char* label, float progress){
     ImGui::OpenPopup("Working...");
     if (ImGui::BeginPopupModal("Working...", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
-        auto t = static_cast<float>(ImGui::GetTime());
-        float v = 0.5f + 0.5f * sinf(t * 6.0f);
         ImGui::TextUnformatted(label);
-        ImGui::ProgressBar(v, ImVec2(250, 0));
+        ImGui::ProgressBar(progress, ImVec2(250, 0));
         ImGui::TextDisabled("Please wait...");
         ImGui::EndPopup();
     }
 }
 
 void SceneUI::render(Scene& scene) {
-
     bool ui_resetAccum = false;
 
     ImGui::DockSpaceOverViewport(
@@ -262,8 +259,9 @@ void SceneUI::render(Scene& scene) {
         const bool hasModels = !scene.models.empty();
         if (!hasModels) {
             ImGui::TextDisabled("(no models)");
-        }
-        else {
+        } else if (scene.isBusy) {
+            ImGui::TextDisabled("Loading...");
+        } else {
 
             for (int i = 0; i < scene.models.size(); i++) {
                 bool sel = (selectedModel == i);
@@ -348,11 +346,6 @@ void SceneUI::render(Scene& scene) {
             }
 
             ImGui::EndPopup();
-        }
-
-
-        if (scene.busy) {
-            DrawBusyOverlay(scene.busyLabel.c_str());
         }
 
         ImGui::End();
@@ -555,7 +548,7 @@ void SceneUI::render(Scene& scene) {
     }
 
     // inspector
-    if (selectedModel >= 0) {
+    if (!scene.isBusy && selectedModel >= 0) {
         ImGui::Begin("Inspector");
 
         ImGui::Indent();
@@ -662,6 +655,20 @@ void SceneUI::render(Scene& scene) {
     }
 
     drawFileBrowser();
+
+    if (scene.isBusy && wasNotBusy) {
+        progress = 0.0f;
+    }
+
+    progress = progress * smoothing + (1-smoothing)*(scene.progress/scene.progressMax);
+    if (scene.isBusy) {
+        wasNotBusy = false;
+        DrawBusyOverlay(scene.busyLabel.c_str(), progress);
+    } else if (progress < 0.99f) {
+        progress = progress * 0.9f + 0.1f*(scene.progress/scene.progressMax);
+        wasNotBusy = false;
+        DrawBusyOverlay(scene.busyLabel.c_str(), progress);
+    } else wasNotBusy = true;
 
 
     if (ui_resetAccum) scene.resetAccumulation();

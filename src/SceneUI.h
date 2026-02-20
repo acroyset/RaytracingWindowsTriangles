@@ -55,6 +55,11 @@ class SceneUI {
     std::string pendingModelPath;
     bool showTexturePrompt = false;
 
+    float progress = 0.0f;
+    float smoothing = 0.99f;
+
+    bool wasNotBusy = true;
+
     public:
 
     SceneUI() = default;

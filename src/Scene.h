@@ -248,11 +248,16 @@ class Scene {
     // Scene save / load / add
 
     std::future<void> job;
-    std::atomic<bool> busy{};
+    std::atomic<bool> isBusy{};
+
     std::string busyLabel;
     std::string statusMsg;
     bool statusIsError;
+
     std::atomic<bool> newData{};
+    std::atomic<float> progress{};
+    std::atomic<float> progressMax{};
+
     std::thread::id mainThreadID = std::this_thread::get_id();
 
     // Keys
@@ -323,7 +328,9 @@ class Scene {
     }
 
     void startAddJob(const std::string& path, const std::string& texturePath) {
-        busy = true;
+        progress = 0.4f;
+        progressMax = 1.0f;
+        isBusy = true;
         resetAccumulation();
         busyLabel = "Adding Model...";
 
@@ -340,12 +347,14 @@ class Scene {
                 statusIsError = true;
                 statusMsg = "Add failed: unknown error";
             }
-            busy = false;
+            isBusy = false;
         });
+
+        progress = 1.0f;
     }
 
     void startLoadJob(const std::string& path){
-        busy = true;
+        isBusy = true;
         resetAccumulation();
         busyLabel = "Loading JSON...";
 
@@ -362,7 +371,7 @@ class Scene {
                 statusIsError = true;
                 statusMsg = "Load failed: unknown error";
             }
-            busy = false;
+            isBusy = false;
         });
     }
 };

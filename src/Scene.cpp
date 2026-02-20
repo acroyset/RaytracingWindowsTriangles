@@ -30,7 +30,7 @@ Scene::Scene() {
 
     textureScales.fill(0.0f);
 
-    busy = false;
+    isBusy = false;
     newData = false;
     statusIsError = false;
 }
@@ -63,7 +63,7 @@ Scene::Scene(const int samples, const int aa, const int bounceLim)
 
     textureScales.fill(0.0f);
 
-    busy = false;
+    isBusy = false;
     newData = false;
     statusIsError = false;
 }
@@ -104,7 +104,6 @@ void Scene::addModel(const std::string& filename, const Transformation &transfor
     }
 }
 void Scene::addModel(const Model& model, const std::string& texturePath) {
-
     int Toffset = int(triangles.size())/3;
     int Voffset = int(vertices.size());
     int TXoffset = int(texCoords.size());
@@ -307,6 +306,7 @@ void Scene::createUniforms() {
 }
 
 void Scene::setUniformsRTX() const {
+    raytracer.bind();
 
     uNumModels.set(int(models.size()));
 
@@ -355,6 +355,7 @@ void Scene::setUniformsRTX() const {
     }
 }
 void Scene::setUniformsPP() const {
+    postProcessing.bind();
     uResolutionPP.set(window.size());
 }
 
@@ -502,9 +503,6 @@ void Scene::updateFrame() {
         set_ssbo();
         newData = false;
     }
-    if (busy) {
-        lastSentPackage = dataSent();
-    }
 
 
     ImGui_ImplOpenGL3_NewFrame();
@@ -520,9 +518,7 @@ void Scene::updateFrame() {
 
     ui.render(*this);
 
-    raytracer.bind();
     setUniformsRTX();
-    postProcessing.bind();
     setUniformsPP();
 
     frameCount++;
@@ -747,6 +743,9 @@ void Scene::loadJSON(const std::string& filename) {
 
     // --- Models ---
     if (j.contains("Models") && j["Models"].is_array()) {
+        int numModels = j["Models"].size();
+        progressMax = numModels;
+        progress = 0.0f;
         for (const auto& m : j["Models"]) {
             std::string mf = m.value("Filename", "");
             if (mf.empty()) continue;
@@ -765,6 +764,7 @@ void Scene::loadJSON(const std::string& filename) {
                 models.back().materials.clear();
                 for (const auto& mat : mats) models.back().materials.push_back(mat);
             }
+            progress = progress + 1.0f;
         }
     }
 
