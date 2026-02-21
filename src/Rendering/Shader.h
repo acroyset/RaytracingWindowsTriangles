@@ -10,30 +10,24 @@
 #include <glad/glad.h>
 #include "Uniform.h"
 #include "Texture.h"
+#include "ShaderPass.h"
 
-class Shader {
+class Shader : public ShaderPass {
     GLuint program   = 0;
     GLuint vao       = 0;
     GLuint fbo[2]    = {0, 0};
     GLuint tex[2]    = {0, 0};
-    int    write     = 0;       // ping-pong write index
+    int    write     = 0;
     int    width     = 0;
     int    height    = 0;
     bool   hasFeedback = false;
 
-    std::string vertPath;
-    std::string fragPath;
-    std::string glslVersion;
+    std::string vertPath, fragPath, glslVersion;
     std::vector<std::string> includePaths;
 
-    // Reserved texture units:
-    //   0 → u_input        (previous shader's output)
-    //   1 → u_previousFrame (own last frame, feedback only)
-    //   2+ → user textures
     int nextUnit = 2;
-    std::vector<int> freeUnits; // reclaimed slots
+    std::vector<int> freeUnits;
 
-    // Cached uniform locations for the pipeline's own bindings
     GLint locInput    = -1;
     GLint locPrevious = -1;
 
@@ -43,38 +37,30 @@ class Shader {
     void allocateFBOs(int w, int h);
 
     int getNextUnit() {
-        if (!freeUnits.empty()) {
-            int u = freeUnits.back();
-            freeUnits.pop_back();
-            return u;
-        }
+        if (!freeUnits.empty()) { int u = freeUnits.back(); freeUnits.pop_back(); return u; }
         return nextUnit++;
     }
 
 public:
-    bool enabled = true;
-
     Shader(const char* vertPath, const char* fragPath,
            const std::string& version,
            const std::vector<std::string>& includes = {});
 
-    ~Shader();
+    ~Shader() override;
 
-    Shader(const Shader&) = delete;
+    Shader(const Shader&)            = delete;
     Shader& operator=(const Shader&) = delete;
     Shader(Shader&&) noexcept;
 
-    // In the shader: uniform sampler2D u_previousFrame;
+    // ── ShaderPass interface ──────────────────────────────────────
+    void   execute(GLuint inputTex, bool toScreen) override;
+    [[nodiscard]] GLuint outputTexture() const override;
+    void   resize(int w, int h) override;
+    void   clearFeedback()      override;
+    bool   reload()             override;
+
+    // ── Shader-specific extras ────────────────────────────────────
     void enableFeedback();
-
-    // Resize internal render targets (called by ShaderWindow)
-    void resize(int w, int h);
-
-    // Clear both ping-pong buffers to zero (call after camera jump etc.)
-    void clearFeedback() const;
-
-    bool reload();
-
 
     template<typename T>
     [[nodiscard]] Uniform<T> createUniform(const std::string& name) const {
@@ -83,17 +69,9 @@ public:
 
     [[nodiscard]] Texture createTexture(const std::string& uniformName);
     [[nodiscard]] Texture createTexture(const std::string& uniformName, const std::string& path);
-    void releaseTexture(const Texture& tex) {
-        freeUnits.push_back(tex.getUnit());
-    }
+    void releaseTexture(const Texture& t) { freeUnits.push_back(t.getUnit()); }
 
-    // inputTex = 0 means "no input" (first shader in chain)
-    void execute(GLuint inputTex, bool toScreen);
-
-    [[nodiscard]] GLuint outputTexture() const {
-       return hasFeedback ? tex[1 - write] : tex[write];
-    }
-    [[nodiscard]] GLuint getProgram()    const { return program; }
+    [[nodiscard]] GLuint getProgram() const { return program; }
     void bind() const { glUseProgram(program); }
 };
 

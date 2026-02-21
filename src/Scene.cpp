@@ -16,9 +16,12 @@ void setBasisVectors(const vec3& forward, vec3& up, vec3& right) {
 
 Scene::Scene() {
 
+    bloom.init(window.getGLSLVersion());
+
     raytracer.enableFeedback();
-    window.addShader(&raytracer);
-    window.addShader(&postProcessing);
+    window.addPass(&raytracer);
+    window.addPass(&bloom);
+    window.addPass(&postProcessing);
 
 
     samples = 1;
@@ -38,9 +41,12 @@ Scene::Scene() {
 Scene::Scene(const int samples, const int aa, const int bounceLim)
     : samples(samples), aa(aa), bounceLim(bounceLim), frameCount(0), sampleCount(0){
 
+    bloom.init(window.getGLSLVersion());
+
     raytracer.enableFeedback();
-    window.addShader(&raytracer);
-    window.addShader(&postProcessing);
+    window.addPass(&raytracer);
+    window.addPass(&bloom);
+    window.addPass(&postProcessing);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -366,9 +372,7 @@ void Scene::set_ssbo() {
     std::vector<Material> materials;
     std::vector<mat4> modelTransforms;
     std::vector<mat4> modelInvTransforms;
-    for (int i = 0; i < models.size(); i++) {
-        Model model = models[i];
-
+    for (const auto& model : models) {
         for (const Material& m : model.materials) materials.emplace_back(m);
         modelTransforms.emplace_back(model.transformation.matrix);
         modelInvTransforms.emplace_back(model.transformation.inverseMatrix);
@@ -744,7 +748,7 @@ void Scene::loadJSON(const std::string& filename) {
     // --- Models ---
     if (j.contains("Models") && j["Models"].is_array()) {
         int numModels = j["Models"].size();
-        progressMax = numModels;
+        progressMax = float(numModels);
         progress = 0.0f;
         for (const auto& m : j["Models"]) {
             std::string mf = m.value("Filename", "");

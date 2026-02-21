@@ -281,7 +281,7 @@ vec3 getEnviormentLight(vec3 dir){
     if (!skyActive) return vec3(0);
 
     vec3 sky = sampleSky(dir);
-    float s  = pow(max(dot(normalize(dir), normalize(sunDir)), 0.0), 2048.0);
+    float s  = pow(max(dot(normalize(dir), normalize(sunDir)), 0.0), 4096.0);
     return sky + sunColor * s;
 }
 
@@ -734,12 +734,14 @@ void main(){
     vec4 total = vec4(0.0);
     int aaCycle = frameCount % (aa*aa);
 
+    float maxBrighness = 1000;
+
     for (int s=0; s<samples; ++s) {
         Ray ray = calculateInitialRay(aaCycle, screen, state);
 
         vec4 color = trace(ray, state);
 
-        total += min(color, vec4(50, 50, 50, 3.4e38));
+        total += min(color, vec4(vec3(maxBrighness), 3.4e38));
 
         aaCycle = (aaCycle+1) % (aa*aa);
     }

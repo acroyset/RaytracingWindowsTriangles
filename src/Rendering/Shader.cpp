@@ -7,48 +7,6 @@
 #include <sstream>
 #include <iostream>
 
-static std::string readFile(const char* path) {
-    std::ifstream f(path, std::ios::binary);
-    if (!f) { std::cerr << "Cannot open: " << path << "\n"; return {}; }
-    std::ostringstream ss; ss << f.rdbuf(); return ss.str();
-}
-
-static std::string injectVersion(const std::string& src, const std::string& ver) {
-    std::string body = src;
-    size_t i = 0;
-    while (i < body.size() && std::isspace((unsigned char)body[i])) ++i;
-    if (i < body.size() && body.compare(i, 8, "#version") == 0) {
-        size_t end = body.find('\n', i);
-        body.replace(i, end - i, "#version " + ver);
-    } else {
-        body = "#version " + ver + "\n" + body;
-    }
-    return body;
-}
-
-static std::string mergeIncludes(const char* mainPath, const std::vector<std::string>& includes) {
-    std::string out;
-    for (const auto& p : includes) out += readFile(p.c_str()) + "\n\n";
-    out += readFile(mainPath);
-    return out;
-}
-
-static GLuint compileShader(GLenum type, const std::string& src) {
-    GLuint sh = glCreateShader(type);
-    const char* c = src.c_str();
-    glShaderSource(sh, 1, &c, nullptr);
-    glCompileShader(sh);
-    GLint ok; glGetShaderiv(sh, GL_COMPILE_STATUS, &ok);
-    if (!ok) {
-        GLint len; glGetShaderiv(sh, GL_INFO_LOG_LENGTH, &len);
-        std::string log(len, '\0');
-        glGetShaderInfoLog(sh, len, nullptr, log.data());
-        std::cerr << "Shader compile error:\n" << log << "\n";
-    }
-    return sh;
-}
-
-
 void Shader::buildProgram(const char* vertPath, const char* fragPath, const std::string& version, const std::vector<std::string>& includes) {
     std::string vsrc = injectVersion(readFile(vertPath), version);
     std::string fsrc = injectVersion(mergeIncludes(fragPath, includes), version);
@@ -142,7 +100,7 @@ void Shader::resize(int w, int h) {
     allocateFBOs(w, h);
 }
 
-void Shader::clearFeedback() const {
+void Shader::clearFeedback() {
     if (!fbo[0]) return;
     for (unsigned int i : fbo) {
         glBindFramebuffer(GL_FRAMEBUFFER, i);
@@ -238,4 +196,8 @@ void Shader::execute(GLuint inputTex, bool toScreen) {
     // Advance ping-pong only when feedback is on;
     // non-feedback shaders always expose their result from the same slot.
     if (hasFeedback) write = 1 - write;
+}
+
+[[nodiscard]] GLuint Shader::outputTexture() const {
+    return hasFeedback ? tex[1 - write] : tex[write];
 }

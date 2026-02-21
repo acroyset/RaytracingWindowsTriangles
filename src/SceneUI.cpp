@@ -251,6 +251,19 @@ void SceneUI::render(Scene& scene) {
             }
         }
 
+        if (ImGui::CollapsingHeader("Bloom")) {
+            ImGui::Checkbox("Bloom Active", &scene.bloom.enabled);
+            if (scene.bloom.enabled) {
+
+                ImGui::Indent();
+                ImGui::SliderFloat("Bloom Threshold", &scene.bloom.threshold, 0.5f, 2.0f);
+                ImGui::SliderFloat("Bloom Knee", &scene.bloom.knee, 0.0f, 1.0f);
+                ImGui::SliderFloat("Bloom Strength", &scene.bloom.strength, 0.0001f, 1.0f);
+                ImGui::SliderInt("Bloom Num Mips", &scene.bloom.numMips, 1, 16);
+                ImGui::Unindent();
+            }
+        }
+
         ImGui::Separator();
         ImGui::Text("Models");
 
@@ -387,7 +400,7 @@ void SceneUI::render(Scene& scene) {
         ImGui::Separator();
 
         if (ImGui::Button("Reload Shaders")) {
-            scene.window.reloadShaders();
+            scene.window.reload();
             ui_resetAccum = true;
         }
 

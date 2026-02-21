@@ -73,19 +73,18 @@ ShaderWindow::~ShaderWindow() {
     glfwTerminate();
 }
 
-void ShaderWindow::addShader(Shader* shader) {
-    shader->resize(fbWidth, fbHeight);
-    shaders.push_back(shader);
+void ShaderWindow::addPass(ShaderPass* pass) {
+    pass->resize(fbWidth, fbHeight);
+    passes.push_back(pass);
 }
 
-void ShaderWindow::removeShader(Shader* shader) {
-    shaders.erase(std::remove(shaders.begin(), shaders.end(), shader), shaders.end());
+void ShaderWindow::removePass(ShaderPass* pass) {
+    passes.erase(std::remove(passes.begin(), passes.end(), pass), passes.end());
 }
 
 void ShaderWindow::render() const {
-    // Collect enabled shaders
-    std::vector<Shader*> active;
-    for (auto* s : shaders)
+    std::vector<ShaderPass*> active;
+    for (auto* s : passes)
         if (s && s->enabled) active.push_back(s);
 
     GLuint prevOutput = 0;
@@ -100,16 +99,16 @@ bool ShaderWindow::resizeAll(int w, int h) {
     if (fbWidth == w && fbHeight == h) return false;
     fbWidth = w; fbHeight = h;
     glViewport(0, 0, w, h);
-    for (auto* s : shaders) s->resize(w, h);
+    for (auto* s : passes) s->resize(w, h);
     return true;
 }
 
 void ShaderWindow::clearAllFeedback() const {
-    for (auto* s : shaders) s->clearFeedback();
+    for (auto* s : passes) s->clearFeedback();
 }
 
-void ShaderWindow::reloadShaders() const {
-    for (Shader* s : shaders) {
+void ShaderWindow::reload() const {
+    for (ShaderPass* s : passes) {
         s->reload();
     }
 }
@@ -137,8 +136,8 @@ void ShaderWindow::setMousePos(const vec2 pos) const {
 }
 
 [[nodiscard]] GLuint ShaderWindow::outputTexture() const {
-    for (int i = int(shaders.size()) - 1; i >= 0; i--)
-        if (shaders[i] && shaders[i]->enabled)
-            return shaders[i]->outputTexture();
+    for (int i = int(passes.size()) - 1; i >= 0; i--)
+        if (passes[i] && passes[i]->enabled)
+            return passes[i]->outputTexture();
     return 0;
 }

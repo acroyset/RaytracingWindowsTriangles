@@ -22,6 +22,9 @@ add_executable(RaytracingWindowsTriangles
         src/SceneUI.cpp
         src/Rendering/Shader.cpp
         src/Rendering/Shader.h
+        src/Rendering/ShaderPass.h
+        src/BloomPass.cpp
+        src/BloomPass.h
 )
 target_include_directories(RaytracingWindowsTriangles PRIVATE
         external/glad/include

@@ -28,6 +28,9 @@
 #include "SceneUI.h"
 #include <nfd.hpp>
 
+#include "BloomPass.h"
+#include "Rendering/Shader.h"
+
 #define GLAD_GL_IMPLEMENTATION
 
 
@@ -100,6 +103,7 @@ class Scene {
 
     ShaderWindow window{"Raytracer"};
     Shader raytracer{"shaders/fullscreen.vert", "shaders/raytracer.frag", window.getGLSLVersion(), {"shaders/structs.glsl"}};
+    BloomPass bloom;
     Shader postProcessing{"shaders/fullscreen.vert", "shaders/postProcessing.frag", window.getGLSLVersion()};
 
     SceneUI ui{};

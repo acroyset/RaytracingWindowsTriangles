@@ -24,11 +24,9 @@
 #include <string>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
-#include "Texture.h"
 #include "Uniform.h"
 #include "Timer.h"
-#include "Shader.h"
+#include "ShaderPass.h"
 
 using namespace glm;
 
@@ -42,7 +40,7 @@ class ShaderWindow {
 
     Timer totalTime, deltaTime;
 
-    std::vector<Shader*> shaders; // non-owning
+    std::vector<ShaderPass*> passes;
 
     std::string glslVersion;
 
@@ -51,8 +49,8 @@ public:
     ~ShaderWindow();
 
     // ── Pipeline ───────────────────────────────────────────────────
-    void addShader(Shader* shader);   // appends to chain
-    void removeShader(Shader* shader);
+    void addPass(ShaderPass* pass);
+    void removePass(ShaderPass* pass);
 
     // Runs the full chain, last shader → screen
     void render() const;
@@ -66,7 +64,7 @@ public:
     // Clears feedback buffers on every shader that has feedback
     void clearAllFeedback() const;
 
-    void reloadShaders() const;
+    void reload() const;
 
     [[nodiscard]] std::string getGLSLVersion()     const { return glslVersion; }
     [[nodiscard]] bool        open()               const { return !glfwWindowShouldClose(window); }
