@@ -6,6 +6,7 @@
 #define SCENE_H
 #define GLFW_INCLUDE_NONE
 
+#include <deque>
 #include <future>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -155,7 +156,7 @@ class Scene {
     float gpuTime = 0;
     float cpuTime = 0;
     float smoothing = 0.9;
-    std::vector<float> dtData;
+    std::deque<float> fpsData;
 
     // Sky
 

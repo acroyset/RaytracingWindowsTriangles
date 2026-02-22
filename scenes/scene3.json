@@ -1,0 +1,971 @@
+{
+    "Camera": {
+        "aperture": 0.0,
+        "focusDistance": 1000.0,
+        "forward": [
+            -0.6676813960075378,
+            -0.18934012949466705,
+            -0.7199666500091553
+        ],
+        "fovDeg": 60.0,
+        "position": [
+            134.09329223632813,
+            -96.32018280029297,
+            143.67491149902344
+        ],
+        "sensitivity": 0.029999999329447746,
+        "speed": 83.74099731445313
+    },
+    "Floor": {
+        "active": true,
+        "diffuseColor": [
+            1.0,
+            1.0,
+            1.0,
+            0.0
+        ],
+        "specularColor": [
+            0.0,
+            0.0,
+            0.0,
+            -1.0
+        ]
+    },
+    "Models": [
+        {
+            "Filename": "assets\\models\\bugatti\\bugatti.obj",
+            "Materials": [
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.0,
+                        0.17906592786312103,
+                        0.3382353186607361
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "specularProbability": 0.23800000548362732,
+                    "specularRoughness": 0.012000000104308128,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.800000011920929,
+                        0.800000011920929,
+                        0.800000011920929
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.38461539149284363,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.03310300037264824,
+                        0.03310300037264824,
+                        0.03310300037264824
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.9379050731658936,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.800000011920929,
+                        0.800000011920929,
+                        0.800000011920929
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.2669999897480011,
+                    "specularRoughness": 0.16599999368190765,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.800000011920929,
+                        0.800000011920929,
+                        0.800000011920929
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "specularProbability": 1.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.0,
+                        0.014417542144656181,
+                        0.04901963472366333
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "specularProbability": 0.1599999964237213,
+                    "specularRoughness": 0.012000000104308128,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.800000011920929,
+                        0.800000011920929,
+                        0.800000011920929
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.38461539149284363,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        5.0,
+                        5.0,
+                        5.0
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 1.5750000476837158,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 0.0,
+                    "type": "Emissive"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        5.0,
+                        5.0,
+                        5.0
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 1.5750000476837158,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 0.0,
+                    "type": "Emissive"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.800000011920929,
+                        0.800000011920929,
+                        0.800000011920929
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.38461539149284363,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.800000011920929,
+                        0.800000011920929,
+                        0.800000011920929
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.38461539149284363,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.800000011920929,
+                        0.800000011920929,
+                        0.800000011920929
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.38461539149284363,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.008076000027358532,
+                        0.008076000027358532,
+                        0.008076000027358532
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.9841046929359436,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.800000011920929,
+                        0.800000011920929,
+                        0.800000011920929
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.38461539149284363,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.800000011920929,
+                        0.800000011920929,
+                        0.800000011920929
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.12824000418186188,
+                        0.12824000418186188,
+                        0.12824000418186188
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.7958741784095764,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.800000011920929,
+                        0.800000011920929,
+                        0.800000011920929
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.38461539149284363,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.800000011920929,
+                        0.800000011920929,
+                        0.800000011920929
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.38461539149284363,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.0020639998838305473,
+                        0.0020639998838305473,
+                        0.0020639998838305473
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.9958890080451965,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.012217000126838684,
+                        0.012217000126838684,
+                        0.012217000126838684
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.976148784160614,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.800000011920929,
+                        0.800000011920929,
+                        0.800000011920929
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.38461539149284363,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.10784316062927246,
+                        0.10784316062927246,
+                        0.10784316062927246
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.38461539149284363,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.800000011920929,
+                        0.800000011920929,
+                        0.800000011920929
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.38461539149284363,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.5289999842643738,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.2558099925518036,
+                        0.5645660161972046,
+                        0.8000019788742065
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.4921632707118988,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "diffuseRoughness": 0.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.2999999523162842,
+                    "specularColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 1.0,
+                    "type": "Transparent"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.067501001060009,
+                        0.8000040054321289,
+                        0.7108039855957031
+                    ],
+                    "diffuseRoughness": 0.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 1.0,
+                    "type": "Transparent"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.0,
+                        0.7111999988555908,
+                        0.8000029921531677
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.4688625931739807,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.9852941036224365,
+                        0.9852941036224365,
+                        0.9852941036224365
+                    ],
+                    "diffuseRoughness": 0.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.2910000085830688,
+                    "specularColor": [
+                        0.9509803652763367,
+                        0.9509803652763367,
+                        0.9509803652763367
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 1.0,
+                    "type": "Transparent"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.800000011920929,
+                        0.800000011920929,
+                        0.800000011920929
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 1.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 0.0,
+                    "type": "Emissive"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.38461539149284363,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.8000019788742065,
+                        0.059716999530792236,
+                        0.03363500162959099
+                    ],
+                    "diffuseRoughness": 0.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.315999984741211,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 1.0,
+                    "type": "Transparent"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.03310300037264824,
+                        0.03310300037264824,
+                        0.03310300037264824
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.9379050731658936,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.1813725233078003,
+                        0.1813725233078003,
+                        0.1813725233078003
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "specularProbability": 0.6930000185966492,
+                    "specularRoughness": 0.0,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.800000011920929,
+                        0.800000011920929,
+                        0.800000011920929
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.38461539149284363,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.800000011920929,
+                        0.800000011920929,
+                        0.800000011920929
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.38461539149284363,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.054969001561403275,
+                        0.054969001561403275,
+                        0.054969001561403275
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.9009512066841125,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.800000011920929,
+                        0.800000011920929,
+                        0.800000011920929
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 0.0,
+                    "type": "Opaque"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.014670000411570072,
+                        0.014670000411570072,
+                        0.014670000411570072
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.09803920984268188,
+                        0.09803920984268188,
+                        0.09803920984268188
+                    ],
+                    "specularProbability": 0.453000009059906,
+                    "specularRoughness": 0.36000001430511475,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.800000011920929,
+                        0.800000011920929,
+                        0.800000011920929
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.38461539149284363,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.800000011920929,
+                        0.800000011920929,
+                        0.800000011920929
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "specularProbability": 0.38461539149284363,
+                    "specularRoughness": 0.08908708393573761,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    9.142814636230469,
+                    -16.928695678710938,
+                    9.572956085205078
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    354.82598876953125,
+                    354.82598876953125,
+                    354.82598876953125
+                ]
+            }
+        }
+    ],
+    "Settings": {
+        "aa": 5,
+        "bounceLim": 8
+    },
+    "Sky": {
+        "active": false,
+        "color": [
+            0.5,
+            0.699999988079071,
+            0.8999999761581421
+        ],
+        "sunColor": [
+            1.0,
+            0.9300000071525574,
+            0.3100000023841858
+        ],
+        "sunDir": [
+            0.8670896887779236,
+            0.4980515241622925,
+            0.01000103447586298
+        ],
+        "sunStrength": 1000.0
+    },
+    "Textures": {
+        "Paths": [],
+        "Scales": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+        ]
+    }
+}

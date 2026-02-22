@@ -515,7 +515,7 @@ void Scene::updateFrame() {
 
     float dt = window.getDeltaTime();
     updateItemSmooth(totalTime, dt);
-    dtData.emplace_back(dt);
+    fpsData.emplace_back(1.0f/dt);
 
     if (inputHandling(speed, sensitivity, dt)) resetAccumulation();
 
@@ -747,7 +747,7 @@ void Scene::loadJSON(const std::string& filename) {
 
     // --- Models ---
     if (j.contains("Models") && j["Models"].is_array()) {
-        int numModels = j["Models"].size();
+        int numModels = int(j["Models"].size());
         progressMax = float(numModels);
         progress = 0.0f;
         for (const auto& m : j["Models"]) {
@@ -766,7 +766,12 @@ void Scene::loadJSON(const std::string& filename) {
                 const auto& mats = m["Materials"];
 
                 models.back().materials.clear();
-                for (const auto& mat : mats) models.back().materials.push_back(mat);
+                models.back().materialNames.clear();
+                for (int i = 0; i < mats.size(); ++i) {
+                    json mat = mats[i];
+                    models.back().materials.push_back(mat);
+                    models.back().materialNames.push_back(mat.contains("Name") ? mat["Name"].get<std::string>() : "Material " + std::to_string(i));
+                }
             }
             progress = progress + 1.0f;
         }

@@ -104,22 +104,25 @@ Triangle createTri(int triIndex, int modelIdx){
 }
 
 // RNG
-float randomValue(inout uint state){
+uint randomUint(inout uint state) {
     state = state * 747796405u + 2891336453u;
     uint result = ((state >> ((state >> 28) + 4u)) ^ state) * 277803737u;
-    result = (result >> 22) ^ result;
-    return float(result) * (1.0/4294967295.0);
+    return (result >> 22) ^ result;
 }
-vec2 randPointDisk(inout uint state){
-    float angle = randomValue(state) * 2 * PI;
-    vec2 pointOnCircle = vec2(cos(angle), sin(angle));
-    return pointOnCircle * sqrt(randomValue(state));
+float randomValue(inout uint state) {
+    return float(randomUint(state)) * (1.0 / 4294967295.0);
 }
 float randomValueNormalDistribution(inout uint state) {
     // Thanks to https://stackoverflow.com/a/6178290
     float theta = 2 * PI * randomValue(state);
     float rho = sqrt(-2 * log(randomValue(state)));
     return rho * cos(theta);
+}
+
+vec2 randPointDisk(inout uint state){
+    float angle = randomValue(state) * 2 * PI;
+    vec2 pointOnCircle = vec2(cos(angle), sin(angle));
+    return pointOnCircle * sqrt(randomValue(state));
 }
 vec3 randPointSphere(inout uint state) {
     // Thanks to https://math.stackexchange.com/a/1585996
@@ -128,6 +131,7 @@ vec3 randPointSphere(inout uint state) {
     float z = randomValueNormalDistribution(state);
     return normalize(vec3(x, y, z));
 }
+
 uint hash_u32(uint v) {
     v ^= v >> 16;
     v *= 0x7feb352du;
@@ -431,7 +435,7 @@ bool updateColor(Hit hit, inout vec3 color, bool isSpecular, mat4 mat){
     return false;
 }
 
-// Transform world ray (origin,dir) by inverse(M) to local; compute invdir.
+// Transform world ray (origin,dir) by inverse(M) to local
 Ray worldToLocalRay(Ray ray, mat4 invM){
     Ray rayLocal;
     rayLocal.pos    = (invM * vec4(ray.pos, 1.0)).xyz;
@@ -440,7 +444,7 @@ Ray worldToLocalRay(Ray ray, mat4 invM){
     return rayLocal;
 }
 
-// Traverse one model’s BVH entirely in LOCAL space. Returns the best WORLD distance and indices via out params.
+// Traverse one model’s BVH entirely in LOCAL space. Returns the best LOACAL distance.
 Hit traverseBVH(int modelIndex, Ray ray, mat4 M, mat4 invM, float bestTW, inout int triTest, inout int aabbTest){
 
     Hit hit;
@@ -510,14 +514,12 @@ Hit traverseBVH(int modelIndex, Ray ray, mat4 M, mat4 invM, float bestTW, inout 
     return hit;
 }
 
-// Find best triangle across all models; all traversal is in LOCAL; returns Hit.
+// Find best triangle across all models
 Hit findBestTri(Ray ray, out int triTest, out int aabbTest){
 
     Hit hit;
     hit.hit = false;
     hit.t = 1e30;
-
-    triTest = 0; aabbTest = 0;
 
     // Build sorted list of models by distance
     ModelDistance modelDists[MAX_MODELS];
@@ -583,7 +585,7 @@ Hit findBestTri(Ray ray, out int triTest, out int aabbTest){
 
 // Russian Roulette
 bool russianRoulet(inout vec3 color, inout uint state){
-    float p = min(max(max(color.r,color.g),color.b), 1.0);
+    float p = min(max(max(color.r,color.g),color.b)*2, 1.0);
     if (randomValue(state) >= p) return true;
     color *= 1.0/p;
     return false;
@@ -615,9 +617,14 @@ bool hitTriangleUpdate(Hit hit, inout Ray ray, inout vec3 color, inout uint stat
     }
 
     if (debugView){
-        if (debugMode == 0) color = normalWorld*0.5+0.5;
-        else if (debugMode == 2)color = hit.t < depthScale ? vec3(hit.t/depthScale) : vec3(1);
-        return true;
+        if (debugMode == 0) {
+            color = normalWorld*0.5+0.5;
+            return true;
+        }
+        else if (debugMode == 2) {
+            color = hit.t < depthScale ? vec3(hit.t/depthScale) : vec3(1);
+            return true;
+        }
     }
 
     bool isSpecular = randomValue(state) <= material.specularProbability;
@@ -673,16 +680,12 @@ vec4 trace(Ray ray, inout uint state){
     vec3 color  = vec3(1.0);
     float depth = 3.4e38;
 
+    int triTest = 0, aabbTest = 0;
+    bool russianRouletBreak = false;
+
     for (int bounce = 0; bounce <= bounceLim; bounce++){
-        int triTest = 0, aabbTest = 0;
 
         Hit hit = findBestTri(ray, triTest, aabbTest);
-
-        if (debugView && debugMode == 1) {
-            vec3 heatmap = triTest > triTh || aabbTest > aabbTh ? vec3(1) : vec3(float(triTest)/float(triTh), 0.0, float(aabbTest)/float(aabbTh));
-
-            return vec4(heatmap, depth);
-        }
 
         if (hit.hit){
             if (focusDistancePlane && hit.t > focusDistance && bounce == 0) color *= vec3(0.75, 1, 0.75);
@@ -695,15 +698,25 @@ vec4 trace(Ray ray, inout uint state){
             if (hitFloorUpdate(ray, color, d, state)) break;
             if (bounce == 0) depth = d;
         } else {
-            if (debugView){
-                return vec4(vec3(1), depth);
-            }
             color *= getEnviormentLight(ray.dir);
             break;
         }
 
-        if (russianRoulet(color, state) && bounce >= 1) return vec4(vec3(0), depth);
-        if (bounce == bounceLim) return vec4(vec3(0), depth);
+        if (russianRoulet(color, state) && bounce >= 1) {
+            russianRouletBreak = true;
+            color = vec3(0);
+            break;
+        };
+        if (bounce == bounceLim) {
+            color = vec3(0);
+            break;
+        };
+    }
+
+    if (debugView && debugMode == 1) {
+        vec3 heatmap = triTest > triTh || aabbTest > aabbTh ? vec3(1) : vec3(float(triTest)/float(triTh), russianRouletBreak ? 1 : 0, float(aabbTest)/float(aabbTh));
+
+        return vec4(heatmap, depth);
     }
 
     return vec4(color, depth);

@@ -197,6 +197,7 @@ void BaseModel::loadMTL(const std::string& filename) {
         material.setEmissionStrength(emission);
 
         materials.push_back(material);
+        materialNames.push_back(curName);
 
     };
 
@@ -250,6 +251,7 @@ bool BaseModel::parse(const std::string& filename) {
     // Reserve space
     size_t estimatedVertices = fileSize / 50;
     size_t estimatedTriangles = fileSize / 80;
+    tempTriangles.reserve(estimatedTriangles * 3);
     triangles.reserve(estimatedTriangles * 3);
     vertices.reserve(estimatedVertices);
     texCoords.reserve(estimatedVertices);
@@ -399,7 +401,7 @@ bool BaseModel::parse(const std::string& filename) {
                 std::string matName(start, ptr);
 
                 auto it = std::find_if(materialNames.begin(), materialNames.end(), [matName](const std::string& name) {return matName == name;});
-                if (it != materialNames.end()) currentMaterial = it - materialNames.begin();
+                if (it != materialNames.end()) currentMaterial = int(it - materialNames.begin());
                 else {
                     // unseen name: push a default color and remember it
                     int idx = int(materials.size());

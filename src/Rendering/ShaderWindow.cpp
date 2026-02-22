@@ -50,7 +50,7 @@ ShaderWindow::ShaderWindow(const std::string& name) {
     }
 
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(1); // vsync
+    glfwSwapInterval(0); // vsync off
 
     // GLAD (GLAD1-style loader)
     if (!gladLoadGL()) {

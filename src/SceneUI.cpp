@@ -410,30 +410,6 @@ void SceneUI::render(Scene& scene) {
         ImGui::Text("Debug");
 
         ui_resetAccum |= ImGui::Checkbox("##Debug View" , &scene.debugView);
-        if (scene.debugView) {
-
-            const char* names[] = { "Normals", "Heatmap", "Depth" };
-
-            // Use a custom getter function
-            int debugMode = scene.debugMode;
-            if (ImGui::SliderInt("Debug Mode", &debugMode, 0, 2, names[debugMode])) {
-                scene.debugMode = static_cast<DebugMode>(debugMode);
-                ui_resetAccum = true;
-            }
-
-            switch (debugMode) {
-                case Normals:
-                    break;
-                case Heatmap:
-                    ui_resetAccum |= ImGui::SliderInt("Triangle Threshold", &scene.triTh, 1, 50);
-                    ui_resetAccum |= ImGui::SliderInt("AABB Threshold", &scene.aabbTh, 1, 250);
-                    break;
-                case Depth:
-                    ui_resetAccum |= ImGui::SliderFloat("Depth Scale", &scene.depthScale, 1, 5000);
-                default: ;
-            }
-
-        }
 
         ImGui::End();
     }
@@ -448,25 +424,42 @@ void SceneUI::render(Scene& scene) {
         ImGui::Separator();
 
         char overlay[128];
-        sprintf(overlay, "FPS: %.2f (%.2f ms)  CPU: %.2f ms  GPU: %.2f ms", 1/scene.totalTime, scene.totalTime*1000.0f, scene.cpuTime*1000.0f, scene.gpuTime*1000.0f);
 
-        float maxVal = (*std::max_element(scene.dtData.begin(), scene.dtData.end())) * 1.2f;
-        ImGui::PlotHistogram(
-            "##Frame Time (ms)",
-            scene.dtData.data(),
-            int(scene.dtData.size()),
+        const float frameMs = scene.totalTime * 1000.0f;
+        const float cpuMs   = scene.cpuTime   * 1000.0f;
+        const float gpuMs   = scene.gpuTime   * 1000.0f;
+        const float fps     = (scene.totalTime > 0.0f) ? (1.0f / scene.totalTime) : 0.0f;
+
+
+        sprintf(overlay,"FPS: %.2f (%.2f ms)  CPU: %.2f ms  GPU: %.2f ms", fps, frameMs, cpuMs, gpuMs);
+
+        float maxVal = (*std::max_element(scene.fpsData.begin(), scene.fpsData.end())) * 1.2f;
+
+        if (maxVal < 10.0f) maxVal = 10.0f;
+
+        auto DequeGetter = [](void* data, int idx){
+            auto* d = static_cast<std::deque<float> *>(data);
+            return (*d)[idx];
+        };
+
+        ImGui::PlotLines(
+            "##FPS",
+            DequeGetter,
+            &scene.fpsData,
+            int(scene.fpsData.size()),
             0,
             overlay,
             0.0f,
             maxVal,
             ImVec2(0, 100)
-            );
+        );
+
         if (ImGui::Button("Reset")) {
-            scene.dtData.clear();
+            scene.fpsData.clear();
         }
-        int maxNum = int(10.0f/scene.totalTime);
-        if (int(scene.dtData.size()) > maxNum) {
-            scene.dtData.erase(scene.dtData.begin());
+        int maxNum = int(ImGui::GetContentRegionAvail().x);
+        if (int(scene.fpsData.size()) > maxNum) {
+            scene.fpsData.pop_front();
         }
 
         ImGui::End();
@@ -483,6 +476,34 @@ void SceneUI::render(Scene& scene) {
 
         ImGui::Text("Position: %.2f, %.2f, %.2f", scene.cameraPos.x, scene.cameraPos.y, scene.cameraPos.z);
         ImGui::Text("Forward: %.2f, %.2f, %.2f", scene.camForward.x, scene.camForward.y, scene.camForward.z);
+
+        ImGui::End();
+    }
+
+    // debug settings
+    if (scene.debugView) {
+        ImGui::Begin("Debug Mode");
+
+        const char* names[] = { "Normals", "Heatmap", "Depth" };
+
+        // Use a custom getter function
+        int debugMode = scene.debugMode;
+        if (ImGui::SliderInt("Debug Mode", &debugMode, 0, 2, names[debugMode])) {
+            scene.debugMode = static_cast<DebugMode>(debugMode);
+            ui_resetAccum = true;
+        }
+
+        switch (debugMode) {
+            case Normals:
+                break;
+            case Heatmap:
+                ui_resetAccum |= ImGui::SliderInt("Triangle Threshold", &scene.triTh, 1, 50);
+                ui_resetAccum |= ImGui::SliderInt("AABB Threshold", &scene.aabbTh, 1, 250);
+                break;
+            case Depth:
+                ui_resetAccum |= ImGui::SliderFloat("Depth Scale", &scene.depthScale, 1, 5000);
+            default: ;
+        }
 
         ImGui::End();
     }

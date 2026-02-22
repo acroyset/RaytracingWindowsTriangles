@@ -6,8 +6,11 @@
   <component name="CMakeWorkspace" PROJECT_DIR="$PROJECT_DIR$" />
   <component name="CidrRootsConfiguration">
     <excludeRoots>
+      <file path="$PROJECT_DIR$/assets" />
+      <file path="$PROJECT_DIR$/cmake-build-debug" />
       <file path="$PROJECT_DIR$/external" />
       <file path="$PROJECT_DIR$/external/glm" />
+      <file path="$PROJECT_DIR$/scenes" />
     </excludeRoots>
   </component>
 </project>
