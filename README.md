@@ -12,11 +12,13 @@ A physically-based path tracer running entirely on the GPU, capable of rendering
 
 ## 🎨 Gallery
 
-### Model Family (6.3M Triangles)
+### Model Family (7.2M Triangles)
 *Multiple renders showcasing different material properties*
 
 <div align="center">
-  <img width="2560" height="1440" alt="Base Profile Screenshot 2026 02 17 - 12 01 35 50" src="https://github.com/user-attachments/assets/6fc538b5-e297-49ca-a9cd-b904c0cc7168" />
+  <img width="2560" height="1440" alt="Base Profile Screenshot 2026 02 21 - 00 35 55 24" src="https://github.com/user-attachments/assets/20ce0e74-eba9-406e-adf1-0fe404323b76" />
+
+
 </div>
 
 ### Bull Family (2.1M Triangles)
@@ -30,7 +32,8 @@ A physically-based path tracer running entirely on the GPU, capable of rendering
 *High-gloss material demonstrating reflections and light transport*
 
 <div align="center">
-  <img width="2560" height="1440" alt="Base Profile Screenshot 2026 02 15 - 15 46 10 28" src="https://github.com/user-attachments/assets/523af4a5-8981-4101-8dfb-a333eae51347" />
+  <img width="2560" height="1440" alt="Base Profile Screenshot 2026 02 16 - 23 23 55 58" src="https://github.com/user-attachments/assets/d89a0d0a-425d-4d5f-b2ab-8fce070098ee" />
+
 
 </div>
 
@@ -38,7 +41,8 @@ A physically-based path tracer running entirely on the GPU, capable of rendering
 *Automotive rendering with complex geometry and materials*
 
 <div align="center">
-  <img width="2560" height="1440" alt="Base Profile Screenshot 2025 09 01 - 20 51 40 84" src="https://github.com/user-attachments/assets/5c1ba2f5-7b60-49dc-bf4f-2324d3e5b27c" />
+  <img width="2560" height="1440" alt="Base Profile Screenshot 2026 02 21 - 16 52 35 52" src="https://github.com/user-attachments/assets/298440c4-8a96-482b-ad56-72b51d68a529" />
+
 </div>
 
 
@@ -59,6 +63,7 @@ A physically-based path tracer running entirely on the GPU, capable of rendering
 - **Refractions & Reflections**: Accurate glass and mirror materials with Fresnel equations
 - **HDR Environment Maps**: Equirectangular environment map support for realistic lighting
 - **Progressive Accumulation**: Temporal anti-aliasing with progressive sample accumulation
+- **Post Processing**: Multi-level bloom rendering with ACES tonemap
 - **Russian Roulette Path Termination**: Unbiased variance reduction
 
 ### 🛠️ Technical Features
@@ -74,7 +79,7 @@ A physically-based path tracer running entirely on the GPU, capable of rendering
 ### Rendering Pipeline
 
 ```
-User Input → Scene Setup → BVH Construction → GPU Upload → Shader Raytracing → Accumulation → Display
+User Input → Scene Setup → BVH Construction → GPU Upload → Shader Raytracing → Accumulation → Post Processing → Display
      ↓                                                            ↑
      └────────── Camera/Material Updates ─────────────────────────┘
 ```
@@ -142,8 +147,6 @@ int main() {
     Scene scene(1, 3, 16);
     
     // add models in editor, save/load json files
-    
-    scene.set_ssbo();
     
     // Render loop
     while (scene.open()) {
@@ -224,11 +227,11 @@ The renderer automatically parses `.mtl` files referenced in OBJ models:
 
 | Scene | Triangles | BVH Nodes | FPS (RTX 4070 Super) | Build Time |
 |-------|-----------|-----------|----------------|------------|
-| Model Family | 6.3M | 12.4M | 30 | 27.9s |
-| 4 Dragons | 3.6M | 8.2M | 45 | 9.2s |
-| Stanford Bunny | 144K | 288K | 180 | 1.3s |
-| Bugatti Veyron | 1.5M | 3.1M | 60 | 10.2s |
-| Lucy | 100K | 199K | 180 | 0.9s |
+| Model Family | 7.2M | 14.3M | 30 | 14.9s |
+| 4 Dragons | 3.6M | 8.2M | 45 | 4.2s |
+| Stanford Bunny | 144K | 288K | 180 | 0.7s |
+| Bugatti Veyron | 1.5M | 2.9M | 60 | 7.7s |
+| Lucy | 100K | 199K | 180 | 0.5s |
 
 *Settings: 2560×1440, 1 sample/frame, 5x5 AA, 16 bounces*
 
@@ -312,7 +315,6 @@ Hit rayTriangleIntersect(Ray ray, vec3 v1, vec3 v2, vec3 v3){
 - [ ] OptiX/DXR acceleration
 - [ ] OIDN/OptiX denoising integration
 - [ ] Volumetric rendering (fog, smoke)
-- [ ] HDR tone mapping options
 - [ ] glTF model loading
 
 ---
