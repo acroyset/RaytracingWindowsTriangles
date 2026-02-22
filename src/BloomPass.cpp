@@ -4,6 +4,8 @@
 
 #include "BloomPass.h"
 
+#include <cmath>
+
 GLuint BloomPass::buildProgram(const std::string& fragPath) const {
     std::string ver  = "#version " + glslVersion + "\n";
     std::string vert = ver + readFile("shaders/fullscreen.vert");
@@ -43,6 +45,7 @@ void BloomPass::cacheUniforms() {
     uUpSmaller    = glGetUniformLocation(upProg, "u_smaller");
     uUpCurrent    = glGetUniformLocation(upProg, "u_current");
     uUpTexel      = glGetUniformLocation(upProg, "u_texelSize");
+    uUpMixWeight   = glGetUniformLocation(upProg, "u_weight");
 
     uCompHDR      = glGetUniformLocation(compositeProg, "u_hdr");
     uCompBloom    = glGetUniformLocation(compositeProg, "u_bloom");
@@ -208,6 +211,7 @@ void BloomPass::execute(GLuint inputTex, bool toScreen) {
     // ── 3. Upsample chain ─────────────────────────────────────────
     glUseProgram(upProg);
 
+    auto currentWeight = float(std::pow(persistence, numMips));
     for (int i = numMips - 1; i >= 0; i--) {
         glBindFramebuffer(GL_FRAMEBUFFER, upMips[i].fbo);
         glViewport(0, 0, upMips[i].w, upMips[i].h);
@@ -225,6 +229,9 @@ void BloomPass::execute(GLuint inputTex, bool toScreen) {
         glUniform1i(uUpCurrent, 1);
 
         glUniform2f(uUpTexel, 1.0f/float(sW), 1.0f/float(sH));
+
+        glUniform1f(uUpMixWeight, currentWeight);
+        currentWeight /= persistence;
         drawFullscreen();
     }
 

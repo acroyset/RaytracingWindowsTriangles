@@ -4,6 +4,7 @@ in vec2 fragCoord;
 uniform sampler2D u_smaller;   // the mip below (already upsampled)
 uniform sampler2D u_current;   // this mip level's downsampled content
 uniform vec2      u_texelSize; // 1.0 / u_smaller resolution
+uniform float     u_weight;
 
 vec3 upsample(sampler2D tex, vec2 uv, vec2 t) {
     // 9-tap tent filter
@@ -28,5 +29,5 @@ void main() {
     vec3 up  = upsample(u_smaller, fragCoord, u_texelSize);
     vec3 cur = texture(u_current, fragCoord).rgb;
     // accumulate: each level adds its frequency band
-    FragColor = vec4(up + cur, 1.0);
+    FragColor = vec4(up*u_weight + cur, 1.0);
 }

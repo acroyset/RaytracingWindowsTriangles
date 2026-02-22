@@ -258,8 +258,9 @@ void SceneUI::render(Scene& scene) {
                 ImGui::Indent();
                 ImGui::SliderFloat("Bloom Threshold", &scene.bloom.threshold, 0.5f, 2.0f);
                 ImGui::SliderFloat("Bloom Knee", &scene.bloom.knee, 0.0f, 1.0f);
-                ImGui::SliderFloat("Bloom Strength", &scene.bloom.strength, 0.0001f, 1.0f);
+                ImGui::SliderFloat("Bloom Strength", &scene.bloom.strength, 0.0001f, 0.1f);
                 ImGui::SliderInt("Bloom Num Mips", &scene.bloom.numMips, 1, 16);
+                ImGui::SliderFloat("Bloom Persistence", &scene.bloom.persistence, 0.0f, 1.0f);
                 ImGui::Unindent();
             }
         }
@@ -564,7 +565,6 @@ void SceneUI::render(Scene& scene) {
     if (!scene.isBusy && selectedModel >= 0) {
         ImGui::Begin("Inspector");
 
-        ImGui::Indent();
         bool changedT = false;
         bool changedM = false;
 
@@ -580,7 +580,7 @@ void SceneUI::render(Scene& scene) {
         vec3 rotDeg = degrees(transform.rotation);
         changedT |= DragFloat3("Position", transform.position, 3.0f);
 
-        static bool uniformScale = false;
+        bool uniformScale = transform.scale.x == transform.scale.y && transform.scale.x == transform.scale.z;
 
         if (uniformScale) {
             float s = transform.scale.x;
@@ -620,6 +620,7 @@ void SceneUI::render(Scene& scene) {
 
         ImGui::Unindent();
 
+        //texture
         if (offsets.textureID != -1) {
             ImGui::Separator();
             ImGui::Text("Texture");
@@ -644,7 +645,41 @@ void SceneUI::render(Scene& scene) {
                 }
             }
         }
-        ImGui::Unindent();
+
+        ImGui::Separator();
+
+        if (ImGui::BeginTable("##Data", 2,
+            ImGuiTableFlags_SizingStretchProp |
+            ImGuiTableFlags_BordersInnerV)) {
+            ImGui::TableSetupColumn("Item", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn("Count", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableHeadersRow();
+
+            auto Row = [&](const char* label, int count)
+            {
+                ImGui::TableNextRow();
+
+                ImGui::TableSetColumnIndex(0);
+                ImGui::TextUnformatted(label);
+
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Text("%d", count);
+            };
+
+            Row("Trianlges", int(model.base.triangles.size()));
+            ImGui::TableNextRow();
+            Row("Vertices", int(model.base.vertices.size()));
+            ImGui::TableNextRow();
+            Row("Tex Coords", int(model.base.texCoords.size()));
+            ImGui::TableNextRow();
+            Row("Normals", int(model.base.normals.size()));
+            ImGui::TableNextRow();
+            Row("BVH Nodes", int(model.base.BVHnodes.size()));
+            ImGui::TableNextRow();
+            Row("Materials", int(model.base.materials.size()));
+
+            ImGui::EndTable();
+        }
 
         if (changedT) {
             transform.rotation = radians(rotDeg);

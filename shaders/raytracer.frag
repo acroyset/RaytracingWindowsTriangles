@@ -280,8 +280,10 @@ vec3 getEnviormentLight(vec3 dir){
 
     if (!skyActive) return vec3(0);
 
+    float th = 0.9975;
     vec3 sky = sampleSky(dir);
-    float s  = pow(max(dot(normalize(dir), normalize(sunDir)), 0.0), 4096.0);
+    float s = max(dot(dir, sunDir) - th, 0)/(1-th);
+    s = pow(s, 8);
     return sky + sunColor * s;
 }
 
@@ -740,6 +742,11 @@ void main(){
         Ray ray = calculateInitialRay(aaCycle, screen, state);
 
         vec4 color = trace(ray, state);
+
+        if (isnan(color.x) || isinf(color.x)) color.x = 0;
+        if (isnan(color.y) || isinf(color.y)) color.y = 0;
+        if (isnan(color.z) || isinf(color.z)) color.z = 0;
+        if (isnan(color.w) || isinf(color.w)) color.w = 0;
 
         total += min(color, vec4(vec3(maxBrighness), 3.4e38));
 
