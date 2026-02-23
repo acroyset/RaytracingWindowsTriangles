@@ -129,6 +129,12 @@ class Scene {
 
     std::vector<BVHnode> BVHnodes;
 
+    // NEE
+
+    std::vector<ivec2> emissiveTris;
+    std::vector<ivec2> emissiveModelTriangleNum;
+    std::atomic<bool> emissiveTrisStale = false;
+
     // Camera
 
     vec3 cameraPos{};
@@ -192,6 +198,8 @@ class Scene {
     SSBO<ModelOffset> ssboModelOffsets;
     SSBO<mat4> ssboModelTransformations;
     SSBO<mat4> ssboModelInvTransformations;
+    SSBO<ivec2> ssboEmissiveTris;
+    SSBO<ivec2> ssboEmissiveModelTriangleNum;
 
     DataPackage lastSentPackage{};
 
@@ -199,6 +207,8 @@ class Scene {
     // Uniforms
 
     Uniform<int> uNumModels;
+    Uniform<int> uNumEmissiveModels;
+    Uniform<int> uNumEmissiveTris;
 
     Uniform<vec3> uCameraPos;
     Uniform<vec3> uCameraForward;
@@ -332,53 +342,11 @@ class Scene {
         item = smoothing * item + (1.0f - smoothing) * value;
     }
 
-    void startAddJob(const std::string& path, const std::string& texturePath) {
-        progress = 0.4f;
-        progressMax = 1.0f;
-        isBusy = true;
-        resetAccumulation();
-        busyLabel = "Adding Model...";
+    void startAddJob(const std::string& path, const std::string& texturePath);
 
-        job = std::async(std::launch::async, [this, path, texturePath]() {
-            try {
-                addModel(path, Transformation(vec3(0), vec3(-1)), texturePath);
-                statusIsError = false;
-                statusMsg = "Added: " + path;
-                newData = true;
-            } catch (const std::exception& e) {
-                statusIsError = true;
-                statusMsg = std::string("Add failed: ") + e.what();
-            } catch (...) {
-                statusIsError = true;
-                statusMsg = "Add failed: unknown error";
-            }
-            isBusy = false;
-        });
+    void startLoadJob(const std::string& path);
 
-        progress = 1.0f;
-    }
-
-    void startLoadJob(const std::string& path){
-        isBusy = true;
-        resetAccumulation();
-        busyLabel = "Loading JSON...";
-
-        job = std::async(std::launch::async, [path, this]() {
-            try {
-                loadJSON(path);
-                statusIsError = false;
-                statusMsg = "Loaded: " + path;
-                newData = true;
-            } catch (const std::exception& e) {
-                statusIsError = true;
-                statusMsg = std::string("Load failed: ") + e.what();
-            } catch (...) {
-                statusIsError = true;
-                statusMsg = "Load failed: unknown error";
-            }
-            isBusy = false;
-        });
-    }
+    void reloadEmissiveTris();
 };
 
 #endif //SCENE_H

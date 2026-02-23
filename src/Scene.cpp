@@ -185,6 +185,8 @@ void Scene::addModel(const Model& model, const std::string& texturePath) {
             textureLabels.emplace_back(label);
         } else pendingTextures.emplace_back(texturePath, textureID);
     }
+
+    emissiveTrisStale = true;
 }
 
 void Scene::removeModel(int index) {
@@ -251,6 +253,7 @@ void Scene::removeModel(int index) {
     modelOffsets.erase(modelOffsets.begin()+index);
 
     newData = true;
+    emissiveTrisStale = true;
 }
 
 int Scene::getNumBVHNodes() const {
@@ -269,7 +272,9 @@ int Scene::getNumMaterials() const {
 
 
 void Scene::createUniforms() {
-    uNumModels = raytracer.createUniform<int>("numModels");
+    uNumModels          = raytracer.createUniform<int>("numModels");
+    uNumEmissiveModels  = raytracer.createUniform<int>("numEmissiveModels");
+    uNumEmissiveTris    = raytracer.createUniform<int>("numEmissiveTris");
 
     uCameraPos          = raytracer.createUniform<vec3>("cameraPos");
     uCameraForward      = raytracer.createUniform<vec3>("camForward");
@@ -315,6 +320,8 @@ void Scene::setUniformsRTX() const {
     raytracer.bind();
 
     uNumModels.set(int(models.size()));
+    uNumEmissiveModels.set(int(emissiveModelTriangleNum.size()));
+    uNumEmissiveTris.set(int(emissiveTris.size()));
 
     uCameraPos.set(cameraPos);
     uCameraForward.set(camForward);
@@ -387,6 +394,8 @@ void Scene::set_ssbo() {
     ssboModelOffsets.set(modelOffsets, 6);
     ssboModelTransformations.set(modelTransforms, 7);
     ssboModelInvTransformations.set(modelInvTransforms, 8);
+    ssboEmissiveTris.set(emissiveTris, 9);
+    ssboEmissiveModelTriangleNum.set(emissiveModelTriangleNum, 10);
 
 }
 
@@ -477,6 +486,8 @@ void Scene::updateFrame() {
 
     Timer t;
     window.start();
+
+    if (!isBusy) reloadEmissiveTris();
 
     if (newData) {
         if (pendingClearTextures) {
@@ -778,6 +789,76 @@ void Scene::loadJSON(const std::string& filename) {
     }
 
     resetAccumulation();
+}
+
+void Scene::startAddJob(const std::string& path, const std::string& texturePath) {
+    progress = 0.4f;
+    progressMax = 1.0f;
+    isBusy = true;
+    resetAccumulation();
+    busyLabel = "Adding Model...";
+
+    job = std::async(std::launch::async, [this, path, texturePath]() {
+        try {
+            addModel(path, Transformation(vec3(0), vec3(-1)), texturePath);
+            statusIsError = false;
+            statusMsg = "Added: " + path;
+            newData = true;
+        } catch (const std::exception& e) {
+            statusIsError = true;
+            statusMsg = std::string("Add failed: ") + e.what();
+        } catch (...) {
+            statusIsError = true;
+            statusMsg = "Add failed: unknown error";
+        }
+        isBusy = false;
+    });
+
+    progress = 1.0f;
+}
+
+void Scene::startLoadJob(const std::string& path){
+    isBusy = true;
+    resetAccumulation();
+    busyLabel = "Loading JSON...";
+
+    job = std::async(std::launch::async, [path, this]() {
+        try {
+            loadJSON(path);
+            statusIsError = false;
+            statusMsg = "Loaded: " + path;
+            newData = true;
+        } catch (const std::exception& e) {
+            statusIsError = true;
+            statusMsg = std::string("Load failed: ") + e.what();
+        } catch (...) {
+            statusIsError = true;
+            statusMsg = "Load failed: unknown error";
+        }
+        isBusy = false;
+    });
+}
+
+void Scene::reloadEmissiveTris() {
+    if (!emissiveTrisStale) return;
+
+    emissiveTris.clear();
+    emissiveModelTriangleNum.clear();
+    for (int m = 0; m < models.size(); ++m) {
+        Model model = models[m];
+        int start = int(emissiveTris.size());
+        int count = 0;
+        for (int i = 0; i < model.base.triangles.size()/3; i++) {
+            Material mat = model.materials[int(model.base.triangles[i*3].w)];
+            if (mat.getType() == Emissive) {
+                emissiveTris.emplace_back(i, m);
+                count++;
+            }
+        }
+        emissiveModelTriangleNum.emplace_back(start, count);
+    }
+    emissiveTrisStale = false;
+    newData = true;
 }
 
 

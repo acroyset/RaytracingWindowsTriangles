@@ -30,7 +30,7 @@ static const char* MaterialTypeLabel(MaterialType t) {
     }
 }
 
-static bool DrawMaterialInspector(Material& m, int matIndex, int textureID){
+static bool DrawMaterialInspector(Material& m, int matIndex, int textureID, bool& typeChange){
     bool changed = false;
 
     // Pull values once (edit locals, then write back at end)
@@ -60,6 +60,7 @@ static bool DrawMaterialInspector(Material& m, int matIndex, int textureID){
     if (ImGui::Combo("Type", &t, items, IM_ARRAYSIZE(items))) {
         type = MaterialType(t);
         changed = true;
+        typeChange = true;
 
         // Coerce defaults when switching to reduce “broken” states
         if (type == Emissive) {
@@ -637,7 +638,9 @@ void SceneUI::render(Scene& scene) {
         ImGui::Indent();
         Material& m = model.materials[selectedColor];
 
-        changedM |= DrawMaterialInspector(m, selectedColor, offsets.textureID);
+        bool typeChange = false;
+        changedM |= DrawMaterialInspector(m, selectedColor, offsets.textureID, typeChange);
+        if (typeChange) scene.emissiveTrisStale = true;
 
         ImGui::Unindent();
 

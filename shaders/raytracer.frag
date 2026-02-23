@@ -10,17 +10,22 @@ const int MAX_STACK_SIZE = 48;
 const int MAX_REFRACTIONS = 16;
 const float PI = 3.14159265359;
 
-layout(std430, binding = 0) buffer ssboTriangles { ivec4 triangles[]; };
-layout(std430, binding = 1) buffer ssboVertices { vec4 vertices[]; };
-layout(std430, binding = 2) buffer ssboTexCoords { vec2 texCoords[]; };
-layout(std430, binding = 3) buffer ssboNormals { vec4 normals[]; };
-layout(std430, binding = 4) buffer ssboMaterials { Material materials[]; };
-layout(std430, binding = 5) buffer ssboBoundingBoxMin { BVHnode BVHnodes[]; };
-layout(std430, binding = 6) buffer ssboModelOffsets { ModelOffset modelOffsets[]; };
-layout(std430, binding = 7) buffer ssboModelTransformations { mat4 modelTransformations[]; };
-layout(std430, binding = 8) buffer ssboModelInvTransformations { mat4 modelInvTransformations[]; };
+layout(std430, binding = 0)  buffer ssboTriangles { ivec4 triangles[]; };
+layout(std430, binding = 1)  buffer ssboVertices { vec4 vertices[]; };
+layout(std430, binding = 2)  buffer ssboTexCoords { vec2 texCoords[]; };
+layout(std430, binding = 3)  buffer ssboNormals { vec4 normals[]; };
+layout(std430, binding = 4)  buffer ssboMaterials { Material materials[]; };
+layout(std430, binding = 5)  buffer ssboBoundingBoxMin { BVHnode BVHnodes[]; };
+layout(std430, binding = 6)  buffer ssboModelOffsets { ModelOffset modelOffsets[]; };
+layout(std430, binding = 7)  buffer ssboModelTransformations { mat4 modelTransformations[]; };
+layout(std430, binding = 8)  buffer ssboModelInvTransformations { mat4 modelInvTransformations[]; };
+layout(std430, binding = 9)  buffer ssboEmissiveTris { ivec2 emissiveTris[]; };
+layout(std430, binding = 10) buffer ssboEmissiveModelTriangleNum { ivec2 emissiveModelTriangleNum[]; };
+
 
 uniform int   numModels;
+uniform int   numEmissiveModels;
+uniform int   numEmissiveTris;
 
 uniform vec3  cameraPos;
 uniform vec3  camForward;
@@ -675,47 +680,188 @@ bool hitFloorUpdate(inout Ray ray, inout vec3 color, out float depth, inout uint
     return false;
 }
 
+vec3 sampleDirectLight(vec3 hitPos, vec3 normal, Material material, inout uint state) {
+    if (numEmissiveTris == 0) return vec3(0);
+
+    int model = int(randomValue(state) * float(numEmissiveModels));
+
+    int start = emissiveModelTriangleNum[model].x;
+    int count = emissiveModelTriangleNum[model].y;
+    int idx = int(randomUint(state)) % count + start;
+    ivec2 index = emissiveTris[idx];
+    int triID = index.x;
+    int modelID = index.y;
+
+    Triangle tri = createTri(triID, modelID);
+    mat4 M = modelTransformations[modelID];
+    mat4 invM = modelInvTransformations[modelID];
+
+    // Transform vertices to world space
+    vec3 v1w = (M * vec4(tri.v1, 1)).xyz;
+    vec3 v2w = (M * vec4(tri.v2, 1)).xyz;
+    vec3 v3w = (M * vec4(tri.v3, 1)).xyz;
+
+    // Sample random point on triangle
+    float r1 = randomValue(state);
+    float r2 = randomValue(state);
+    float u = 1.0 - sqrt(r1);
+    float v = r2 * sqrt(r1);
+    float w = 1.0 - u - v;
+    vec3 lightPos = v1w * w + v2w * u + v3w * v;
+
+    vec3 toLight = lightPos - hitPos;
+    float dist2 = dot(toLight, toLight);
+    float dist = sqrt(dist2);
+    vec3 lightDir = toLight / dist;
+
+    float cosA = dot(normal, lightDir);
+    if (cosA <= 0.0) return vec3(0);
+
+    // Light normal — use triangle's built in normal if available, else geometric
+    vec3 lightNormalLocal = tri.useNormals
+        ? normalize(tri.n1 * w + tri.n2 * u + tri.n3 * v)
+        : normalize(cross(tri.v2 - tri.v1, tri.v3 - tri.v1));
+    vec3 lightNormal = toWorldNormal(lightNormalLocal, invM);
+
+    float cosB = dot(lightNormal, -lightDir);
+    if (cosB <= 0.0) return vec3(0);
+
+    // Shadow ray
+    Ray shadowRay;
+    shadowRay.pos = hitPos + normal * 1e-3;
+    shadowRay.dir = lightDir;
+    shadowRay.invDir = 1.0 / lightDir;
+
+    // Early exit shadow trace — just need any hit before the light
+    int dummyTri, dummyAABB;
+    Hit shadowHit = findBestTri(shadowRay, dummyTri, dummyAABB);
+    if (shadowHit.hit && shadowHit.t < dist - 1e-3 && shadowHit.tri.material.type != 3) return vec3(0);
+
+    // Area and PDF
+    float area = 0.5 * length(cross(v2w - v1w, v3w - v1w));
+    float pdf = 1.0 / (float(numEmissiveModels) * float(count) * area);
+
+    // Contribution
+    vec3 Le = tri.material.diffuseColor.rgb * tri.material.emissionStrength;
+    vec3 BRDF = material.diffuseColor.rgb / PI;
+    float G = cosA * cosB / dist2;
+
+    return Le * BRDF * G / pdf;
+}
+
 vec4 trace(Ray ray, inout uint state){
     iorStack[0] = 1.0; iorSize = 1;
-    vec3 color  = vec3(1.0);
+    vec3 color      = vec3(0.0);  // accumulated radiance
+    vec3 throughput = vec3(1.0);  // path weight
     float depth = 3.4e38;
 
     int triTest = 0, aabbTest = 0;
     bool russianRouletBreak = false;
+    bool prevSpecular = true; // camera ray treated as specular so first emissive hit is counted
 
     for (int bounce = 0; bounce <= bounceLim; bounce++){
 
         Hit hit = findBestTri(ray, triTest, aabbTest);
 
         if (hit.hit){
-            if (focusDistancePlane && hit.t > focusDistance && bounce == 0) color *= vec3(0.75, 1, 0.75);
-
+            if (focusDistancePlane && hit.t > focusDistance && bounce == 0) throughput *= vec3(0.75, 1, 0.75);
             if (bounce == 0) depth = hit.t;
 
-            if (hitTriangleUpdate(hit, ray, color, state)) break;
+            mat4 M    = modelTransformations[hit.modelID];
+            mat4 invM = modelInvTransformations[hit.modelID];
+            Material material = hit.tri.material;
+
+            // Advance to hit point
+            ray.pos += ray.dir * hit.t;
+
+            // World normal
+            vec3 normalLocal = calculateNormalLocal(hit);
+            vec3 normalWorld = toWorldNormal(normalLocal, invM);
+            if (dot(normalWorld, ray.dir) > 0.0) {
+                normalWorld = -normalWorld;
+                if (material.type == 2)
+                throughput *= exp(-hit.t * material.absorption * (1.0 - material.diffuseColor.rgb));
+            }
+
+            // Debug views
+            if (debugView) {
+                if (debugMode == 0) { color = normalWorld * 0.5 + 0.5; break; }
+                if (debugMode == 2) { color = hit.t < depthScale ? vec3(hit.t / depthScale) : vec3(1); break; }
+            }
+
+            // Emissive — only count if previous bounce was specular/camera
+            // otherwise it was already counted via NEE
+            if (material.type == 3) {
+                if (prevSpecular)
+                color += throughput * material.diffuseColor.rgb * material.emissionStrength;
+                break;
+            }
+
+            // Roll specular once here so both NEE and direction use same decision
+            bool isSpecular = randomValue(state) <= material.specularProbability && material.type != 0;
+            bool isTransparent = material.type == 2; // direction handled inside calculateNewDirection
+
+            // NEE — skip for specular and transparent (delta-like BRDFs)
+            if (!isSpecular && !isTransparent) {
+                color += throughput * sampleDirectLight(ray.pos, normalWorld, material, state);
+            }
+
+            prevSpecular = isSpecular || isTransparent;
+
+            // Throughput update (mirrors updateColor logic)
+            vec3 diffuseColor = hit.tri.useTexture ? getTextureColor(hit, M) : material.diffuseColor.rgb;
+            throughput *= (isSpecular || isTransparent) ? material.specularColor.rgb : diffuseColor;
+
+            // New ray direction — calculateNewDirection handles transparency roll internally
+            ray.dir    = calculateNewDirection(normalWorld, ray.dir, material, isSpecular, state, throughput);
+            ray.pos   += normalWorld * 1e-3 * sign(dot(ray.dir, normalWorld));
+            ray.invDir = 1.0 / ray.dir;
+
         } else if (floorActive && ray.dir.y < 0.0){
-            float d;
-            if (hitFloorUpdate(ray, color, d, state)) break;
-            if (bounce == 0) depth = d;
+            float floorY = -1000.0;
+            float t = (floorY - ray.pos.y) / ray.dir.y;
+            if (bounce == 0) depth = t;
+
+            if (t > 0.01){
+                ray.pos += ray.dir * t;
+                vec3 n = vec3(0, 1, 0);
+
+                if (debugView) {
+                    if (debugMode == 0) { color = n * 0.5 + 0.5; break; }
+                    if (debugMode == 2) { color = t < depthScale ? vec3(t / depthScale) : vec3(1); break; }
+                }
+
+                bool isSpecular = randomValue(state) <= floorMaterial.specularProbability && floorMaterial.type != 0;
+
+                if (!isSpecular) {
+                    color += throughput * sampleDirectLight(ray.pos, n, floorMaterial, state);
+                }
+
+                prevSpecular = isSpecular;
+                throughput *= isSpecular ? floorMaterial.specularColor.rgb : floorMaterial.diffuseColor.rgb;
+                ray.dir    = calculateNewDirection(n, ray.dir, floorMaterial, isSpecular, state, throughput);
+                ray.invDir = 1.0 / ray.dir;
+            } else {
+                color += throughput * getEnviormentLight(ray.dir);
+                break;
+            }
+
         } else {
-            color *= getEnviormentLight(ray.dir);
+            color += throughput * getEnviormentLight(ray.dir);
             break;
         }
 
-        if (russianRoulet(color, state) && bounce >= 1) {
+        if (russianRoulet(throughput, state) && bounce >= 1) {
             russianRouletBreak = true;
-            color = vec3(0);
             break;
-        };
-        if (bounce == bounceLim) {
-            color = vec3(0);
-            break;
-        };
+        }
+        if (bounce == bounceLim) break;
     }
 
     if (debugView && debugMode == 1) {
-        vec3 heatmap = triTest > triTh || aabbTest > aabbTh ? vec3(1) : vec3(float(triTest)/float(triTh), russianRouletBreak ? 1 : 0, float(aabbTest)/float(aabbTh));
-
+        vec3 heatmap = triTest > triTh || aabbTest > aabbTh
+        ? vec3(1)
+        : vec3(float(triTest)/float(triTh), russianRouletBreak ? 1.0 : 0.0, float(aabbTest)/float(aabbTh));
         return vec4(heatmap, depth);
     }
 
