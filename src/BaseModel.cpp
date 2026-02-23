@@ -167,7 +167,6 @@ void BaseModel::loadMTL(const std::string& filename) {
 
     auto flushMaterial = [&](){
         if (curName.empty()) return;
-        materialNames.push_back(curName);
         auto luminance = [](vec3 c) {
             return 0.2126f*c.r + 0.7152f*c.g + 0.0722f*c.b;
         };

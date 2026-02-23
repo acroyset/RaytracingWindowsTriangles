@@ -17,7 +17,7 @@
         "speed": 52.64099884033203
     },
     "Floor": {
-        "active": true,
+        "active": false,
         "diffuseColor": [
             1.0,
             1.0,
@@ -43,17 +43,17 @@
                         1.0
                     ],
                     "diffuseRoughness": 0.0,
-                    "emissionStrength": 60.729000091552734,
-                    "indexOfRefraction": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.2999999523162842,
                     "specularColor": [
-                        0.0,
-                        0.0,
-                        0.0
+                        0.9558823704719543,
+                        0.9558823704719543,
+                        0.9558823704719543
                     ],
                     "specularProbability": 0.0,
                     "specularRoughness": 0.0,
-                    "transparency": 0.0,
-                    "type": "Emissive"
+                    "transparency": 1.0,
+                    "type": "Transparent"
                 }
             ],
             "TextureID": -1,
@@ -387,17 +387,17 @@
                         1.0
                     ],
                     "diffuseRoughness": 0.0,
-                    "emissionStrength": 0.0,
-                    "indexOfRefraction": 1.3289999961853027,
+                    "emissionStrength": 30.351999282836914,
+                    "indexOfRefraction": 1.0,
                     "specularColor": [
-                        0.9656862616539001,
-                        0.9656862616539001,
-                        0.9656862616539001
+                        0.0,
+                        0.0,
+                        0.0
                     ],
-                    "specularProbability": 1.0,
+                    "specularProbability": 0.0,
                     "specularRoughness": 0.0,
-                    "transparency": 1.0,
-                    "type": "Transparent"
+                    "transparency": 0.0,
+                    "type": "Emissive"
                 }
             ],
             "TextureID": -1,
@@ -425,12 +425,12 @@
                 {
                     "absorption": 0.0,
                     "diffuseColor": [
-                        0.9852941036224365,
-                        0.6953596472740173,
-                        0.2270040363073349
+                        0.936274528503418,
+                        0.7660550475120544,
+                        0.49108514189720154
                     ],
                     "diffuseRoughness": 0.0,
-                    "emissionStrength": 31.36400032043457,
+                    "emissionStrength": 71.8499984741211,
                     "indexOfRefraction": 1.0,
                     "specularColor": [
                         0.0,
@@ -472,7 +472,7 @@
                         1.0,
                         1.0
                     ],
-                    "diffuseRoughness": 0.257999986410141,
+                    "diffuseRoughness": 1.0,
                     "emissionStrength": 0.0,
                     "indexOfRefraction": 1.0,
                     "specularColor": [
@@ -515,7 +515,7 @@
                         1.0,
                         1.0
                     ],
-                    "diffuseRoughness": 0.4399999976158142,
+                    "diffuseRoughness": 1.0,
                     "emissionStrength": 0.0,
                     "indexOfRefraction": 1.0,
                     "specularColor": [
@@ -640,9 +640,9 @@
                 {
                     "absorption": 0.0,
                     "diffuseColor": [
-                        0.1764705777168274,
-                        0.1764705777168274,
-                        0.1764705777168274
+                        0.7843137383460999,
+                        0.7843137383460999,
+                        0.7843137383460999
                     ],
                     "diffuseRoughness": 1.0,
                     "emissionStrength": 0.0,
@@ -660,9 +660,9 @@
                 {
                     "absorption": 0.0,
                     "diffuseColor": [
-                        0.2235294133424759,
-                        0.14509804546833038,
-                        0.0
+                        0.9558823704719543,
+                        0.6385701894760132,
+                        0.05154268816113472
                     ],
                     "diffuseRoughness": 1.0,
                     "emissionStrength": 0.0,
@@ -673,7 +673,7 @@
                         0.0
                     ],
                     "specularProbability": 0.0,
-                    "specularRoughness": 0.08908706903457642,
+                    "specularRoughness": 0.0,
                     "transparency": 0.0,
                     "type": "Opaque"
                 },
@@ -720,9 +720,9 @@
                 {
                     "absorption": 0.0,
                     "diffuseColor": [
-                        0.05190310627222061,
-                        0.22058820724487305,
-                        0.09820879250764847
+                        0.016868527978658676,
+                        0.19117647409439087,
+                        0.0
                     ],
                     "diffuseRoughness": 1.0,
                     "emissionStrength": 0.0,
@@ -732,8 +732,8 @@
                         1.0,
                         1.0
                     ],
-                    "specularProbability": 0.04399999976158142,
-                    "specularRoughness": 0.03700000047683716,
+                    "specularProbability": 0.10100000351667404,
+                    "specularRoughness": 0.10100000351667404,
                     "transparency": 0.0,
                     "type": "Specular"
                 }
@@ -761,24 +761,24 @@
             "Filename": "assets\\models\\bull.obj",
             "Materials": [
                 {
-                    "absorption": 0.0,
+                    "absorption": 0.20000000298023224,
                     "diffuseColor": [
                         0.8235292434692383,
                         0.0,
                         1.0
                     ],
                     "diffuseRoughness": 0.29499998688697815,
-                    "emissionStrength": 9.097000122070313,
-                    "indexOfRefraction": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.3289999961853027,
                     "specularColor": [
-                        0.0,
-                        0.0,
-                        0.0
+                        0.9117646813392639,
+                        0.9117646813392639,
+                        0.9117646813392639
                     ],
-                    "specularProbability": 0.0,
-                    "specularRoughness": 0.0,
-                    "transparency": 0.0,
-                    "type": "Emissive"
+                    "specularProbability": 1.0,
+                    "specularRoughness": 0.29600000381469727,
+                    "transparency": 1.0,
+                    "type": "Transparent"
                 }
             ],
             "TextureID": -1,
@@ -976,24 +976,24 @@
             "Filename": "assets\\models\\dragon800K.obj",
             "Materials": [
                 {
-                    "absorption": 1.0,
+                    "absorption": 0.0,
                     "diffuseColor": [
                         0.0,
                         0.7058823108673096,
                         1.0
                     ],
                     "diffuseRoughness": 0.0,
-                    "emissionStrength": 0.0,
-                    "indexOfRefraction": 1.309000015258789,
+                    "emissionStrength": 59.70399856567383,
+                    "indexOfRefraction": 1.0,
                     "specularColor": [
-                        0.7955593466758728,
-                        0.8058127760887146,
-                        0.9117646813392639
+                        0.0,
+                        0.0,
+                        0.0
                     ],
-                    "specularProbability": 1.0,
+                    "specularProbability": 0.0,
                     "specularRoughness": 0.0,
-                    "transparency": 1.0,
-                    "type": "Transparent"
+                    "transparency": 0.0,
+                    "type": "Emissive"
                 }
             ],
             "TextureID": -1,
@@ -1115,15 +1115,15 @@
         ],
         "sunColor": [
             1.0,
-            0.9300000071525574,
-            0.3100000023841858
+            0.890426754951477,
+            0.5343137383460999
         ],
         "sunDir": [
             0.8670898079872131,
             0.49805158376693726,
             0.010001035407185555
         ],
-        "sunStrength": 1000.0
+        "sunStrength": 75.22100067138672
     },
     "Textures": {
         "Paths": [

@@ -699,6 +699,9 @@ void Scene::loadJSON(const std::string& filename) {
     pendingClearTextures = true;
     textureScales.fill(0.0f);
 
+    emissiveTris.clear();
+    emissiveModelTriangleNum.clear();
+
     // precomputedModels.clear();
 
     // --- Camera ---
@@ -777,11 +780,9 @@ void Scene::loadJSON(const std::string& filename) {
                 const auto& mats = m["Materials"];
 
                 models.back().materials.clear();
-                models.back().materialNames.clear();
-                for (int i = 0; i < mats.size(); ++i) {
-                    json mat = mats[i];
+                for (auto mat : mats) {
                     models.back().materials.push_back(mat);
-                    models.back().materialNames.push_back(mat.contains("Name") ? mat["Name"].get<std::string>() : "Material " + std::to_string(i));
+                    if (mat.contains("Name")) models.back().materialNames.back() = mat["Name"].get<std::string>();
                 }
             }
             progress = progress + 1.0f;
@@ -855,7 +856,7 @@ void Scene::reloadEmissiveTris() {
                 count++;
             }
         }
-        emissiveModelTriangleNum.emplace_back(start, count);
+        if (count > 0) emissiveModelTriangleNum.emplace_back(start, count);
     }
     emissiveTrisStale = false;
     newData = true;

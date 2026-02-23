@@ -898,11 +898,8 @@ void SceneUI::drawFileBrowser() {
         // Clicking an existing file populates the name field
         // (already handled by Selectable in the file list above)
         if (!fileBrowser.selectedFile.empty()) {
-            // strip .json for display
-            std::string stripped = fileBrowser.selectedFile;
-            if (stripped.find(".json") != std::string::npos)
-                stripped = stripped.substr(0, stripped.size() - 5);
-            strncpy(saveName, stripped.c_str(), IM_ARRAYSIZE(saveName));
+            std::string filename = fileBrowser.selectedFile;
+            strncpy(saveName, filename.c_str(), IM_ARRAYSIZE(saveName));
             fileBrowser.selectedFile = ""; // consume it
         }
     } else {

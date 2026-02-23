@@ -587,10 +587,69 @@ Hit findBestTri(Ray ray, out int triTest, out int aabbTest){
 
     return hit;
 }
+bool shadowRayBlocked(Ray ray, float maxDist, int excludeTriID, int excludeModelID) {
+    for (int modelIdx = 0; modelIdx < numModels; modelIdx++) {
+        mat4 invM = modelInvTransformations[modelIdx];
+        Ray rayLocal = worldToLocalRay(ray, invM);
+
+        ModelOffset offset = modelOffsets[modelIdx];
+        BVHnode root = BVHnodes[offset.BVHnodes];
+
+        // Quick AABB reject
+        if (intersectAABB(rayLocal, getMin(root), getMax(root)) > 1e30) continue;
+
+        // Convert maxDist to local space (approximate — use scale)
+        mat4 M = modelTransformations[modelIdx];
+        vec3 scaledDir = (invM * vec4(ray.dir, 0.0)).xyz;
+        float localScale = length(scaledDir);
+        float localMaxDist = maxDist * localScale;
+
+        int sp = 0;
+        stack[sp++] = offset.BVHnodes;
+
+        while (sp > 0) {
+            BVHnode node = BVHnodes[stack[--sp]];
+
+            if (leaf(node)) {
+                int start = triStart(node);
+                int num   = numTri(node);
+                for (int j = start; j < start + num; j++) {
+                    if (j == excludeTriID && modelIdx == excludeModelID) continue;
+
+                    ivec4 t1, t2, t3;
+                    getTriangle(j, modelIdx, t1, t2, t3);
+                    vec3 v0 = vertices[t1.x + offset.vertex].xyz;
+                    vec3 v1 = vertices[t2.x + offset.vertex].xyz;
+                    vec3 v2 = vertices[t3.x + offset.vertex].xyz;
+
+                    Hit h = rayTriangleIntersect(rayLocal, v0, v1, v2);
+                    if (h.hit && h.t < localMaxDist) {
+                        // Check it's not an emissive (light doesn't block itself)
+                        ivec4 idx1 = triangles[j*3 + offset.triangle*3];
+                        Material mat = materials[int(idx1.w) + offset.material];
+                        if (mat.type != 3) return true; // blocked
+                    }
+                }
+            } else {
+                int A = childA(node) + offset.BVHnodes;
+                int B = childB(node) + offset.BVHnodes;
+                BVHnode nA = BVHnodes[A];
+                BVHnode nB = BVHnodes[B];
+
+                float dA = intersectAABB(rayLocal, getMin(nA), getMax(nA));
+                float dB = intersectAABB(rayLocal, getMin(nB), getMax(nB));
+
+                if (dB < localMaxDist && dB < 1e38) stack[sp++] = B;
+                if (dA < localMaxDist && dA < 1e38) stack[sp++] = A;
+            }
+        }
+    }
+    return false;
+}
 
 // Russian Roulette
 bool russianRoulet(inout vec3 color, inout uint state){
-    float p = min(max(max(color.r,color.g),color.b)*2, 1.0);
+    float p = min(max(max(color.r,color.g),color.b), 1.0);
     if (randomValue(state) >= p) return true;
     color *= 1.0/p;
     return false;
@@ -680,7 +739,7 @@ bool hitFloorUpdate(inout Ray ray, inout vec3 color, out float depth, inout uint
     return false;
 }
 
-vec3 sampleDirectLight(vec3 hitPos, vec3 normal, Material material, inout uint state) {
+vec3 sampleDirectLight(vec3 hitPos, vec3 normal, vec3 diffuseColor, inout uint state) {
     if (numEmissiveTris == 0) return vec3(0);
 
     int model = int(randomValue(state) * float(numEmissiveModels));
@@ -734,8 +793,7 @@ vec3 sampleDirectLight(vec3 hitPos, vec3 normal, Material material, inout uint s
 
     // Early exit shadow trace — just need any hit before the light
     int dummyTri, dummyAABB;
-    Hit shadowHit = findBestTri(shadowRay, dummyTri, dummyAABB);
-    if (shadowHit.hit && shadowHit.t < dist - 1e-3 && shadowHit.tri.material.type != 3) return vec3(0);
+    if (shadowRayBlocked(shadowRay, dist - 1e-3, triID, modelID)) return vec3(0);
 
     // Area and PDF
     float area = 0.5 * length(cross(v2w - v1w, v3w - v1w));
@@ -743,10 +801,46 @@ vec3 sampleDirectLight(vec3 hitPos, vec3 normal, Material material, inout uint s
 
     // Contribution
     vec3 Le = tri.material.diffuseColor.rgb * tri.material.emissionStrength;
-    vec3 BRDF = material.diffuseColor.rgb / PI;
+    vec3 BRDF = diffuseColor / PI;
     float G = cosA * cosB / dist2;
 
     return Le * BRDF * G / pdf;
+}
+vec3 sampleSun(vec3 hitPos, vec3 normal, Material material, inout uint state) {
+    if (!skyActive) return vec3(0);
+
+    // Build a random direction inside the sun's cone
+    float cosMax = 0.9975;
+    float cosTheta = 1.0 - randomValue(state) * (1.0 - cosMax);
+    float sinTheta = sqrt(max(0.0, 1.0 - cosTheta * cosTheta));
+    float phi = randomValue(state) * 2.0 * PI;
+
+    // ONB around sunDir
+    vec3 w = sunDir;
+    vec3 u = normalize(abs(w.x) > 0.9 ? cross(w, vec3(0,1,0)) : cross(w, vec3(1,0,0)));
+    vec3 v = cross(w, u);
+
+    vec3 sampleDir = normalize(w * cosTheta + u * cos(phi) * sinTheta + v * sin(phi) * sinTheta);
+
+    float cosA = dot(normal, sampleDir);
+    if (cosA <= 0.0) return vec3(0);
+
+    // Shadow ray — just need any non-emissive hit to block it
+    Ray shadowRay;
+    shadowRay.pos    = hitPos + normal * 1e-3;
+    shadowRay.dir    = sampleDir;
+    shadowRay.invDir = 1.0 / sampleDir;
+    int dTri, dAABB;
+    Hit shadowHit = findBestTri(shadowRay, dTri, dAABB);
+    if (shadowHit.hit && shadowHit.tri.material.type != 3) return vec3(0);
+
+    // PDF: uniform solid angle over cone
+    float solidAngle = 2.0 * PI * (1.0 - cosMax);
+    float pdf = 1.0 / solidAngle;
+
+    // sunColor is already multiplied by sunStrength in setUniformsRTX
+    vec3 BRDF = material.diffuseColor.rgb / PI;
+    return sunColor * BRDF * cosA / pdf;
 }
 
 vec4 trace(Ray ray, inout uint state){
@@ -803,7 +897,10 @@ vec4 trace(Ray ray, inout uint state){
 
             // NEE — skip for specular and transparent (delta-like BRDFs)
             if (!isSpecular && !isTransparent) {
-                color += throughput * sampleDirectLight(ray.pos, normalWorld, material, state);
+                vec3 diffuseColor = hit.tri.useTexture ? getTextureColor(hit, M) : material.diffuseColor.rgb;
+                color += throughput * sampleDirectLight(ray.pos, normalWorld, diffuseColor, state);
+
+                color += throughput * sampleSun(ray.pos, normalWorld, material, state);
             }
 
             prevSpecular = isSpecular || isTransparent;
@@ -817,7 +914,8 @@ vec4 trace(Ray ray, inout uint state){
             ray.pos   += normalWorld * 1e-3 * sign(dot(ray.dir, normalWorld));
             ray.invDir = 1.0 / ray.dir;
 
-        } else if (floorActive && ray.dir.y < 0.0){
+        }
+        else if (floorActive && ray.dir.y < 0.0){
             float floorY = -1000.0;
             float t = (floorY - ray.pos.y) / ray.dir.y;
             if (bounce == 0) depth = t;
@@ -834,7 +932,8 @@ vec4 trace(Ray ray, inout uint state){
                 bool isSpecular = randomValue(state) <= floorMaterial.specularProbability && floorMaterial.type != 0;
 
                 if (!isSpecular) {
-                    color += throughput * sampleDirectLight(ray.pos, n, floorMaterial, state);
+                    color += throughput * sampleDirectLight(ray.pos, n, floorMaterial.diffuseColor.rgb, state);
+                    color += throughput * sampleSun(ray.pos, n, floorMaterial, state);
                 }
 
                 prevSpecular = isSpecular;
@@ -846,7 +945,8 @@ vec4 trace(Ray ray, inout uint state){
                 break;
             }
 
-        } else {
+        }
+        else {
             color += throughput * getEnviormentLight(ray.dir);
             break;
         }
@@ -859,8 +959,7 @@ vec4 trace(Ray ray, inout uint state){
     }
 
     if (debugView && debugMode == 1) {
-        vec3 heatmap = triTest > triTh || aabbTest > aabbTh
-        ? vec3(1)
+        vec3 heatmap = triTest > triTh || aabbTest > aabbTh ? vec3(1)
         : vec3(float(triTest)/float(triTh), russianRouletBreak ? 1.0 : 0.0, float(aabbTest)/float(aabbTh));
         return vec4(heatmap, depth);
     }
