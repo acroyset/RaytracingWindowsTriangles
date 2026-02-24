@@ -1,6 +1,6 @@
 # ⚡ Real-Time GPU Raytracer
 
-> High-Performance BVH-Accelerated Path Tracer with OpenGL Compute Shaders
+> High-Performance BVH-Accelerated Path Tracer with OpenGL Fragment Shaders
 
 ![C++](https://img.shields.io/badge/C++-17-blue.svg)
 ![OpenGL](https://img.shields.io/badge/OpenGL-4.3-green.svg)
