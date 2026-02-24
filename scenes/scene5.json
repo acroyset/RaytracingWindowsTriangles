@@ -354,7 +354,7 @@
                     "specularProbability": 0.0,
                     "specularRoughness": 0.0,
                     "transparency": 0.0,
-                    "type": "Opaque"
+                    "type": "Specular"
                 }
             ],
             "TextureID": 0,
@@ -476,14 +476,14 @@
                     "emissionStrength": 0.0,
                     "indexOfRefraction": 1.0,
                     "specularColor": [
-                        0.0,
-                        0.0,
-                        0.0
+                        1.0,
+                        1.0,
+                        1.0
                     ],
-                    "specularProbability": 0.0,
+                    "specularProbability": 1.0,
                     "specularRoughness": 0.0,
                     "transparency": 0.0,
-                    "type": "Opaque"
+                    "type": "Specular"
                 }
             ],
             "TextureID": -1,
@@ -519,14 +519,14 @@
                     "emissionStrength": 0.0,
                     "indexOfRefraction": 1.0,
                     "specularColor": [
-                        0.0,
-                        0.0,
-                        0.0
+                        1.0,
+                        1.0,
+                        1.0
                     ],
-                    "specularProbability": 0.0,
-                    "specularRoughness": 0.0,
+                    "specularProbability": 1.0,
+                    "specularRoughness": 0.24300000071525574,
                     "transparency": 0.0,
-                    "type": "Opaque"
+                    "type": "Specular"
                 }
             ],
             "TextureID": -1,
@@ -562,14 +562,14 @@
                     "emissionStrength": 0.0,
                     "indexOfRefraction": 1.0,
                     "specularColor": [
-                        0.0,
-                        0.0,
-                        0.0
+                        1.0,
+                        1.0,
+                        1.0
                     ],
-                    "specularProbability": 0.0,
-                    "specularRoughness": 0.0,
+                    "specularProbability": 1.0,
+                    "specularRoughness": 0.6110000014305115,
                     "transparency": 0.0,
-                    "type": "Opaque"
+                    "type": "Specular"
                 }
             ],
             "TextureID": -1,
@@ -609,10 +609,10 @@
                         1.0,
                         1.0
                     ],
-                    "specularProbability": 0.027000000700354576,
+                    "specularProbability": 0.0,
                     "specularRoughness": 0.0,
                     "transparency": 0.0,
-                    "type": "Opaque"
+                    "type": "Specular"
                 }
             ],
             "TextureID": 1,
@@ -660,9 +660,9 @@
                 {
                     "absorption": 0.0,
                     "diffuseColor": [
-                        0.9558823704719543,
-                        0.6385701894760132,
-                        0.05154268816113472
+                        0.07843136787414551,
+                        0.050911590456962585,
+                        0.0
                     ],
                     "diffuseRoughness": 1.0,
                     "emissionStrength": 0.0,
@@ -675,13 +675,13 @@
                     "specularProbability": 0.0,
                     "specularRoughness": 0.0,
                     "transparency": 0.0,
-                    "type": "Opaque"
+                    "type": "Specular"
                 },
                 {
                     "absorption": 0.0,
                     "diffuseColor": [
-                        0.2235294133424759,
-                        0.14509804546833038,
+                        0.05882352590560913,
+                        0.03818369284272194,
                         0.0
                     ],
                     "diffuseRoughness": 1.0,
@@ -695,7 +695,7 @@
                     "specularProbability": 0.0,
                     "specularRoughness": 0.08908706903457642,
                     "transparency": 0.0,
-                    "type": "Opaque"
+                    "type": "Specular"
                 },
                 {
                     "absorption": 0.0,
@@ -720,9 +720,9 @@
                 {
                     "absorption": 0.0,
                     "diffuseColor": [
-                        0.016868527978658676,
-                        0.19117647409439087,
-                        0.0
+                        0.004336569458246231,
+                        0.039215683937072754,
+                        0.0009611680870875716
                     ],
                     "diffuseRoughness": 1.0,
                     "emissionStrength": 0.0,
@@ -732,8 +732,8 @@
                         1.0,
                         1.0
                     ],
-                    "specularProbability": 0.10100000351667404,
-                    "specularRoughness": 0.10100000351667404,
+                    "specularProbability": 0.00800000037997961,
+                    "specularRoughness": 0.22200000286102295,
                     "transparency": 0.0,
                     "type": "Specular"
                 }
@@ -1100,6 +1100,69 @@
                     30.0
                 ]
             }
+        },
+        {
+            "Filename": "assets\\models\\tree\\tree.obj",
+            "Materials": [
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.10784316062927246,
+                        0.06660901010036469,
+                        0.0
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.007569203618913889,
+                        0.10294115543365479,
+                        0.010374238714575768
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "specularProbability": 0.024000000208616257,
+                    "specularRoughness": 0.4090000092983246,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    -137.9290008544922,
+                    9.5,
+                    129.0709991455078
+                ],
+                "rotation": [
+                    0.0,
+                    -0.0872664600610733,
+                    0.0
+                ],
+                "scale": [
+                    9.991000175476074,
+                    9.991000175476074,
+                    9.991000175476074
+                ]
+            }
         }
     ],
     "Settings": {
@@ -1107,7 +1170,7 @@
         "bounceLim": 16
     },
     "Sky": {
-        "active": false,
+        "active": true,
         "color": [
             0.5,
             0.699999988079071,

@@ -38,9 +38,6 @@ namespace glm {
 
 inline void to_json(json& j, const MaterialType& t) {
     switch (t) {
-        case Opaque:
-            j = "Opaque";
-            return;
         case Specular:
             j = "Specular";
             return;
@@ -52,9 +49,7 @@ inline void to_json(json& j, const MaterialType& t) {
     }
 }
 inline void from_json(const json& j, MaterialType& t) {
-    if (j == "Opaque") {
-        t = Opaque;
-    } else if (j == "Specular") {
+    if (j == "Specular") {
         t = Specular;
     } else if (j == "Transparent") {
         t = Transparent;

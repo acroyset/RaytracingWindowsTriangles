@@ -22,7 +22,6 @@ inline bool ColorEdit3(const char* label, vec4& v) {
 
 static const char* MaterialTypeLabel(MaterialType t) {
     switch (t) {
-        case Opaque:      return "Opaque";
         case Specular:    return "Specular";
         case Transparent: return "Transparent";
         case Emissive:    return "Emissive";
@@ -55,7 +54,7 @@ static bool DrawMaterialInspector(Material& m, int matIndex, int textureID, bool
     ImGui::Separator();
 
     // --- Type selector drives everything ---
-    const char* items[] = {"Opaque", "Specular", "Transparent", "Emissive"};
+    const char* items[] = {"Specular", "Transparent", "Emissive"};
     int t = int(type);
     if (ImGui::Combo("Type", &t, items, IM_ARRAYSIZE(items))) {
         type = MaterialType(t);
@@ -123,10 +122,6 @@ static bool DrawMaterialInspector(Material& m, int matIndex, int textureID, bool
         changed |= ImGui::SliderFloat("Specular Roughness", &specularRoughness, 0.0f, 1.0f);
 
         changed |= ImGui::SliderFloat("Specular Probability", &specularProbability, 0.0f, 1.0f);
-    } else if (type == Opaque) {
-        ImGui::SeparatorText("Surface");
-
-        changed |= ImGui::SliderFloat("Roughness", &diffuseRoughness, 0.0f, 1.0f);
     }
 
     if (changed) {
@@ -402,7 +397,11 @@ void SceneUI::render(Scene& scene) {
         ImGui::Separator();
 
         if (ImGui::Button("Reload Shaders")) {
-            scene.window.reload();
+            scene.reloadShaders();
+            ui_resetAccum = true;
+        }
+
+        if (ImGui::Checkbox("Next Event Estimation (NEE)", &scene.NEE)) {
             ui_resetAccum = true;
         }
 
@@ -559,15 +558,17 @@ void SceneUI::render(Scene& scene) {
                 ImGui::Text("%s", size.c_str());
             };
 
-            Row("Triangles", package.triangles, package.trianglesSent, bytesToReadable(package.triangleBytes));
-            Row("Vertices", package.vertices, package.verticesSent, bytesToReadable(package.verticesBytes));
-            Row("Tex Coords", package.texCoords, package.texCoordsSent, bytesToReadable(package.texCoordsBytes));
-            Row("Normals", package.normals, package.normalsSent, bytesToReadable(package.normalsBytes));
-            Row("BVH Nodes", package.BVHNodes, package.BVHNodesSent, bytesToReadable(package.BVHNodesBytes));
-            RowNoSent("Models", int(scene.models.size()), "");
-            RowNoSent("Materials", package.materials, bytesToReadable(package.materialsBytes));
-            RowNoSent("Textures", package.textures, bytesToReadable(package.texturesBytes));
-            RowNoSent("Transforms", package.transforms, bytesToReadable(package.transformsBytes));
+            Row(      "Triangles",    package.triangles, package.trianglesSent, bytesToReadable(package.triangleBytes));
+            Row(      "Vertices",     package.vertices, package.verticesSent,   bytesToReadable(package.verticesBytes));
+            Row(      "Tex Coords",   package.texCoords, package.texCoordsSent, bytesToReadable(package.texCoordsBytes));
+            Row(      "Normals",      package.normals, package.normalsSent,     bytesToReadable(package.normalsBytes));
+            Row(      "BVH Nodes",    package.BVHNodes, package.BVHNodesSent,   bytesToReadable(package.BVHNodesBytes));
+            RowNoSent("Models",             package.models,                           bytesToReadable(package.modelsBytes));
+            RowNoSent("Emissive Models",    package.emissiveModels,                   bytesToReadable(package.emissiveModelsBytes));
+            RowNoSent("Emissive Triangles", package.emissiveTriangles,                bytesToReadable(package.emissiveTrianglesBytes));
+            RowNoSent("Materials",          package.materials,                        bytesToReadable(package.materialsBytes));
+            RowNoSent("Textures",           package.textures,                         bytesToReadable(package.texturesBytes));
+            RowNoSent("Transforms",         package.transforms,                       bytesToReadable(package.transformsBytes));
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
@@ -602,7 +603,7 @@ void SceneUI::render(Scene& scene) {
         vec3 rotDeg = degrees(transform.rotation);
         changedT |= DragFloat3("Position", transform.position, 3.0f);
 
-        bool uniformScale = transform.scale.x == transform.scale.y && transform.scale.x == transform.scale.z;
+        static bool uniformScale = transform.scale.x == transform.scale.y && transform.scale.x == transform.scale.z;
 
         if (uniformScale) {
             float s = transform.scale.x;

@@ -183,8 +183,7 @@ void BaseModel::loadMTL(const std::string& filename) {
 
         if (emission > 0) material.setType(Emissive);
         else if (transparency > 0) material.setType(Transparent);
-        else if (specularProb > 0) material.setType(Specular);
-        else material.setType(Opaque);
+        else material.setType(Specular);
 
         material.setDiffuseColor(emission == 0 ? Kd : Ke);
         material.setDiffuseRoughness(1);

@@ -8,7 +8,7 @@
 
 using namespace glm;
 
-enum MaterialType : int {Opaque=0, Specular=1, Transparent=2, Emissive=3};
+enum MaterialType : int {Specular=0, Transparent=1, Emissive=2};
 
 class Material {
 
@@ -43,7 +43,7 @@ class Material {
 public:
 
     Material() {
-        type = Opaque;
+        type = Specular;
 
         diffuseColor = vec4(vec3(0.95), 0);
         diffuseRoughness = 1;

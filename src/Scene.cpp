@@ -273,6 +273,7 @@ int Scene::getNumMaterials() const {
 
 void Scene::createUniforms() {
     uNumModels          = raytracer.createUniform<int>("numModels");
+    uNEE                = raytracer.createUniform<bool>("NEE");
     uNumEmissiveModels  = raytracer.createUniform<int>("numEmissiveModels");
     uNumEmissiveTris    = raytracer.createUniform<int>("numEmissiveTris");
 
@@ -320,6 +321,7 @@ void Scene::setUniformsRTX() const {
     raytracer.bind();
 
     uNumModels.set(int(models.size()));
+    uNEE.set(NEE);
     uNumEmissiveModels.set(int(emissiveModelTriangleNum.size()));
     uNumEmissiveTris.set(int(emissiveTris.size()));
 
@@ -565,17 +567,19 @@ void Scene::updateFrame() {
 void Scene::displayStats() const {
     DataPackage package = lastSentPackage;
 
-    std::cout << "Triangles: "       << lastSentPackage.triangles  << " (" << bytesToReadable(package.triangleBytes)   << ")" << std::endl;
-    std::cout << "Vertices: "        << lastSentPackage.vertices   << " (" << bytesToReadable(package.verticesBytes)   << ")" << std::endl;
-    std::cout << "Texture Coords: "  << lastSentPackage.texCoords  << " (" << bytesToReadable(package.texCoordsBytes)  << ")" << std::endl;
-    std::cout << "Normals: "         << lastSentPackage.normals    << " (" << bytesToReadable(package.normalsBytes)    << ")" << std::endl;
-    std::cout << "BVH Nodes: "       << lastSentPackage.BVHNodes   << " (" << bytesToReadable(package.BVHNodesBytes)   << ")" << std::endl;
-    std::cout                                                                                                                 << std::endl;
-    std::cout << "Models: "          << models.size()                                                                         << std::endl;
-    std::cout << "Materials: "       << lastSentPackage.materials  << " (" << bytesToReadable(package.materialsBytes)  << ")" << std::endl;
-    std::cout << "Textures: "        << lastSentPackage.textures   << " (" << bytesToReadable(package.texturesBytes)   << ")" << std::endl;
-    std::cout << "Transformations: " << lastSentPackage.transforms << " (" << bytesToReadable(package.transformsBytes) << ")" << std::endl;
-    std::cout << "Total Data Sent: " << bytesToReadable(package.totalSize) << std::endl;
+    std::cout << "Triangles: "        << lastSentPackage.triangles         << " (" << bytesToReadable(package.triangleBytes)          << ")" << std::endl;
+    std::cout << "Vertices: "         << lastSentPackage.vertices          << " (" << bytesToReadable(package.verticesBytes)          << ")" << std::endl;
+    std::cout << "Texture Coords: "   << lastSentPackage.texCoords         << " (" << bytesToReadable(package.texCoordsBytes)         << ")" << std::endl;
+    std::cout << "Normals: "          << lastSentPackage.normals           << " (" << bytesToReadable(package.normalsBytes)           << ")" << std::endl;
+    std::cout << "BVH Nodes: "        << lastSentPackage.BVHNodes          << " (" << bytesToReadable(package.BVHNodesBytes)          << ")" << std::endl;
+    std::cout                                                                                                                                << std::endl;
+    std::cout << "Models: "           << lastSentPackage.models            << " (" << bytesToReadable(package.modelsBytes)            << ")" << std::endl;
+    std::cout << "Emissive Models"    << lastSentPackage.emissiveModels    << " (" << bytesToReadable(package.emissiveModelsBytes)    << ")" << std::endl;
+    std::cout << "Emissive Triangles" << lastSentPackage.emissiveTriangles << " (" << bytesToReadable(package.emissiveTrianglesBytes) << ")" << std::endl;
+    std::cout << "Materials: "        << lastSentPackage.materials         << " (" << bytesToReadable(package.materialsBytes)         << ")" << std::endl;
+    std::cout << "Textures: "         << lastSentPackage.textures          << " (" << bytesToReadable(package.texturesBytes)          << ")" << std::endl;
+    std::cout << "Transformations: "  << lastSentPackage.transforms        << " (" << bytesToReadable(package.transformsBytes)        << ")" << std::endl;
+    std::cout << "Total Data Sent: "  << bytesToReadable(package.totalSize) << std::endl;
     std::cout << std::endl;
 }
 
@@ -583,29 +587,36 @@ DataPackage Scene::dataSent() const {
     DataPackage result{};
 
     for (const Model& model : models) {
-        result.triangles += int(model.base.triangles.size())/3;
-        result.vertices += int(model.base.vertices.size());
-        result.texCoords += int(model.base.texCoords.size());
-        result.normals += int(model.base.normals.size());
-        result.materials += int(model.materials.size());
-        result.BVHNodes += int(model.base.BVHnodes.size());
+        result.triangles  += int(model.base.triangles.size())/3;
+        result.vertices   += int(model.base.vertices.size());
+        result.texCoords  += int(model.base.texCoords.size());
+        result.normals    += int(model.base.normals.size());
+        result.BVHNodes   += int(model.base.BVHnodes.size());
+        result.models     ++;
+        result.materials  += int(model.materials.size());
         result.transforms ++;
     }
-    result.textures = int(textures.size());
+    result.emissiveModels    = int(emissiveModelTriangleNum.size());
+    result.emissiveTriangles = int(emissiveTris.size());
+    result.textures          = int(textures.size());
 
     result.trianglesSent = int(triangles.size())/3;
-    result.verticesSent = int(vertices.size());
+    result.verticesSent  = int(vertices.size());
     result.texCoordsSent = int(texCoords.size());
-    result.normalsSent = int(normals.size());
-    result.BVHNodesSent = int(BVHnodes.size());
+    result.normalsSent   = int(normals.size());
+    result.BVHNodesSent  = int(BVHnodes.size());
 
-    result.triangleBytes = result.trianglesSent * int(sizeof(ivec4)) * 3;
-    result.verticesBytes = result.verticesSent * int(sizeof(vec4));
-    result.texCoordsBytes = result.texCoordsSent * int(sizeof(vec2));
-    result.normalsBytes = result.normalsSent * int(sizeof(vec4));
-    result.materialsBytes = result.materials * int(sizeof(Material));
-    result.BVHNodesBytes = result.BVHNodesSent * int(sizeof(BVHnode));
-    result.transformsBytes = result.transforms * int(sizeof(Transformation));
+    result.triangleBytes          = result.trianglesSent     * int(sizeof(ivec4)) * 3;
+    result.verticesBytes          = result.verticesSent      * int(sizeof(vec4));
+    result.texCoordsBytes         = result.texCoordsSent     * int(sizeof(vec2));
+    result.normalsBytes           = result.normalsSent       * int(sizeof(vec4));
+    result.BVHNodesBytes          = result.BVHNodesSent      * int(sizeof(BVHnode));
+
+    result.modelsBytes            = result.models            * int(sizeof(ModelOffset));
+    result.emissiveModelsBytes    = result.emissiveModels    * int(sizeof(ivec2));
+    result.emissiveTrianglesBytes = result.emissiveTriangles * int(sizeof(ivec2));
+    result.materialsBytes         = result.materials         * int(sizeof(Material));
+    result.transformsBytes        = result.transforms        * int(sizeof(Transformation));
 
     result.texturesBytes = 0;
     for (const Texture& t : textures) {
@@ -617,8 +628,11 @@ DataPackage Scene::dataSent() const {
         result.verticesBytes +
         result.texCoordsBytes +
         result.normalsBytes +
-        result.materialsBytes +
         result.BVHNodesBytes +
+        result.modelsBytes +
+        result.emissiveModelsBytes +
+        result.emissiveTrianglesBytes +
+        result.materialsBytes +
         result.transformsBytes +
         result.texturesBytes;
 
@@ -805,6 +819,8 @@ void Scene::startAddJob(const std::string& path, const std::string& texturePath)
             statusIsError = false;
             statusMsg = "Added: " + path;
             newData = true;
+
+            progress = 1.0f;
         } catch (const std::exception& e) {
             statusIsError = true;
             statusMsg = std::string("Add failed: ") + e.what();
@@ -814,8 +830,6 @@ void Scene::startAddJob(const std::string& path, const std::string& texturePath)
         }
         isBusy = false;
     });
-
-    progress = 1.0f;
 }
 
 void Scene::startLoadJob(const std::string& path){

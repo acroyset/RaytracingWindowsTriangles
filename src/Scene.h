@@ -54,12 +54,21 @@ struct DataPackage {
     int normals;
     int normalsBytes;
 
-    int materials;
-    int materialsBytes;
-
     int BVHNodesSent;
     int BVHNodes;
     int BVHNodesBytes;
+
+    int models;
+    int modelsBytes;
+
+    int emissiveModels;
+    int emissiveModelsBytes;
+
+    int emissiveTriangles;
+    int emissiveTrianglesBytes;
+
+    int materials;
+    int materialsBytes;
 
     int transforms;
     int transformsBytes;
@@ -131,6 +140,7 @@ class Scene {
 
     // NEE
 
+    bool NEE = true;
     std::vector<ivec2> emissiveTris;
     std::vector<ivec2> emissiveModelTriangleNum;
     std::atomic<bool> emissiveTrisStale = false;
@@ -207,6 +217,7 @@ class Scene {
     // Uniforms
 
     Uniform<int> uNumModels;
+    Uniform<bool> uNEE;
     Uniform<int> uNumEmissiveModels;
     Uniform<int> uNumEmissiveTris;
 
@@ -347,6 +358,12 @@ class Scene {
     void startLoadJob(const std::string& path);
 
     void reloadEmissiveTris();
+
+    void reloadShaders() {
+        window.reload();
+        createUniforms();
+        resetAccumulation();
+    }
 };
 
 #endif //SCENE_H
