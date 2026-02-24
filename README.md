@@ -13,7 +13,7 @@ A physically-based path tracer running entirely on the GPU, capable of rendering
 ## 🎨 Gallery
 
 ### Model Family (7.2M Triangles)
-*Multiple renders showcasing different material properties*
+*Multiple models showcasing different material properties*
 
 <div align="center">
   <img width="2560" height="1440" alt="Base Profile Screenshot 2026 02 21 - 00 35 55 24" src="https://github.com/user-attachments/assets/20ce0e74-eba9-406e-adf1-0fe404323b76" />
@@ -22,14 +22,14 @@ A physically-based path tracer running entirely on the GPU, capable of rendering
 </div>
 
 ### Bull Family (2.1M Triangles)
-*Complex textures with millions of triangles*
+*Complex textures with different materials*
 
 <div align="center">
   <img width="2560" height="1440" alt="Base Profile Screenshot 2026 02 11 - 18 16 50 59" src="https://github.com/user-attachments/assets/1ebc96a7-e2e2-4de3-9365-908545cddc64" />
 </div>
 
-### Glass Dragon
-*High-gloss material demonstrating reflections and light transport*
+### Glass Dragon (870K Triangles)
+*High-gloss material demonstrating reflections and refractions*
 
 <div align="center">
   <img width="2560" height="1440" alt="Base Profile Screenshot 2026 02 16 - 23 23 55 58" src="https://github.com/user-attachments/assets/d89a0d0a-425d-4d5f-b2ab-8fce070098ee" />
@@ -54,7 +54,9 @@ A physically-based path tracer running entirely on the GPU, capable of rendering
 - **Real-Time Path Tracing**: 30-60 FPS on complex scenes with millions of triangles
 - **BVH Acceleration**: Custom-built Bounding Volume Hierarchy for efficient ray-triangle intersection
 - **GPU-Accelerated**: All rendering performed in fragment shaders using OpenGL 4.3
+- **Next Event Estimation** (NEE) Calculate direct and indirect light separately and acount for bias
 - **Multi-threaded BVH Construction**: Parallel tree building for fast scene initialization
+- **Russian Roulette Path Termination**: Unbiased variance reduction
 
 ### 🎨 Rendering Features
 - **Physically-Based Materials**: Support for diffuse, specular, metallic, glass, and emissive materials
@@ -64,13 +66,14 @@ A physically-based path tracer running entirely on the GPU, capable of rendering
 - **HDR Environment Maps**: Equirectangular environment map support for realistic lighting
 - **Progressive Accumulation**: Temporal anti-aliasing with progressive sample accumulation
 - **Post Processing**: Multi-level bloom rendering with ACES tonemap
-- **Russian Roulette Path Termination**: Unbiased variance reduction
 
 ### 🛠️ Technical Features
 - **OBJ Model Loading**: Fast, optimized parser with MTL material support
 - **Per-Model Transformations**: Independent position, rotation, and scale for each model
 - **Live Material Editing**: Real-time material property adjustments via ImGui interface
+- **Save/Load JSON**: Save and load scenes with JSON format
 - **Debug Visualization**: BVH traversal heatmaps for performance analysis
+- **Reuse Model Data**: Reuse per model BVH and trianlges, and don't send duplicate to GPU
 
 ---
 
@@ -93,6 +96,7 @@ User Input → Scene Setup → BVH Construction → GPU Upload → Shader Raytra
 - **Stack-based iteration**: Non-recursive BVH traversal in shader
 - **Multi-model support**: Each model has independent transformation matrix
 - **Early ray termination**: Distance-based pruning in model space
+- **Next Event Estimation**: Choose random emissive triangle or sun and compute direct light
 
 ---
 
@@ -121,19 +125,6 @@ User Input → Scene Setup → BVH Construction → GPU Upload → Shader Raytra
 - **ImGui** (UI framework)
 - **stb_image** (texture loading)
 - **nlohmann/json** (save/load)
-
-### Build Instructions
-
-#### Windows
-```bash
-# Clone repository
-git clone --recursive https://github.com/acroyset/RaytracingWindowsTriangles.git
-cd RaytracingWindowsTriangles
-
-# Open RaytracingWindowsTriangles/cmake-build-debug/RaytracingWindowsTriangles.exe
-```
-
----
 
 ## 🎮 Usage
 
@@ -233,7 +224,7 @@ The renderer automatically parses `.mtl` files referenced in OBJ models:
 | Bugatti Veyron | 1.5M | 2.9M | 60 | 7.7s |
 | Lucy | 100K | 199K | 180 | 0.5s |
 
-*Settings: 2560×1440, 1 sample/frame, 5x5 AA, 16 bounces*
+*Settings: 2560×1440, 1 sample/frame, 5x5 AA, 16 bounces, NEE enabled*
 
 ---
 
