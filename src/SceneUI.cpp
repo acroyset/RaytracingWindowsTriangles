@@ -363,7 +363,7 @@ void SceneUI::render(Scene& scene) {
 
     // settings
     {
-        ImGui::Begin("Settings");
+        ImGui::Begin("Controls");
 
         ImGui::Checkbox("Lock", &scene.lock);
 
@@ -405,6 +405,15 @@ void SceneUI::render(Scene& scene) {
             ui_resetAccum = true;
         }
 
+        if (ImGui::Button("Save PNG")) {
+            browserMode = BrowserMode::SavePNG;
+            Scene* s = &scene;
+            fileBrowser.openAt(PROJECT_DIR "renders", ".png", [this, s](const std::string& path) {
+                s->savePNG(path);
+                browserMode = BrowserMode::None;
+            });
+        }
+
         ImGui::Separator();
 
         ImGui::Text("Debug");
@@ -442,6 +451,8 @@ void SceneUI::render(Scene& scene) {
             return (*d)[idx];
         };
 
+        int width = int(ImGui::GetContentRegionAvail().x);
+
         ImGui::PlotLines(
             "##FPS",
             DequeGetter,
@@ -451,13 +462,13 @@ void SceneUI::render(Scene& scene) {
             overlay,
             0.0f,
             maxVal,
-            ImVec2(0, 100)
+            ImVec2(float(width), 100)
         );
 
         if (ImGui::Button("Reset")) {
             scene.fpsData.clear();
         }
-        int maxNum = int(ImGui::GetContentRegionAvail().x);
+        int maxNum = width/2;
         if (int(scene.fpsData.size()) > maxNum) {
             scene.fpsData.pop_front();
         }
@@ -518,13 +529,12 @@ void SceneUI::render(Scene& scene) {
             ImGuiTableFlags_SizingStretchProp |
             ImGuiTableFlags_BordersInnerV))
         {
-            ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthStretch);
-            ImGui::TableSetupColumn("Count", ImGuiTableColumnFlags_WidthStretch);
-            ImGui::TableSetupColumn("Sent", ImGuiTableColumnFlags_WidthStretch);
-            ImGui::TableSetupColumn("Size",  ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn("Label",  ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn("Total", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn("Size",   ImGuiTableColumnFlags_WidthStretch);
             ImGui::TableHeadersRow();
 
-            auto Row = [&](const char* label, int count, int sent, const std::string& size)
+            auto Row = [&](const char* label, int total, int onGpu, const std::string& size)
             {
                 ImGui::TableNextRow();
 
@@ -532,49 +542,36 @@ void SceneUI::render(Scene& scene) {
                 ImGui::TextUnformatted(label);
 
                 ImGui::TableSetColumnIndex(1);
-                ImGui::Text("%d", count);
+                if (onGpu < total) {
+                    ImGui::TextColored(ImVec4(0.8f, 1.0f, 0.8f, 1.0f), "%d", total);
+                    if (ImGui::IsItemHovered())
+                        ImGui::SetTooltip("On GPU: %d  |  %.0f%% saved by instancing",
+                            onGpu, 100.f * float(total - onGpu) / float(total));
+                } else {
+                    ImGui::Text("%d", total);
+                }
 
                 ImGui::TableSetColumnIndex(2);
-                ImGui::Text("%d", sent);
-
-                ImGui::TableSetColumnIndex(3);
                 ImGui::Text("%s", size.c_str());
             };
 
-            auto RowNoSent = [&](const char* label, int count, const std::string& size)
-            {
-                ImGui::TableNextRow();
-
-                ImGui::TableSetColumnIndex(0);
-                ImGui::TextUnformatted(label);
-
-                ImGui::TableSetColumnIndex(1);
-                ImGui::Text("%d", count);
-
-                ImGui::TableSetColumnIndex(2);
-                ImGui::Text("%d", count);
-
-                ImGui::TableSetColumnIndex(3);
-                ImGui::Text("%s", size.c_str());
-            };
-
-            Row(      "Triangles",    package.triangles, package.trianglesSent, bytesToReadable(package.triangleBytes));
-            Row(      "Vertices",     package.vertices, package.verticesSent,   bytesToReadable(package.verticesBytes));
-            Row(      "Tex Coords",   package.texCoords, package.texCoordsSent, bytesToReadable(package.texCoordsBytes));
-            Row(      "Normals",      package.normals, package.normalsSent,     bytesToReadable(package.normalsBytes));
-            Row(      "BVH Nodes",    package.BVHNodes, package.BVHNodesSent,   bytesToReadable(package.BVHNodesBytes));
-            RowNoSent("Models",             package.models,                           bytesToReadable(package.modelsBytes));
-            RowNoSent("Emissive Models",    package.emissiveModels,                   bytesToReadable(package.emissiveModelsBytes));
-            RowNoSent("Emissive Triangles", package.emissiveTriangles,                bytesToReadable(package.emissiveTrianglesBytes));
-            RowNoSent("Materials",          package.materials,                        bytesToReadable(package.materialsBytes));
-            RowNoSent("Textures",           package.textures,                         bytesToReadable(package.texturesBytes));
-            RowNoSent("Transforms",         package.transforms,                       bytesToReadable(package.transformsBytes));
+            Row("Triangles",          package.triangles,         package.trianglesSent,     bytesToReadable(package.triangleBytes)          );
+            Row("Vertices",           package.vertices,          package.verticesSent,      bytesToReadable(package.verticesBytes)          );
+            Row("Tex Coords",         package.texCoords,         package.texCoordsSent,     bytesToReadable(package.texCoordsBytes)         );
+            Row("Normals",            package.normals,           package.normalsSent,       bytesToReadable(package.normalsBytes)           );
+            Row("BVH Nodes",          package.BVHNodes,          package.BVHNodesSent,      bytesToReadable(package.BVHNodesBytes)          );
+            Row("Models",             package.models,            package.models,            bytesToReadable(package.modelsBytes)            );
+            Row("Emissive Models",    package.emissiveModels,    package.emissiveModels,    bytesToReadable(package.emissiveModelsBytes)    );
+            Row("Emissive Triangles", package.emissiveTriangles, package.emissiveTriangles, bytesToReadable(package.emissiveTrianglesBytes) );
+            Row("Materials",          package.materials,         package.materials,         bytesToReadable(package.materialsBytes)         );
+            Row("Textures",           package.textures,          package.textures,          bytesToReadable(package.texturesBytes)          );
+            Row("Transforms",         package.transforms,        package.transforms,        bytesToReadable(package.transformsBytes)        );
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             ImGui::TextColored(ImVec4(1,1,0.4f,1), "Total");
 
-            ImGui::TableSetColumnIndex(3);
+            ImGui::TableSetColumnIndex(2);
             ImGui::TextColored(ImVec4(1,1,0.4f,1),
                 "%s", bytesToReadable(package.totalSize).c_str());
 
@@ -678,7 +675,6 @@ void SceneUI::render(Scene& scene) {
             ImGuiTableFlags_BordersInnerV)) {
             ImGui::TableSetupColumn("Item", ImGuiTableColumnFlags_WidthStretch);
             ImGui::TableSetupColumn("Count", ImGuiTableColumnFlags_WidthStretch);
-            ImGui::TableHeadersRow();
 
             auto Row = [&](const char* label, int count)
             {
@@ -738,7 +734,7 @@ void SceneUI::render(Scene& scene) {
         wasNotBusy = false;
         DrawBusyOverlay(scene.busyLabel.c_str(), progress);
     } else if (progress < 0.99f) {
-        progress = progress * 0.9f + 0.1f*(scene.progress/scene.progressMax);
+        progress = progress * 0.8f + 0.2f*(scene.progress/scene.progressMax);
         wasNotBusy = false;
         DrawBusyOverlay(scene.busyLabel.c_str(), progress);
     } else wasNotBusy = true;
@@ -878,8 +874,8 @@ void SceneUI::drawFileBrowser() {
 
     ImGui::EndChild();
 
-    if (browserMode == BrowserMode::SaveJSON) {
-        static char saveName[128] = "scene";
+    if (browserMode == BrowserMode::SaveJSON || browserMode == BrowserMode::SavePNG) {
+        static char saveName[128] = "";
 
         // Show current path
         ImGui::Text("Save to: %s/", fileBrowser.currentPath.c_str());
@@ -903,7 +899,8 @@ void SceneUI::drawFileBrowser() {
             strncpy(saveName, filename.c_str(), IM_ARRAYSIZE(saveName));
             fileBrowser.selectedFile = ""; // consume it
         }
-    } else {
+    }
+    else {
         // Bottom bar
         ImGui::Separator();
         ImGui::Text("%s", fileBrowser.selectedFile.c_str());
@@ -925,4 +922,12 @@ void SceneUI::drawFileBrowser() {
     }
 
     ImGui::End();
+}
+
+void SceneUI::promptSavePNG(Scene *scene) {
+    browserMode = BrowserMode::SavePNG;
+    fileBrowser.openAt(PROJECT_DIR "renders", ".png", [this, scene](const std::string& path) {
+        scene->savePNG(path);
+        browserMode = BrowserMode::None;
+    });
 }

@@ -200,7 +200,7 @@ void BloomPass::execute(GLuint inputTex, bool toScreen) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, downMips[i].texH);
         glUniform1i(uDownVSrc, 0);
-        glUniform2f(uDownVTexel, 1.0f / float(downMips[i].w), 1.0f / float(downMips[i].h));
+        glUniform2f(uDownVTexel, 1.0f / float(srcW), 1.0f / float(srcH));
         drawFullscreen();
 
         srcTex = downMips[i].tex;

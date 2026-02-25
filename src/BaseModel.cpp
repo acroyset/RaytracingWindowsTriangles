@@ -6,9 +6,7 @@
 #include <fstream>
 #include <iostream>
 #include <cstring>
-#include <dinput.h>
 #include <sstream>
-#include <unordered_map>
 
 #include "Transformation.h"
 #include "Rendering/Timer.h"

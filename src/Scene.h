@@ -27,7 +27,7 @@
 #include "Model.h"
 #include "JSONextensions.h"
 #include "SceneUI.h"
-#include <nfd.hpp>
+#include <OpenImageDenoise/oidn.hpp>
 
 #include "BloomPass.h"
 #include "Rendering/Shader.h"
@@ -364,6 +364,8 @@ class Scene {
         createUniforms();
         resetAccumulation();
     }
+
+    void savePNG(const std::string& filename) const;
 };
 
 #endif //SCENE_H

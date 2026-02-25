@@ -754,11 +754,10 @@ vec3 sampleSun(vec3 hitPos, vec3 normal, Material material, inout uint state) {
     return vis * sunColor * BRDF * cosA / pdf;
 }
 
-vec4 trace(Ray ray, inout uint state){
+vec3 trace(Ray ray, inout uint state){
     iorStack[0] = 1.0; iorSize = 1;
     vec3 color      = vec3(0.0);  // accumulated radiance
     vec3 throughput = vec3(1.0);  // path weight
-    float depth = INF;
 
     int triTest = 0, aabbTest = 0;
     bool russianRouletBreak = false;
@@ -770,7 +769,6 @@ vec4 trace(Ray ray, inout uint state){
 
         if (hit.hit){
             if (focusDistancePlane && hit.t > focusDistance && bounce == 0) throughput *= vec3(0.75, 1, 0.75);
-            if (bounce == 0) depth = hit.t;
 
             mat4 M    = modelTransformations[hit.modelID];
             mat4 invM = modelInvTransformations[hit.modelID];
@@ -840,7 +838,6 @@ vec4 trace(Ray ray, inout uint state){
         else if (floorActive && ray.dir.y < 0.0){
             float floorY = -1000.0;
             float t = (floorY - ray.pos.y) / ray.dir.y;
-            if (bounce == 0) depth = t;
 
             if (t > SELF_INTERSECT){
                 ray.pos += ray.dir * t;
@@ -884,10 +881,10 @@ vec4 trace(Ray ray, inout uint state){
     if (debugView && debugMode == 1) {
         vec3 heatmap = triTest > triTh || aabbTest > aabbTh ? vec3(1)
         : vec3(float(triTest)/float(triTh), russianRouletBreak ? 1.0 : 0.0, float(aabbTest)/float(aabbTh));
-        return vec4(heatmap, depth);
+        return heatmap;
     }
 
-    return vec4(color, depth);
+    return color;
 }
 
 // Main
@@ -914,7 +911,7 @@ void main(){
     uvec2 pix = uvec2(fragCoord.x*resolution.x, fragCoord.y*resolution.y);
     uint  state = pixelFrameSeed(pix);
 
-    vec4 total = vec4(0.0);
+    vec3 total = vec3(0.0);
     int aaCycle = frameCount % (aa*aa);
 
     float maxBrighness = 1000;
@@ -922,18 +919,17 @@ void main(){
     for (int s=0; s<samples; ++s) {
         Ray ray = calculateInitialRay(aaCycle, screen, state);
 
-        vec4 color = trace(ray, state);
+        vec3 color = trace(ray, state);
 
-        bvec4 err = bvec4(
+        bvec3 err = bvec3(
             isnan(color.x) || isinf(color.x),
             isnan(color.y) || isinf(color.y),
-            isnan(color.z) || isinf(color.z),
-            isnan(color.w) || isinf(color.w)
+            isnan(color.z) || isinf(color.z)
         );
 
-        color = mix(color, vec4(0.0), err);
+        color = mix(color, vec3(0.0), err);
 
-        total += min(color, vec4(vec3(maxBrighness), INF));
+        total += min(color, vec3(maxBrighness));
 
         aaCycle = (aaCycle+1) % (aa*aa);
     }
@@ -943,7 +939,7 @@ void main(){
 
     vec4 prev = texture(u_previousFrame, fragCoord);
 
-    vec4 accum = mix(prev, total, float(samples)/(float(sampleCount+samples)));
+    vec4 accum = mix(prev, vec4(total, 1), float(samples)/(float(sampleCount+samples)));
 
     FragColor = accum;
 }

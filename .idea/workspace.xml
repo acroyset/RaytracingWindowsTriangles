@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="BackendCodeEditorMiscSettings">
-    <option name="/Default/Environment/Hierarchy/GeneratedFilesCacheKey/Timestamp/@EntryValue" value="5" type="long" />
+    <option name="/Default/Environment/Hierarchy/GeneratedFilesCacheKey/Timestamp/@EntryValue" value="3" type="long" />
     <option name="/Default/Housekeeping/FeatureSuggestion/FeatureSuggestionManager/DisabledSuggesters/=SwitchToGoToActionSuggester/@EntryIndexedValue" value="true" type="bool" />
     <option name="/Default/Housekeeping/GlobalSettingsUpgraded/IsUpgraded/@EntryValue" value="true" type="bool" />
     <option name="/Default/Housekeeping/LiveTemplatesHousekeeping/HotspotSessionHintIsShown/@EntryValue" value="true" type="bool" />
@@ -26,7 +26,6 @@
       <config projectName="RaytracingWindowsTriangles" targetName="glfw" />
       <config projectName="RaytracingWindowsTriangles" targetName="glad" />
       <config projectName="RaytracingWindowsTriangles" targetName="update_mappings" />
-      <config projectName="RaytracingWindowsTriangles" targetName="nfd" />
       <config projectName="RaytracingWindowsTriangles" targetName="RaytracingWindowsTriangles" />
     </generated>
   </component>
@@ -37,16 +36,19 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cd06d447-a7c8-42f4-a8e5-4bf88ac1888b" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/renders/render.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/imgui.ini" beforeDir="false" afterPath="$PROJECT_DIR$/imgui.ini" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scenes/scene5.json" beforeDir="false" afterPath="$PROJECT_DIR$/scenes/scene5.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/shaders/raytracer.frag" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/raytracer.frag" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/BaseModel.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/BaseModel.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/JSONextensions.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/JSONextensions.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Material.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Material.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/BloomPass.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/BloomPass.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/BloomPass.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/BloomPass.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/SceneUI.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/SceneUI.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/SceneUI.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/SceneUI.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -115,7 +117,7 @@
     &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/assets&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -127,18 +129,18 @@
 }</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\external" />
       <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\assets" />
       <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\assets\models" />
       <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles" />
       <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTrianglesFrag" />
-      <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\external" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\renders" />
+      <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\external" />
       <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\assets\models" />
       <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\scenes" />
-      <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\external" />
       <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\assets\models\tuilips" />
-      <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\assets\models\flowerPot" />
     </key>
   </component>
   <component name="RunManager" selected="CMake Application.RaytracingWindowsTriangles">
@@ -162,11 +164,6 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="nfd" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="RaytracingWindowsTriangles" TARGET_NAME="nfd" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="uninstall" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="RaytracingWindowsTriangles" TARGET_NAME="uninstall" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -179,7 +176,6 @@
     </configuration>
     <list>
       <item itemvalue="CMake Application.RaytracingWindowsTriangles" />
-      <item itemvalue="CMake Application.nfd" />
       <item itemvalue="CMake Application.docs" />
       <item itemvalue="CMake Application.glad" />
       <item itemvalue="CMake Application.glfw" />
@@ -281,7 +277,10 @@
       <workItem from="1771752095790" duration="2126000" />
       <workItem from="1771787906131" duration="9493000" />
       <workItem from="1771813188449" duration="8289000" />
-      <workItem from="1771889249939" duration="7756000" />
+      <workItem from="1771889249939" duration="8564000" />
+      <workItem from="1771988216733" duration="2139000" />
+      <workItem from="1771990427463" duration="1961000" />
+      <workItem from="1771996128380" duration="3271000" />
     </task>
     <servers />
   </component>

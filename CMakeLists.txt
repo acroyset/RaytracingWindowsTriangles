@@ -21,10 +21,7 @@ add_executable(RaytracingWindowsTriangles
         src/Rendering/Texture.cpp
         src/SceneUI.cpp
         src/Rendering/Shader.cpp
-        src/Rendering/Shader.h
-        src/Rendering/ShaderPass.h
         src/BloomPass.cpp
-        src/BloomPass.h
 )
 target_include_directories(RaytracingWindowsTriangles PRIVATE
         external/glad/include
@@ -64,11 +61,20 @@ target_link_libraries(imgui_glfw_opengl3 PUBLIC glfw glad)
 # Link ImGui to your app (now that the app target exists)
 target_link_libraries(RaytracingWindowsTriangles PRIVATE imgui_glfw_opengl3)
 
-FetchContent_Declare(
-        nfd
-        GIT_REPOSITORY https://github.com/btzy/nativefiledialog-extended.git
-        GIT_TAG master
-)
-FetchContent_MakeAvailable(nfd)
+# OIDN
+set(OIDN_DIR "${CMAKE_SOURCE_DIR}/external/oidn")
 
-target_link_libraries(RaytracingWindowsTriangles PRIVATE nfd)
+target_include_directories(RaytracingWindowsTriangles PRIVATE
+        "${OIDN_DIR}/include"
+)
+
+target_link_libraries(RaytracingWindowsTriangles PRIVATE
+        "${OIDN_DIR}/lib/OpenImageDenoise.lib"
+)
+
+# Copy DLLs to output directory
+add_custom_command(TARGET RaytracingWindowsTriangles POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${OIDN_DIR}/bin"
+        $<TARGET_FILE_DIR:RaytracingWindowsTriangles>
+)

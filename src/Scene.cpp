@@ -4,6 +4,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "../external/stb_image.h"
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "../external/stb_image_write.h"
+
+
 using Clock = std::chrono::high_resolution_clock;
 
 auto start = Clock::now();
@@ -463,6 +467,13 @@ bool Scene::inputHandling(float speed, float sensitivity, float dt) {
         }
         trackedKeysPressed[GLFW_KEY_F] = true;
     } else trackedKeysPressed[GLFW_KEY_F] = false;
+    if (window.keyPressed(GLFW_KEY_V)){
+        if (!trackedKeysPressed[GLFW_KEY_V]) {
+            ui.promptSavePNG(this);
+        }
+
+        trackedKeysPressed[GLFW_KEY_V] = true;
+    } else trackedKeysPressed[GLFW_KEY_V] = false;
 
     if (lock) return false;
 
@@ -875,6 +886,27 @@ void Scene::reloadEmissiveTris() {
     emissiveTrisStale = false;
     newData = true;
 }
+
+void Scene::savePNG(const std::string& filename) const {
+    int width  = int(window.size().x);
+    int height = int(window.size().y);
+
+    std::vector<float> color(width * height * 4);
+    glBindTexture(GL_TEXTURE_2D, postProcessing.outputTexture());
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, color.data());
+
+    std::vector<unsigned char> ldr(width * height * 4);
+    for (int i = 0; i < width * height * 4; i += 4) {
+        ldr[i+0] = static_cast<unsigned char>(std::clamp(color[i+0], 0.f, 1.f) * 255.f);
+        ldr[i+1] = static_cast<unsigned char>(std::clamp(color[i+1], 0.f, 1.f) * 255.f);
+        ldr[i+2] = static_cast<unsigned char>(std::clamp(color[i+2], 0.f, 1.f) * 255.f);
+        ldr[i+3] = static_cast<unsigned char>(std::clamp(color[i+3], 0.f, 1.f) * 255.f);
+    }
+
+    stbi_flip_vertically_on_write(true);
+    stbi_write_png(filename.c_str(), width, height, 4, ldr.data(), width * 4);
+}
+
 
 
 /*

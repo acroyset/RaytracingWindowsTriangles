@@ -13,9 +13,9 @@ class BloomPass : public ShaderPass {
 public:
     float threshold   = 1.0f;
     float knee        = 0.2f;
-    float strength    = 0.015f;
-    int   numMips     = 8;
-    float persistence = 0.94f;
+    float strength    = 0.02f;
+    int   numMips     = 12;
+    float persistence = 0.97f;
 
     BloomPass() = default;
     ~BloomPass() override;

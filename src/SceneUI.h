@@ -50,7 +50,7 @@ class SceneUI {
     vec2 viewportImgMinScreen{0}, viewportImgMaxScreen{0};
 
     FileBrowser fileBrowser;
-    enum class BrowserMode { None, AddModel, AddTexture, LoadJSON, SaveJSON };
+    enum class BrowserMode { None, AddModel, AddTexture, LoadJSON, SaveJSON, SavePNG };
     BrowserMode browserMode = BrowserMode::None;
     std::string pendingModelPath;
     bool showTexturePrompt = false;
@@ -77,6 +77,8 @@ class SceneUI {
     [[nodiscard]] vec2 getCenter() const {
         return 0.5f * (viewportImgMinScreen + viewportImgMaxScreen);
     }
+
+    void promptSavePNG(Scene *scene);
 
 };
 
