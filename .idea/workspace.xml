@@ -36,19 +36,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cd06d447-a7c8-42f4-a8e5-4bf88ac1888b" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/renders/render.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/imgui.ini" beforeDir="false" afterPath="$PROJECT_DIR$/imgui.ini" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/shaders/raytracer.frag" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/raytracer.frag" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/BaseModel.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/BaseModel.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/BloomPass.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/BloomPass.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/BloomPass.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/BloomPass.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Rendering/Shader.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/Shader.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Rendering/Shader.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/Shader.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/SceneUI.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/SceneUI.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/SceneUI.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/SceneUI.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -280,7 +274,8 @@
       <workItem from="1771889249939" duration="8564000" />
       <workItem from="1771988216733" duration="2139000" />
       <workItem from="1771990427463" duration="1961000" />
-      <workItem from="1771996128380" duration="3271000" />
+      <workItem from="1771996128380" duration="3587000" />
+      <workItem from="1772070352528" duration="3007000" />
     </task>
     <servers />
   </component>

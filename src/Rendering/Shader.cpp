@@ -60,6 +60,25 @@ void Shader::allocateFBOs(int w, int h) {
             std::cerr << "Shader FBO " << i << " incomplete\n";
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    for (int i = 0; i < 2; i++) {
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo[i]);
+
+        // Build draw buffers list
+        std::vector<GLenum> drawBuffers = { GL_COLOR_ATTACHMENT0 };
+
+        for (int a = 0; a < numAOVs; a++) {
+            glGenTextures(1, &aovTex[i][a]);
+            glBindTexture(GL_TEXTURE_2D, aovTex[i][a]);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, w, h, 0, GL_RGBA, GL_FLOAT, nullptr);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1 + a, GL_TEXTURE_2D, aovTex[i][a], 0);
+            drawBuffers.push_back(GL_COLOR_ATTACHMENT1 + a);
+        }
+
+        glDrawBuffers((GLsizei)drawBuffers.size(), drawBuffers.data());
+    }
 }
 
 
@@ -200,4 +219,14 @@ void Shader::execute(GLuint inputTex, bool toScreen) {
 
 [[nodiscard]] GLuint Shader::outputTexture() const {
     return hasFeedback ? tex[1 - write] : tex[write];
+}
+
+void Shader::enableAOVs(int count) {
+    numAOVs = count;
+}
+
+GLuint Shader::getAOVTexture(int idx) const {
+    // return the last-written slot (same logic as outputTexture)
+    int slot = hasFeedback ? (1 - write) : write;
+    return aovTex[slot][idx];
 }

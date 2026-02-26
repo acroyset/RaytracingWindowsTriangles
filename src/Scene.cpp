@@ -23,6 +23,9 @@ Scene::Scene() {
     bloom.init(window.getGLSLVersion());
 
     raytracer.enableFeedback();
+    raytracer.enableAOVs(2);  // 0 = albedo, 1 = normals
+    raytracer.enableFeedback();
+
     window.addPass(&raytracer);
     window.addPass(&bloom);
     window.addPass(&postProcessing);
@@ -48,6 +51,9 @@ Scene::Scene(const int samples, const int aa, const int bounceLim)
     bloom.init(window.getGLSLVersion());
 
     raytracer.enableFeedback();
+    raytracer.enableAOVs(2);  // 0 = albedo, 1 = normals
+    raytracer.enableFeedback();
+
     window.addPass(&raytracer);
     window.addPass(&bloom);
     window.addPass(&postProcessing);
@@ -887,20 +893,102 @@ void Scene::reloadEmissiveTris() {
     newData = true;
 }
 
-void Scene::savePNG(const std::string& filename) const {
+void Scene::savePNG(const std::string& filename) {
     int width  = int(window.size().x);
     int height = int(window.size().y);
+    int n = width * height * 3;
 
-    std::vector<float> color(width * height * 4);
+    std::vector<float> beauty(width * height * 4);
+    std::vector<float> albedo(width * height * 4);
+    std::vector<float> normal(width * height * 4);
+
+    auto readTex = [&](GLuint tex, std::vector<float>& buf) {
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, buf.data());
+    };
+
+    readTex(raytracer.outputTexture(),  beauty);
+    readTex(raytracer.getAOVTexture(0), albedo);  // albedo
+    readTex(raytracer.getAOVTexture(1), normal);  // world normals [0,1]
+
+
+    std::vector<float> beautyRGB(n), albedoRGB(n), normalRGB(n), outputRGB(n);
+
+    for (int i = 0; i < width * height; i++) {
+        beautyRGB[i*3+0] = beauty[i*4+0];
+        beautyRGB[i*3+1] = beauty[i*4+1];
+        beautyRGB[i*3+2] = beauty[i*4+2];
+
+        albedoRGB[i*3+0] = albedo[i*4+0];
+        albedoRGB[i*3+1] = albedo[i*4+1];
+        albedoRGB[i*3+2] = albedo[i*4+2];
+
+        // remap normals back from [0,1] to [-1,1] for OIDN
+        normalRGB[i*3+0] = normal[i*4+0] * 2.0f - 1.0f;
+        normalRGB[i*3+1] = normal[i*4+1] * 2.0f - 1.0f;
+        normalRGB[i*3+2] = normal[i*4+2] * 2.0f - 1.0f;
+    }
+
+
+    oidn::DeviceRef device = oidn::newDevice();
+    device.commit();
+
+    // Allocate buffers through OIDN's device instead of std::vector
+    oidn::BufferRef beautyBuf = device.newBuffer(n * sizeof(float));
+    oidn::BufferRef albedoBuf = device.newBuffer(n * sizeof(float));
+    oidn::BufferRef normalBuf = device.newBuffer(n * sizeof(float));
+    oidn::BufferRef outputBuf = device.newBuffer(n * sizeof(float));
+
+    // Copy packed RGB data into OIDN buffers
+    memcpy(beautyBuf.getData(), beautyRGB.data(), n * sizeof(float));
+    memcpy(albedoBuf.getData(), albedoRGB.data(), n * sizeof(float));
+    memcpy(normalBuf.getData(), normalRGB.data(), n * sizeof(float));
+
+    oidn::FilterRef filter = device.newFilter("RT");
+    filter.setImage("color",  beautyBuf, oidn::Format::Float3, width, height);
+    filter.setImage("albedo", albedoBuf, oidn::Format::Float3, width, height);
+    filter.setImage("normal", normalBuf, oidn::Format::Float3, width, height);
+    filter.setImage("output", outputBuf, oidn::Format::Float3, width, height);
+    filter.set("hdr", true);
+    filter.set("cleanAux", true);
+    filter.commit();
+    filter.execute();
+
+    const char* err;
+    if (device.getError(err) != oidn::Error::None) std::cerr << "OIDN error: " << err << "\n";
+
+    // Read output back from OIDN buffer
+    auto* denoised = (float*)outputBuf.getData();
+
+    std::vector<float> denoisedRGBA(width * height * 4);
+    for (int i = 0; i < width * height; i++) {
+        denoisedRGBA[i*4+0] = denoised[i*3+0];
+        denoisedRGBA[i*4+1] = denoised[i*3+1];
+        denoisedRGBA[i*4+2] = denoised[i*3+2];
+        denoisedRGBA[i*4+3] = 1.0f;
+    }
+
+    GLuint denoisedTex;
+    glGenTextures(1, &denoisedTex);
+    glBindTexture(GL_TEXTURE_2D, denoisedTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, denoisedRGBA.data());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    bloom.execute(denoisedTex, false);
+    postProcessing.execute(bloom.outputTexture(), false);
+    glDeleteTextures(1, &denoisedTex);
+
+    std::vector<float> output(width * height * 4);
     glBindTexture(GL_TEXTURE_2D, postProcessing.outputTexture());
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, color.data());
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, output.data());
+
 
     std::vector<unsigned char> ldr(width * height * 4);
-    for (int i = 0; i < width * height * 4; i += 4) {
-        ldr[i+0] = static_cast<unsigned char>(std::clamp(color[i+0], 0.f, 1.f) * 255.f);
-        ldr[i+1] = static_cast<unsigned char>(std::clamp(color[i+1], 0.f, 1.f) * 255.f);
-        ldr[i+2] = static_cast<unsigned char>(std::clamp(color[i+2], 0.f, 1.f) * 255.f);
-        ldr[i+3] = static_cast<unsigned char>(std::clamp(color[i+3], 0.f, 1.f) * 255.f);
+    for (int i = 0; i < width * height * 4; i++) {
+        ldr[i] = static_cast<unsigned char>(std::clamp(output[i], 0.0f, 1.0f) * 255.0f);
     }
 
     stbi_flip_vertically_on_write(true);

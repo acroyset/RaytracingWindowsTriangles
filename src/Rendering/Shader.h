@@ -25,6 +25,10 @@ class Shader : public ShaderPass {
     std::string vertPath, fragPath, glslVersion;
     std::vector<std::string> includePaths;
 
+    static constexpr int MAX_AOVS = 4;
+    int    numAOVs = 0;
+    GLuint aovTex[2][MAX_AOVS] = {};   // ping-pong aware, indexed [write][aov]
+
     int nextUnit = 2;
     std::vector<int> freeUnits;
 
@@ -73,6 +77,9 @@ public:
 
     [[nodiscard]] GLuint getProgram() const { return program; }
     void bind() const { glUseProgram(program); }
+
+    void enableAOVs(int count);
+    [[nodiscard]] GLuint getAOVTexture(int aovIndex) const;
 };
 
 #endif //SHADER_H

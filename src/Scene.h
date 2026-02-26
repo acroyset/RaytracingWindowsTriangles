@@ -365,7 +365,7 @@ class Scene {
         resetAccumulation();
     }
 
-    void savePNG(const std::string& filename) const;
+    void savePNG(const std::string& filename);
 };
 
 #endif //SCENE_H

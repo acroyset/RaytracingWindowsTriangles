@@ -1,6 +1,8 @@
 #line 1
 
-out vec4 FragColor;
+layout (location = 0) out vec4 FragColor;   // accumulated beauty (existing)
+layout (location = 1) out vec4 outAlbedo;   // first-hit albedo AOV
+layout (location = 2) out vec4 outNormal;   // first-hit world normal AOV
 
 in vec2 fragCoord; // [0,1]
 
@@ -424,7 +426,7 @@ vec3 getTextureColor(Hit hitInfo, mat4 mat){
     return texture(textures[hitInfo.tri.textureID], texCoord).xyz;
 }
 
-bool updateColor(Hit hit, inout vec3 color, bool isSpecular, mat4 mat){
+bool updateColor(Hit hit, inout vec3 color, bool isSpecular, mat4 mat, vec3 diffuseColor){
     Material material = hit.tri.material;
     bool isTransparent = material.type == 1;
     bool isEmissive = material.type == 2;
@@ -433,8 +435,6 @@ bool updateColor(Hit hit, inout vec3 color, bool isSpecular, mat4 mat){
         color *= material.diffuseColor.rgb * material.emissionStrength;
         return true;
     }
-
-    vec3 diffuseColor = hit.tri.useTexture ? getTextureColor(hit, mat) : material.diffuseColor.rgb;
 
     color *= (isSpecular || isTransparent) ? material.specularColor.rgb : diffuseColor;
 
@@ -796,16 +796,24 @@ vec3 trace(Ray ray, inout uint state){
             bool isSpecular = randomValue(state) <= material.specularProbability;
             bool isTransparent = material.type == 1; // direction handled inside calculateNewDirection
 
+            vec3 diffuseColor = hit.tri.useTexture ? getTextureColor(hit, M) : material.diffuseColor.rgb;
+
+            if (bounce == 0) {
+                vec3 specular = material.specularColor.rgb;
+                vec3 albedo   = mix(diffuseColor, specular, material.specularProbability);
+                outAlbedo = vec4(albedo, 1.0);
+                outNormal = vec4(normalWorld * 0.5 + 0.5, 1.0);
+            }
+
             if (NEE){
                 // Emissive — only count if previous bounce was specular/camera
                 // otherwise it was already counted via NEE
                 if (material.type == 2) {
-                    if (prevSpecular)
-                    color += throughput * material.diffuseColor.rgb * material.emissionStrength;
+                    if (prevSpecular) color += throughput * diffuseColor * material.emissionStrength;
                     break;
                 }
             } else {
-                if (updateColor(hit, throughput, isSpecular, M)) {
+                if (updateColor(hit, throughput, isSpecular, M, diffuseColor)) {
                     color += throughput;
                     break;
                 }
@@ -813,8 +821,6 @@ vec3 trace(Ray ray, inout uint state){
 
             // NEE — skip for specular and transparent (delta-like BRDFs) or no NEE
             if (NEE) {
-
-                vec3 diffuseColor = hit.tri.useTexture ? getTextureColor(hit, M) : material.diffuseColor.rgb;
 
                 if (!isSpecular && !isTransparent){
                     color += throughput * sampleDirectLight(ray.pos, normalWorld, diffuseColor, state);
@@ -857,6 +863,13 @@ vec3 trace(Ray ray, inout uint state){
 
                 prevSpecular = isSpecular;
                 vec3 diffuseColor = (isSpecular) ? floorMaterial.specularColor.rgb : floorMaterial.diffuseColor.rgb;
+
+                if (bounce == 0) {
+                    vec3 albedo   = diffuseColor;
+                    outAlbedo = vec4(albedo, 1.0);
+                    outNormal = vec4(n * 0.5 + 0.5, 1.0);
+                }
+
                 throughput *= diffuseColor;
                 ray.dir    = calculateNewDirection(n, ray.dir, floorMaterial, isSpecular, state, throughput);
                 ray.invDir = 1.0 / ray.dir;
@@ -868,6 +881,10 @@ vec3 trace(Ray ray, inout uint state){
         }
         else {
             color += throughput * getEnviormentLight(ray.dir);
+            if (bounce == 0){
+                outAlbedo = vec4(0.0);
+                outNormal = vec4(0.5, 0.5, 1.0, 0.0);
+            }
             break;
         }
 
