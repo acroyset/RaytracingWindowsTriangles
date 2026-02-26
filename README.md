@@ -16,9 +16,7 @@ A physically-based path tracer running entirely on the GPU, capable of rendering
 *Multiple models showcasing different material properties*
 
 <div align="center">
-  <img width="2560" height="1440" alt="Base Profile Screenshot 2026 02 21 - 00 35 55 24" src="https://github.com/user-attachments/assets/20ce0e74-eba9-406e-adf1-0fe404323b76" />
-
-
+  <img width="2560" height="1440" alt="render" src="https://github.com/user-attachments/assets/cca66077-989e-42d9-9b16-7d78db118310" />
 </div>
 
 ### Bull Family (2.1M Triangles)
@@ -66,6 +64,7 @@ A physically-based path tracer running entirely on the GPU, capable of rendering
 - **HDR Environment Maps**: Equirectangular environment map support for realistic lighting
 - **Progressive Accumulation**: Temporal anti-aliasing with progressive sample accumulation
 - **Post Processing**: Multi-level bloom rendering with ACES tonemap
+- **OIDN**: Intel denoiser for faster convergence
 
 ### 🛠️ Technical Features
 - **OBJ Model Loading**: Fast, optimized parser with MTL material support
@@ -83,8 +82,8 @@ A physically-based path tracer running entirely on the GPU, capable of rendering
 
 ```
 User Input → Scene Setup → BVH Construction → GPU Upload → Shader Raytracing → Accumulation → Post Processing → Display
-     ↓                                                            ↑
-     └────────── Camera/Material Updates ─────────────────────────┘
+     ↓                                                            ↑                                  ↓
+     └────────── Camera/Material Updates ─────────────────────────┘                                 OIDN → PNG
 ```
 
 ### BVH Construction
@@ -119,12 +118,14 @@ User Input → Scene Setup → BVH Construction → GPU Upload → Shader Raytra
 
 ### Dependencies
 
-- **GLFW** (window management)
-- **GLAD** (OpenGL loader)
-- **GLM** (mathematics)
-- **ImGui** (UI framework)
-- **stb_image** (texture loading)
-- **nlohmann/json** (save/load)
+- **GLFW** window management
+- **GLAD** OpenGL loader
+- **GLM** mathematics
+- **ImGui** UI framework (Fetched)
+- **stb_image** texture loading
+- **std_image_write** image saving
+- **nlohmann/json** save/load
+- **OIDN** denoise Fetched (Fetched)
 
 ## 🎮 Usage
 
@@ -161,6 +162,7 @@ int main() {
 | `L`       | Lock / Unlock cursor    |
 | `F`       | Toggle Fullscreen       |
 | `Esc`     | Exit application        |
+| `V`       | Save PNG                |
 
 #### UI Controls
 - **Model Selection**: left hand panel to select active model
@@ -295,7 +297,6 @@ Hit rayTriangleIntersect(Ray ray, vec3 v1, vec3 v2, vec3 v3){
 
 - **Single-Level BVH**: No TLAS/BLAS hierarchy for instancing
 - **CPU BVH Build**: Scene loading can be slow for very large models
-- **No Denoising**: Pure path tracing without ML denoising
 
 ---
 
@@ -304,7 +305,6 @@ Hit rayTriangleIntersect(Ray ray, vec3 v1, vec3 v2, vec3 v3){
 - [ ] Two-level BVH for instancing
 - [ ] GPU BVH construction
 - [ ] OptiX/DXR acceleration
-- [ ] OIDN/OptiX denoising integration
 - [ ] Volumetric rendering (fog, smoke)
 - [ ] glTF model loading
 
