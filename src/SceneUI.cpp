@@ -20,6 +20,18 @@ inline bool ColorEdit3(const char* label, vec4& v) {
     return out;
 }
 
+struct MaterialConstraints {
+    bool allowTransparent = true;
+    bool allowEmissive    = true;
+    bool allowTexture     = true;
+};
+
+static const MaterialConstraints FLOOR_CONSTRAINTS = {
+    .allowTransparent = false,
+    .allowEmissive    = false,
+    .allowTexture     = false,
+};
+
 static const char* MaterialTypeLabel(MaterialType t) {
     switch (t) {
         case Specular:    return "Specular";
@@ -29,7 +41,7 @@ static const char* MaterialTypeLabel(MaterialType t) {
     }
 }
 
-static bool DrawMaterialInspector(Material& m, int matIndex, int textureID, bool& typeChange){
+static bool DrawMaterialInspector(Material& m, int matIndex, int textureID, bool& typeChange, const MaterialConstraints& constraints = {}) {
     bool changed = false;
 
     // Pull values once (edit locals, then write back at end)
@@ -47,17 +59,31 @@ static bool DrawMaterialInspector(Material& m, int matIndex, int textureID, bool
 
     float emissionStrength       = m.getEmissionStrength();
 
-    // --- Header ---
-    ImGui::Text("Material #%d", matIndex);
-    ImGui::SameLine();
-    ImGui::TextDisabled("(%s)", MaterialTypeLabel(type));
-    ImGui::Separator();
+    // Coerce disallowed types to Specular
+    if (!constraints.allowTransparent && type == Transparent) { type = Specular; changed = true; typeChange = true; }
+    if (!constraints.allowEmissive    && type == Emissive)    { type = Specular; changed = true; typeChange = true; }
 
-    // --- Type selector drives everything ---
-    const char* items[] = {"Specular", "Transparent", "Emissive"};
-    int t = int(type);
-    if (ImGui::Combo("Type", &t, items, IM_ARRAYSIZE(items))) {
-        type = MaterialType(t);
+    // --- Header ---
+    if (matIndex != -1) ImGui::Text("Material #%d", matIndex);
+    if (matIndex != -1) ImGui::SameLine();
+    if (matIndex != -1) ImGui::TextDisabled("(%s)", MaterialTypeLabel(type));
+    if (matIndex != -1) ImGui::Separator();
+
+    // --- Build filtered type list ---
+    std::vector<const char*>  items;
+    std::vector<MaterialType> itemTypes;
+
+    items.push_back("Specular"); itemTypes.push_back(Specular);
+    if (constraints.allowTransparent) { items.push_back("Transparent"); itemTypes.push_back(Transparent); }
+    if (constraints.allowEmissive)    { items.push_back("Emissive");    itemTypes.push_back(Emissive); }
+
+    // Find current index in filtered list
+    int t = 0;
+    for (int i = 0; i < (int)itemTypes.size(); i++)
+        if (itemTypes[i] == type) { t = i; break; }
+
+    if (ImGui::Combo("Type", &t, items.data(), (int)items.size())) {
+        type = itemTypes[t];
         changed = true;
         typeChange = true;
 
@@ -84,8 +110,8 @@ static bool DrawMaterialInspector(Material& m, int matIndex, int textureID, bool
 
     ImGui::Spacing();
 
-    // --- Common group: Base color (and texture info) ---
-    if (textureID != -1) {
+    // --- Base color / texture ---
+    if (constraints.allowTexture && textureID != -1) {
         ImGui::TextDisabled("Texture bound (ID %d).", textureID);
     } else {
         if (type == Emissive) {
@@ -200,6 +226,29 @@ void SceneUI::render(Scene& scene) {
 
         if (ImGui::Button("Reset accumulation")) ui_resetAccum = true;
 
+        if (ImGui::CollapsingHeader("Camera")) {
+            ui_resetAccum |= ImGui::SliderFloat("FOV", &scene.camera.fovDeg, 20, 140);
+            bool dof = scene.camera.aperture > 0;
+            if (ImGui::Checkbox("Depth of Field", &dof)) {
+                if (dof) scene.camera.aperture = 0.001;
+                else scene.camera.aperture = 0.0;
+                ui_resetAccum = true;
+            }
+
+            if (dof) {
+                ImGui::Indent();
+                ui_resetAccum |= ImGui::SliderFloat("Aperture", &scene.camera.aperture, 0.001f, 0.5f);
+                ui_resetAccum |= ImGui::SliderFloat("Focus Distance", &scene.camera.focusDistance, 0.0f, 1000.0f);
+                ui_resetAccum |= ImGui::Checkbox("Focus Distance Plane", &scene.camera.focusDistancePlane);
+                ImGui::Unindent();
+            }
+
+            float s = scene.sensitivity*100;
+            if (ImGui::SliderFloat("Sensitivity", &s, 0.1, 10)) scene.sensitivity = s/100;
+
+            ImGui::SliderFloat("Speed", &scene.speed, 0.01, 1000);
+        }
+
         if (ImGui::CollapsingHeader("Sky")) {
             ui_resetAccum |= ImGui::Checkbox("Sky Active", &scene.skyActive);
             if (scene.skyActive) {
@@ -218,30 +267,7 @@ void SceneUI::render(Scene& scene) {
             if (scene.floorActive) {
                 ImGui::Indent();
 
-                vec3 diffuseColor = vec3(scene.floorDiffuseColor);
-                if (ColorEdit3("Floor Diffuse Color", diffuseColor)) {
-                    scene.floorDiffuseColor = vec4(diffuseColor, scene.floorDiffuseColor.w);
-                    ui_resetAccum = true;
-                }
-
-                bool specularFloor = scene.floorSpecularColor.w != -1.0f;
-                if (ImGui::Checkbox("Specular Floor", &specularFloor)) {
-                    if (specularFloor) scene.floorSpecularColor.w = 0.0f;
-                    else scene.floorSpecularColor.w = -1.0f;
-                    ui_resetAccum = true;
-                }
-
-                if (specularFloor) {
-                    vec3 specularColor = vec3(scene.floorSpecularColor);
-                    if (ColorEdit3("Floor Specular Color", specularColor)) {
-                        scene.floorSpecularColor = vec4(specularColor, scene.floorSpecularColor.w);
-                        ui_resetAccum = true;
-                    }
-                }
-
-                ui_resetAccum |= ImGui::SliderFloat("Floor Smoothness", &scene.floorDiffuseColor.w, 0.0f, 1.0f);
-
-                if (specularFloor) ui_resetAccum |= ImGui::SliderFloat("Floor Specular Probability", &scene.floorSpecularColor.w, 0.0f, 1.0f);
+                DrawMaterialInspector(scene.floorMaterial, -1, -1, ui_resetAccum, FLOOR_CONSTRAINTS);
 
                 ImGui::Unindent();
             }
@@ -334,8 +360,6 @@ void SceneUI::render(Scene& scene) {
         }
 
 
-
-
         if (ImGui::BeginPopupModal("RemoveModelPopup", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
             ImGui::Text("Are you sure?");
             ImGui::Separator();
@@ -363,7 +387,7 @@ void SceneUI::render(Scene& scene) {
 
     // settings
     {
-        ImGui::Begin("Controls");
+        ImGui::Begin("Settings");
 
         ImGui::Checkbox("Lock", &scene.lock);
 
@@ -371,37 +395,10 @@ void SceneUI::render(Scene& scene) {
         ui_resetAccum |= ImGui::SliderInt("Antialiasing", &scene.aa, 1, 5);
         ui_resetAccum |= ImGui::SliderInt("Bounces", &scene.bounceLim, 1, 16);
 
-        if (ImGui::CollapsingHeader("Camera")) {
-            ui_resetAccum |= ImGui::SliderFloat("FOV", &scene.fovDeg, 20, 140);
-            bool dof = scene.aperture > 0;
-            if (ImGui::Checkbox("Depth of Field", &dof)) {
-                if (dof) scene.aperture = 0.001;
-                else scene.aperture = 0.0;
-                ui_resetAccum = true;
-            }
-
-            if (dof) {
-                ImGui::Indent();
-                ui_resetAccum |= ImGui::SliderFloat("Aperture", &scene.aperture, 0.001f, 0.5f);
-                ui_resetAccum |= ImGui::SliderFloat("Focus Distance", &scene.focusDistance, 0.0f, 1000.0f);
-                ui_resetAccum |= ImGui::Checkbox("Focus Distance Plane", &scene.focusDistancePlane);
-                ImGui::Unindent();
-            }
-
-            float s = scene.sensitivity*100;
-            if (ImGui::SliderFloat("Sensitivity", &s, 0.1, 10)) scene.sensitivity = s/100;
-
-            ImGui::SliderFloat("Speed", &scene.speed, 0.01, 1000);
-        }
-
         ImGui::Separator();
 
         if (ImGui::Button("Reload Shaders")) {
             scene.reloadShaders();
-            ui_resetAccum = true;
-        }
-
-        if (ImGui::Checkbox("Next Event Estimation (NEE)", &scene.NEE)) {
             ui_resetAccum = true;
         }
 
@@ -414,11 +411,9 @@ void SceneUI::render(Scene& scene) {
             });
         }
 
-        ImGui::Separator();
+        ui_resetAccum |= ImGui::Checkbox("Next Event Estimation (NEE)", &scene.NEE);
 
-        ImGui::Text("Debug");
-
-        ui_resetAccum |= ImGui::Checkbox("##Debug View" , &scene.debugView);
+        ui_resetAccum |= ImGui::Checkbox("Debug Mode" , &scene.debugView);
 
         ImGui::End();
     }
@@ -485,8 +480,12 @@ void SceneUI::render(Scene& scene) {
 
         ImGui::Separator();
 
-        ImGui::Text("Position: %.2f, %.2f, %.2f", scene.cameraPos.x, scene.cameraPos.y, scene.cameraPos.z);
-        ImGui::Text("Forward: %.2f, %.2f, %.2f", scene.camForward.x, scene.camForward.y, scene.camForward.z);
+        ImGui::Text("Position: %.2f, %.2f, %.2f", scene.camera.pos.x, scene.camera.pos.y, scene.camera.pos.z);
+        ImGui::Text("Forward: %.2f, %.2f, %.2f", scene.camera.forward.x, scene.camera.forward.y, scene.camera.forward.z);
+
+        ImGui::Separator();
+
+        ImGui::Text("Pixels: %d", scene.window.size().x * scene.window.size().y);
 
         ImGui::End();
     }

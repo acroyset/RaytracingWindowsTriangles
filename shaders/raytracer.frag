@@ -29,18 +29,12 @@ layout(std430, binding = 10) buffer ssboEmissiveModelTriangleNum { ivec2 emissiv
 
 
 uniform int   numModels;
+
 uniform bool  NEE;
 uniform int   numEmissiveModels;
 uniform int   numEmissiveTris;
 
-uniform vec3  cameraPos;
-uniform vec3  camForward;
-uniform vec3  camUp;
-uniform vec3  camRight;
-uniform float fovDeg;
-uniform float aperture;
-uniform float focusDistance;
-uniform bool  focusDistancePlane;
+uniform Camera camera;
 
 uniform uvec2 resolution;
 uniform int   frameCount;
@@ -58,8 +52,7 @@ uniform vec3  sunDir;
 uniform vec3  sunColor;
 
 uniform bool  floorActive;
-uniform vec4  floorDiffuseColor;
-uniform vec4  floorSpecularColor;
+uniform Material floorMaterial;
 
 uniform bool      skyActive;
 uniform sampler2D skyTex;
@@ -79,16 +72,16 @@ int   stack[MAX_STACK_SIZE];
 float iorStack[MAX_REFRACTIONS];
 int   iorSize = 1;
 
-Material floorMaterial;
-
 Triangle createTri(int triIndex, int modelIdx){
     Triangle tri;
 
     ModelOffset offset = modelOffsets[modelIdx];
 
-    ivec4 idx1 = triangles[triIndex*3+0 + offset.triangle*3];
-    ivec4 idx2 = triangles[triIndex*3+1 + offset.triangle*3];
-    ivec4 idx3 = triangles[triIndex*3+2 + offset.triangle*3];
+    int base = triIndex * 3 + offset.triangle * 3;
+
+    ivec4 idx1 = triangles[base+0];
+    ivec4 idx2 = triangles[base+1];
+    ivec4 idx3 = triangles[base+2];
 
     tri.material = materials[int(idx1.w) + offset.material];
     tri.textureID = modelOffsets[modelIdx].textureID;
@@ -112,6 +105,13 @@ Triangle createTri(int triIndex, int modelIdx){
     }
 
     return tri;
+}
+void getTriangle(int triIndex, int modelIndex, out ivec4 t1, out ivec4 t2, out ivec4 t3){
+    ModelOffset offset = modelOffsets[modelIndex];
+
+    t1 = triangles[3*triIndex+0 + offset.triangle*3];
+    t2 = triangles[3*triIndex+1 + offset.triangle*3];
+    t3 = triangles[3*triIndex+2 + offset.triangle*3];
 }
 
 // RNG
@@ -186,14 +186,6 @@ vec2 seamSafeUV(vec2 uv){
     return uv;
 }
 
-void getTriangle(int triIndex, int modelIndex, out ivec4 t1, out ivec4 t2, out ivec4 t3){
-    ModelOffset offset = modelOffsets[modelIndex];
-
-    t1 = triangles[3*triIndex+0 + offset.triangle*3];
-    t2 = triangles[3*triIndex+1 + offset.triangle*3];
-    t3 = triangles[3*triIndex+2 + offset.triangle*3];
-}
-
 // Camera / Path
 Ray calculateInitialRay(int aaCycle, vec2 screenCoord, inout uint state){
     float xi = float(aaCycle % aa);
@@ -206,17 +198,17 @@ Ray calculateInitialRay(int aaCycle, vec2 screenCoord, inout uint state){
 
     vec2 coord = screenCoord + jitter;
 
-    float fovRadX = radians(fovDeg);
+    float fovRadX = radians(camera.fovDeg);
     coord *= tan(0.5*fovRadX);
 
-    vec3 lensPoint = vec3(randPointDisk(state)*aperture*focusDistance, 0);
-    vec3 focusPoint = focusDistance*vec3(coord, 1);
+    vec3 lensPoint = vec3(randPointDisk(state)*camera.aperture*camera.focusDistance, 0);
+    vec3 focusPoint = camera.focusDistance*vec3(coord, 1);
 
     vec3 dir = normalize(focusPoint-lensPoint);
 
     Ray ray;
-    ray.pos = cameraPos+lensPoint;
-    ray.dir = dir.x * camRight + dir.y * camUp + dir.z * camForward;
+    ray.pos = camera.pos+lensPoint;
+    ray.dir = dir.x * camera.right + dir.y * camera.up + dir.z * camera.forward;
     ray.invDir = 1/ray.dir;
 
     return ray;
@@ -256,7 +248,6 @@ Hit rayTriangleIntersect(Ray ray, vec3 v1, vec3 v2, vec3 v3){
     h.v = v;
     h.w = 1-u-v;
     return h;
-
 }
 float intersectAABB(Ray ray, vec3 bmin, vec3 bmax){
     vec3 t0 = (bmin - ray.pos) * ray.invDir;
@@ -331,12 +322,10 @@ vec3 calculateRefractionDir(vec3 normal, vec3 dir, float diffuseRoughness, float
     float r0 = (m1-m2)/(m1+m2); r0*=r0;
     float reflect_prob = r0 + (1.0-r0)*pow(1.0-cos_i,5.0);
 
-    if (randomValue(state) < reflect_prob)
-    return calculateOpaqueDir(normal, dir, specularRoughness, state);
+    if (randomValue(state) < reflect_prob) return calculateOpaqueDir(normal, dir, specularRoughness, state);
 
     float disc = 1.0 - eta*eta*(1.0 - cos_i*cos_i);
-    if (disc < 0.0)
-    return calculateOpaqueDir(normal, dir, specularRoughness, state);
+    if (disc < 0.0) return calculateOpaqueDir(normal, dir, specularRoughness, state);
 
     float cos_t = sqrt(disc);
     vec3 refr = eta*dir + (eta*cos_i - cos_t)*n;
@@ -768,7 +757,7 @@ vec3 trace(Ray ray, inout uint state){
         Hit hit = findBestTri(ray, triTest, aabbTest);
 
         if (hit.hit){
-            if (focusDistancePlane && hit.t > focusDistance && bounce == 0) throughput *= vec3(0.75, 1, 0.75);
+            if (camera.focusDistancePlane && hit.t > camera.focusDistance && bounce == 0) throughput *= vec3(0.5, 0.9, 0.5);
 
             mat4 M    = modelTransformations[hit.modelID];
             mat4 invM = modelInvTransformations[hit.modelID];
@@ -906,16 +895,6 @@ vec3 trace(Ray ray, inout uint state){
 
 // Main
 void main(){
-    floorMaterial.diffuseColor = vec4(floorDiffuseColor.rgb, 0);
-    floorMaterial.diffuseRoughness = 1.0;
-    floorMaterial.specularColor = vec4(floorSpecularColor.rgb, 0);
-    floorMaterial.specularRoughness = 1-floorDiffuseColor.w;
-    floorMaterial.specularProbability = floorSpecularColor.w;
-    floorMaterial.transparency = 0.0;
-    floorMaterial.indexOfRefraction = 1.0;
-    floorMaterial.absorption = 0.0;
-    floorMaterial.emissionStrength = 0.0;
-    floorMaterial.type = floorSpecularColor.w == -1 ? 0 : 1;
 
     float targetAspect = 16./9.;
 

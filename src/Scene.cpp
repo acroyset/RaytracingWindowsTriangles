@@ -19,11 +19,10 @@ void setBasisVectors(const vec3& forward, vec3& up, vec3& right) {
 }
 
 Scene::Scene() {
-
     bloom.init(window.getGLSLVersion());
 
     raytracer.enableFeedback();
-    raytracer.enableAOVs(2);  // 0 = albedo, 1 = normals
+    raytracer.enableAOVs(2); // 0 = albedo, 1 = normals
     raytracer.enableFeedback();
 
     window.addPass(&raytracer);
@@ -37,6 +36,8 @@ Scene::Scene() {
 
     frameCount = 0;
     sampleCount = 0;
+
+    camera = Camera();
 
     textureScales.fill(0.0f);
 
@@ -68,10 +69,10 @@ Scene::Scene(const int samples, const int aa, const int bounceLim)
     ImGui_ImplGlfw_InitForOpenGL(window.getWindow(), true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    camForward = vec3(0, 0, -1);
-    setBasisVectors(camForward, camUp, camRight);
+    camera.forward = vec3(0, 0, -1);
+    setBasisVectors(camera.forward, camera.up, camera.right);
 
-    cameraPos = vec3(0, 0, 0);
+    camera.pos = vec3(0, 0, 0);
 
     createUniforms();
 
@@ -283,21 +284,14 @@ int Scene::getNumMaterials() const {
 
 void Scene::createUniforms() {
     uNumModels          = raytracer.createUniform<int>("numModels");
+
     uNEE                = raytracer.createUniform<bool>("NEE");
     uNumEmissiveModels  = raytracer.createUniform<int>("numEmissiveModels");
     uNumEmissiveTris    = raytracer.createUniform<int>("numEmissiveTris");
 
-    uCameraPos          = raytracer.createUniform<vec3>("cameraPos");
-    uCameraForward      = raytracer.createUniform<vec3>("camForward");
-    uCameraUp           = raytracer.createUniform<vec3>("camUp");
-    uCameraRight        = raytracer.createUniform<vec3>("camRight");
-    uFovDeg             = raytracer.createUniform<float>("fovDeg");
-    uAperture           = raytracer.createUniform<float>("aperture");
-    uFocusDistance      = raytracer.createUniform<float>("focusDistance");
-    uFocusDistancePlane = raytracer.createUniform<bool>("focusDistancePlane");
+    uCamera     = raytracer.createUniformBlock<Camera>("camera");
 
     uResolutionRTX  = raytracer.createUniform<uvec2>("resolution");
-    uResolutionPP   = postProcessing.createUniform<uvec2>("u_resolution");
     uFrameCount     = raytracer.createUniform<int>("frameCount");
     uTimeSinceStart = raytracer.createUniform<float>("timeSinceStart");
     uSampleCount    = raytracer.createUniform<int>("sampleCount");
@@ -312,9 +306,8 @@ void Scene::createUniforms() {
     uSunDir    = raytracer.createUniform<vec3>("sunDir");
     uSunColor  = raytracer.createUniform<vec3>("sunColor");
 
-    uFloorActive        = raytracer.createUniform<bool>("floorActive");
-    uFloorDiffuseColor  = raytracer.createUniform<vec4>("floorDiffuseColor");
-    uFloorSpecularColor = raytracer.createUniform<vec4>("floorSpecularColor");
+    uFloorActive   = raytracer.createUniform<bool>("floorActive");
+    uFloorMaterial = raytracer.createUniformBlock<Material>("floorMaterial");
 
     uDebugView     = raytracer.createUniform<bool>("debugView");
     uDebugMode     = raytracer.createUniform<int>("debugMode");
@@ -335,14 +328,7 @@ void Scene::setUniformsRTX() const {
     uNumEmissiveModels.set(int(emissiveModelTriangleNum.size()));
     uNumEmissiveTris.set(int(emissiveTris.size()));
 
-    uCameraPos.set(cameraPos);
-    uCameraForward.set(camForward);
-    uCameraUp.set(camUp);
-    uCameraRight.set(camRight);
-    uFovDeg.set(fovDeg);
-    uAperture.set(aperture);
-    uFocusDistance.set(focusDistance);
-    uFocusDistancePlane.set(focusDistancePlane);
+    uCamera.set(camera);
 
     uResolutionRTX.set(window.size());
     uFrameCount.set(frameCount);
@@ -360,8 +346,7 @@ void Scene::setUniformsRTX() const {
     uSunColor.set(sunColor*sunStrength);
 
     uFloorActive.set(floorActive);
-    uFloorDiffuseColor.set(floorDiffuseColor);
-    uFloorSpecularColor.set(floorSpecularColor);
+    uFloorMaterial.set(floorMaterial);
 
     uDebugView.set(debugView);
     uDebugMode.set(debugMode);
@@ -441,11 +426,11 @@ bool Scene::inputHandling(float speed, float sensitivity, float dt) {
                               -(mousePos.y - center.y));
 
             if (delta.x*delta.x + delta.y*delta.y > 0.25f) {
-                delta *= (2.0f / float(window.size().y)) * sensitivity * fovDeg;
+                delta *= (2.0f / float(window.size().y)) * sensitivity * camera.fovDeg;
 
-                camForward += delta.x * camRight + delta.y * camUp;
-                camForward = normalize(camForward);
-                setBasisVectors(camForward, camUp, camRight);
+                camera.forward += delta.x * camera.right + delta.y * camera.up;
+                camera.forward = normalize(camera.forward);
+                setBasisVectors(camera.forward, camera.up, camera.right);
                 moved = true;
 
                 window.setMousePos(center);
@@ -484,18 +469,18 @@ bool Scene::inputHandling(float speed, float sensitivity, float dt) {
     if (lock) return false;
 
     vec3 change = vec3(0, 0, 0);
-    if (window.keyPressed(GLFW_KEY_W)) change += camForward;
-    if (window.keyPressed(GLFW_KEY_S)) change -= camForward;
-    if (window.keyPressed(GLFW_KEY_A)) change -= camRight;
-    if (window.keyPressed(GLFW_KEY_D)) change += camRight;
-    if (window.keyPressed(GLFW_KEY_E)) change += camUp;
-    if (window.keyPressed(GLFW_KEY_Q)) change -= camUp;
+    if (window.keyPressed(GLFW_KEY_W)) change += camera.forward;
+    if (window.keyPressed(GLFW_KEY_S)) change -= camera.forward;
+    if (window.keyPressed(GLFW_KEY_A)) change -= camera.right;
+    if (window.keyPressed(GLFW_KEY_D)) change += camera.right;
+    if (window.keyPressed(GLFW_KEY_E)) change += camera.up;
+    if (window.keyPressed(GLFW_KEY_Q)) change -= camera.up;
 
     if (window.keyPressed(GLFW_KEY_LEFT_SHIFT) || window.keyPressed(GLFW_KEY_RIGHT_SHIFT)) speed *= 2;
 
     if (pow(change.x, 2) + pow(change.y, 2) + pow(change.z, 2) > 0) {
         change = normalize(change);
-        cameraPos += change*speed*dt;
+        camera.pos += change*speed*dt;
         moved = true;
     }
     return moved;
@@ -660,11 +645,11 @@ DataPackage Scene::dataSent() const {
 void Scene::saveJSON(const std::string& filename) const {
     json j;
 
-    j["Camera"]["position"] = cameraPos;
-    j["Camera"]["forward"] = camForward;
-    j["Camera"]["fovDeg"] = fovDeg;
-    j["Camera"]["aperture"] = aperture;
-    j["Camera"]["focusDistance"] = focusDistance;
+    j["Camera"]["position"] = camera.pos;
+    j["Camera"]["forward"] = camera.forward;
+    j["Camera"]["fovDeg"] = camera.fovDeg;
+    j["Camera"]["aperture"] = camera.aperture;
+    j["Camera"]["focusDistance"] = camera.focusDistance;
     j["Camera"]["sensitivity"] = sensitivity;
     j["Camera"]["speed"] = speed;
 
@@ -678,8 +663,7 @@ void Scene::saveJSON(const std::string& filename) const {
     j["Sky"]["sunColor"] = sunColor;
 
     j["Floor"]["active"] = floorActive;
-    j["Floor"]["diffuseColor"] = floorDiffuseColor;
-    j["Floor"]["specularColor"] = floorSpecularColor;
+    j["Floor"]["material"] = floorMaterial;
 
     j["Models"] = json::array();
     for (int i = 0; i < models.size(); ++i) {
@@ -738,16 +722,16 @@ void Scene::loadJSON(const std::string& filename) {
     // --- Camera ---
     if (j.contains("Camera")) {
         const auto& c = j["Camera"];
-        if (c.contains("position"))      cameraPos = c["position"];
-        if (c.contains("forward"))       camForward = c["forward"];
-        if (c.contains("fovDeg"))        fovDeg = c["fovDeg"];
-        if (c.contains("aperture"))      aperture = c["aperture"];
-        if (c.contains("focusDistance")) focusDistance = c["focusDistance"];
+        if (c.contains("position"))      camera.pos = c["position"];
+        if (c.contains("forward"))       camera.forward = c["forward"];
+        if (c.contains("fovDeg"))        camera.fovDeg = c["fovDeg"];
+        if (c.contains("aperture"))      camera.aperture = c["aperture"];
+        if (c.contains("focusDistance")) camera.focusDistance = c["focusDistance"];
         if (c.contains("sensitivity"))   sensitivity = c["sensitivity"];
         if (c.contains("speed"))         speed = c["speed"];
 
     }
-    setBasisVectors(camForward, camUp, camRight);
+    setBasisVectors(camera.forward, camera.up, camera.right);
 
     // --- Settings ---
     if (j.contains("Settings")) {
@@ -769,9 +753,8 @@ void Scene::loadJSON(const std::string& filename) {
     // --- Floor ---
     if (j.contains("Floor")) {
         const auto& fl = j["Floor"];
-        if (fl.contains("active"))        floorActive = fl["active"].get<bool>();
-        if (fl.contains("diffuseColor"))  floorDiffuseColor = fl["diffuseColor"].get<vec4>();
-        if (fl.contains("specularColor")) floorSpecularColor = fl["specularColor"].get<vec4>();
+        if (fl.contains("active"))   floorActive = fl["active"].get<bool>();
+        if (fl.contains("material")) floorMaterial = fl["material"].get<Material>();
     }
 
     // --- Textures (paths + scales) ---

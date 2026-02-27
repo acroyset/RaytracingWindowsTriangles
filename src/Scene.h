@@ -30,7 +30,9 @@
 #include <OpenImageDenoise/oidn.hpp>
 
 #include "BloomPass.h"
+#include "Camera.h"
 #include "Rendering/Shader.h"
+#include "Camera.h"
 
 #define GLAD_GL_IMPLEMENTATION
 
@@ -146,15 +148,7 @@ class Scene {
     std::atomic<bool> emissiveTrisStale = false;
 
     // Camera
-
-    vec3 cameraPos{};
-    vec3 camForward{};
-    vec3 camUp{};
-    vec3 camRight{};
-    float fovDeg = 60;
-    float aperture = 0.0;
-    float focusDistance = 1000;
-    bool focusDistancePlane = false;
+    Camera camera;
 
     bool lock = true;
     float sensitivity = 0.03;
@@ -183,10 +177,8 @@ class Scene {
     vec3 sunColor = vec3(1, 0.93, 0.31);
 
     // Floor
-
     bool floorActive = true;
-    vec4 floorDiffuseColor = vec4(1, 1, 1, 0);
-    vec4 floorSpecularColor = vec4(0, 0, 0, -1);
+    Material floorMaterial;
 
     // Debug
 
@@ -221,14 +213,7 @@ class Scene {
     Uniform<int> uNumEmissiveModels;
     Uniform<int> uNumEmissiveTris;
 
-    Uniform<vec3> uCameraPos;
-    Uniform<vec3> uCameraForward;
-    Uniform<vec3> uCameraUp;
-    Uniform<vec3> uCameraRight;
-    Uniform<float> uFovDeg;
-    Uniform<float> uAperture;
-    Uniform<float> uFocusDistance;
-    Uniform<bool> uFocusDistancePlane;
+    UniformBlock<Camera> uCamera;
 
     Uniform<uvec2> uResolutionRTX;
     Uniform<uvec2> uResolutionPP;
@@ -247,8 +232,7 @@ class Scene {
     Uniform<vec3> uSunColor;
 
     Uniform<bool> uFloorActive;
-    Uniform<vec4> uFloorDiffuseColor;
-    Uniform<vec4> uFloorSpecularColor;
+    UniformBlock<Material> uFloorMaterial;
 
     Uniform<bool> uDebugView;
     Uniform<int> uDebugMode;

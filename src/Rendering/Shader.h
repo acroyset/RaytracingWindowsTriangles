@@ -71,6 +71,11 @@ public:
         return Uniform<T>(program, name);
     }
 
+    template<typename T>
+    [[nodiscard]] UniformBlock<T> createUniformBlock(const std::string& name) const {
+        return UniformBlock<T>(program, name);
+    }
+
     [[nodiscard]] Texture createTexture(const std::string& uniformName);
     [[nodiscard]] Texture createTexture(const std::string& uniformName, const std::string& path);
     void releaseTexture(const Texture& t) { freeUnits.push_back(t.getUnit()); }

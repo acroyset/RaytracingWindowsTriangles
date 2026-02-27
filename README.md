@@ -125,7 +125,7 @@ User Input → Scene Setup → BVH Construction → GPU Upload → Shader Raytra
 - **stb_image** texture loading
 - **std_image_write** image saving
 - **nlohmann/json** save/load
-- **OIDN** denoise Fetched (Fetched)
+- **OIDN** denoise Fetched
 
 ## 🎮 Usage
 

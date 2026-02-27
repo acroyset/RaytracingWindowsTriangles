@@ -5,6 +5,7 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 #include <glm/vec3.hpp>
+#include "Rendering/Uniform.h"
 
 using namespace glm;
 
@@ -126,6 +127,50 @@ public:
 
     void setEmissionStrength(float e) { this->emissionStrength = e; }
 
+};
+
+
+
+template<>
+struct UniformFields<Material> {
+    Uniform<int> uType;
+    Uniform<vec3> uDiffuseColor;
+    Uniform<float> uDiffuseRoughness;
+    Uniform<vec3> uSpecularColor;
+    Uniform<float> uSpecularRoughness;
+    Uniform<float> uSpecularProbability;
+    Uniform<float> uTransparency;
+    Uniform<float> uIndexOfRefraction;
+    Uniform<float> uAbsorption;
+    Uniform<float> uEmissionStrength;
+
+    UniformFields() = default;
+
+    UniformFields(GLuint program, const std::string& name) :
+        uType(program, name + ".type"),
+        uDiffuseColor(program, name + ".diffuseColor"),
+        uDiffuseRoughness(program, name + ".diffuseRoughness"),
+        uSpecularColor(program, name + ".specularColor"),
+        uSpecularRoughness(program, name + ".specularRoughness"),
+        uSpecularProbability(program, name + ".specularProbability"),
+        uTransparency(program, name + ".transparency"),
+        uIndexOfRefraction(program, name + ".indexOfRefraction"),
+        uAbsorption(program, name + ".absorption"),
+        uEmissionStrength(program, name + ".emissionStrength")
+    {}
+
+    void set(const Material& d) const {
+        uType.set(d.getType());
+        uDiffuseColor.set(d.getDiffuseColor());
+        uDiffuseRoughness.set(d.getDiffuseRoughness());
+        uSpecularColor.set(d.getSpecularColor());
+        uSpecularRoughness.set(d.getSpecularRoughness());
+        uSpecularProbability.set(d.getSpecularProbability());
+        uTransparency.set(d.getTransparency());
+        uIndexOfRefraction.set(d.getIndexOfRefraction());
+        uAbsorption.set(d.getAbsorption());
+        uEmissionStrength.set(d.getEmissionStrength());
+    }
 };
 
 

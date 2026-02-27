@@ -2,6 +2,7 @@
 #ifndef UNIFORM_H
 #define UNIFORM_H
 
+#include <iostream>
 #include <string>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -13,8 +14,8 @@ struct UniformBase {
     GLint location = -1;
     explicit UniformBase(GLuint program, const std::string& name) {
         location = glGetUniformLocation(program, name.c_str());
-        // (Optional) warn if not found:
-        // if (location == -1) std::cerr << "Uniform not found: " << name << "\n";
+
+         if (location == -1) std::cerr << "Uniform not found: " << name << "\n";
     }
     [[nodiscard]] bool valid() const { return location != -1; }
 };
@@ -29,7 +30,6 @@ struct Uniform : UniformBase {
             "Add a specialization or extend the if constexpr.");
     }
 
-    // Optional: arrays (std::vector, span, etc.)
     void setArray(const T* data, GLsizei count) const {
         static_assert(always_false<T>,
             "Uniform<T>::setArray called with unsupported type T array.");
@@ -38,6 +38,29 @@ struct Uniform : UniformBase {
 private:
     template<class> static constexpr bool always_false = false;
 };
+
+
+template<typename T>
+struct UniformFields;
+
+template<typename T>
+struct UniformBlock : UniformBase {
+
+    UniformBlock() = default;
+
+    UniformBlock(GLuint program, const std::string& name)
+        : UniformBase()
+        , fields(program, name)
+    {}
+
+    void set(const T& value) const {
+        fields.set(value);
+    }
+
+private:
+    UniformFields<T> fields;
+};
+
 
 // ---- Implementations for supported Ts ----
 

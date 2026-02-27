@@ -1,4 +1,14 @@
 
+struct Camera {
+    vec3  pos;
+    vec3  forward;
+    vec3  up;
+    vec3  right;
+    float fovDeg;
+    float aperture;
+    float focusDistance;
+    bool  focusDistancePlane;
+};
 
 struct Material {
 
