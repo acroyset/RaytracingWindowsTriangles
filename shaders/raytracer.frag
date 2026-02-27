@@ -41,13 +41,11 @@ uniform int   frameCount;
 uniform float timeSinceStart;
 uniform int   sampleCount;
 
-uniform int       numNodes;
 uniform int       samples;
 uniform int       aa;
 uniform int       bounceLim;
 uniform sampler2D u_previousFrame;
 
-uniform vec3  skyColor;
 uniform vec3  sunDir;
 uniform vec3  sunColor;
 
@@ -58,11 +56,7 @@ uniform bool      skyActive;
 uniform sampler2D skyTex;
 uniform float     uEnvYaw;
 
-uniform bool  debugView;
-uniform int   debugMode;
-uniform int   triTh;
-uniform int   aabbTh;
-uniform float depthScale;
+uniform DebugView  debugView;
 
 uniform sampler2D textures[MAX_TEXTURES];
 uniform float     textureScales[MAX_TEXTURES];
@@ -776,9 +770,9 @@ vec3 trace(Ray ray, inout uint state){
             }
 
             // Debug views
-            if (debugView) {
-                if (debugMode == 0) { color = normalWorld * 0.5 + 0.5; break; }
-                if (debugMode == 2) { color = hit.t < depthScale ? vec3(hit.t / depthScale) : vec3(1); break; }
+            if (debugView.enable) {
+                if (debugView.mode == 0) { color = normalWorld * 0.5 + 0.5; break; }
+                if (debugView.mode == 2) { color = hit.t < debugView.depthScale ? vec3(hit.t / debugView.depthScale) : vec3(1); break; }
             }
 
             // Roll specular
@@ -838,9 +832,10 @@ vec3 trace(Ray ray, inout uint state){
                 ray.pos += ray.dir * t;
                 vec3 n = vec3(0, 1, 0);
 
-                if (debugView) {
-                    if (debugMode == 0) { color = n * 0.5 + 0.5; break; }
-                    if (debugMode == 2) { color = t < depthScale ? vec3(t / depthScale) : vec3(1); break; }
+                // Debug views
+                if (debugView.enable) {
+                    if (debugView.mode == 0) { color = n * 0.5 + 0.5; break; }
+                    if (debugView.mode == 2) { color = hit.t < debugView.depthScale ? vec3(hit.t / debugView.depthScale) : vec3(1); break; }
                 }
 
                 bool isSpecular = randomValue(state) <= floorMaterial.specularProbability;
@@ -884,9 +879,9 @@ vec3 trace(Ray ray, inout uint state){
         if (bounce == bounceLim) break;
     }
 
-    if (debugView && debugMode == 1) {
-        vec3 heatmap = triTest > triTh || aabbTest > aabbTh ? vec3(1)
-        : vec3(float(triTest)/float(triTh), russianRouletBreak ? 1.0 : 0.0, float(aabbTest)/float(aabbTh));
+    if (debugView.enable && debugView.mode == 1) {
+        vec3 heatmap = triTest > debugView.triTh || aabbTest > debugView.aabbTh ? vec3(1)
+        : vec3(float(triTest)/float(debugView.triTh), russianRouletBreak ? 1.0 : 0.0, float(aabbTest)/float(debugView.aabbTh));
         return heatmap;
     }
 

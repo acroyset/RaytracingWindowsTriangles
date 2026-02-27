@@ -133,43 +133,43 @@ public:
 
 template<>
 struct UniformFields<Material> {
-    Uniform<int> uType;
-    Uniform<vec3> uDiffuseColor;
+    Uniform<vec4>  uDiffuseColor;
+    Uniform<vec4>  uSpecularColor;
     Uniform<float> uDiffuseRoughness;
-    Uniform<vec3> uSpecularColor;
     Uniform<float> uSpecularRoughness;
     Uniform<float> uSpecularProbability;
     Uniform<float> uTransparency;
     Uniform<float> uIndexOfRefraction;
     Uniform<float> uAbsorption;
     Uniform<float> uEmissionStrength;
+    Uniform<int>   uType;
 
     UniformFields() = default;
 
     UniformFields(GLuint program, const std::string& name) :
-        uType(program, name + ".type"),
-        uDiffuseColor(program, name + ".diffuseColor"),
-        uDiffuseRoughness(program, name + ".diffuseRoughness"),
-        uSpecularColor(program, name + ".specularColor"),
-        uSpecularRoughness(program, name + ".specularRoughness"),
+        uDiffuseColor       (program, name + ".diffuseColor"),
+        uSpecularColor      (program, name + ".specularColor"),
+        uDiffuseRoughness   (program, name + ".diffuseRoughness"),
+        uSpecularRoughness  (program, name + ".specularRoughness"),
         uSpecularProbability(program, name + ".specularProbability"),
-        uTransparency(program, name + ".transparency"),
-        uIndexOfRefraction(program, name + ".indexOfRefraction"),
-        uAbsorption(program, name + ".absorption"),
-        uEmissionStrength(program, name + ".emissionStrength")
+        uTransparency       (program, name + ".transparency"),
+        uIndexOfRefraction  (program, name + ".indexOfRefraction"),
+        uAbsorption         (program, name + ".absorption"),
+        uEmissionStrength   (program, name + ".emissionStrength"),
+        uType               (program, name + ".type")
     {}
 
     void set(const Material& d) const {
-        uType.set(d.getType());
-        uDiffuseColor.set(d.getDiffuseColor());
+        uDiffuseColor.set(vec4(d.getDiffuseColor(), 0.0f));
+        uSpecularColor.set(vec4(d.getSpecularColor(), 0.0f));
         uDiffuseRoughness.set(d.getDiffuseRoughness());
-        uSpecularColor.set(d.getSpecularColor());
         uSpecularRoughness.set(d.getSpecularRoughness());
         uSpecularProbability.set(d.getSpecularProbability());
         uTransparency.set(d.getTransparency());
         uIndexOfRefraction.set(d.getIndexOfRefraction());
         uAbsorption.set(d.getAbsorption());
         uEmissionStrength.set(d.getEmissionStrength());
+        uType.set(d.getType());
     }
 };
 

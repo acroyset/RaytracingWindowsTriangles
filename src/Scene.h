@@ -33,6 +33,7 @@
 #include "Camera.h"
 #include "Rendering/Shader.h"
 #include "Camera.h"
+#include "DebugView.h"
 
 #define GLAD_GL_IMPLEMENTATION
 
@@ -99,12 +100,6 @@ struct ModelOffset {
         this->material = material;
         this->textureID = textureID;
     }
-};
-
-enum DebugMode {
-    Normals,
-    Heatmap,
-    Depth
 };
 
 class SceneUI;
@@ -181,12 +176,7 @@ class Scene {
     Material floorMaterial;
 
     // Debug
-
-    bool debugView = false;
-    DebugMode debugMode = Normals;
-    int triTh = 5;
-    int aabbTh = 100;
-    float depthScale = 1500;
+    DebugView debugView;
 
 
     // SSBO
@@ -209,6 +199,7 @@ class Scene {
     // Uniforms
 
     Uniform<int> uNumModels;
+
     Uniform<bool> uNEE;
     Uniform<int> uNumEmissiveModels;
     Uniform<int> uNumEmissiveTris;
@@ -221,31 +212,26 @@ class Scene {
     Uniform<float> uTimeSinceStart;
     Uniform<int> uSampleCount;
 
-    Uniform<int> uNumNodes;
     Uniform<int> uSamples;
     Uniform<int> uAA;
     Uniform<int> uBounceLim;
 
     Uniform<bool> uSkyActive;
-    Uniform<vec3> uSkyColor;
     Uniform<vec3> uSunDir;
     Uniform<vec3> uSunColor;
 
     Uniform<bool> uFloorActive;
     UniformBlock<Material> uFloorMaterial;
 
-    Uniform<bool> uDebugView;
-    Uniform<int> uDebugMode;
-    Uniform<int> uTriThreshold;
-    Uniform<int> uAABBThreshold;
-    Uniform<float> uDepthScale;
+    UniformBlock<DebugView> uDebugView;
+
+    Uniform<float> uEnvYaw{};
 
     Uniform<float> uTextureScales;
 
     // Textures
 
     Texture skyTexture;
-    Uniform<float> uEnvYaw{};
 
     std::vector<Texture> textures;
     std::array<float, 64> textureScales{};
@@ -271,7 +257,6 @@ class Scene {
     std::thread::id mainThreadID = std::this_thread::get_id();
 
     // Keys
-
     std::map<GLuint, bool> trackedKeysPressed{};
 
     public:
@@ -289,8 +274,6 @@ class Scene {
     void addModel(const Model& model, const std::string& texturePath = "");
 
     void removeModel(int index);
-
-    [[nodiscard]] int getNumBVHNodes() const;
 
     [[nodiscard]] int getNumTris() const;
 
@@ -316,27 +299,6 @@ class Scene {
     void saveJSON(const std::string& filename) const;
     void loadJSON(const std::string& filename);
 
-    int numTriBelow(int index);
-
-    void get_BVH_stats(int index, int& leafNodes, int& depth, int& minDepth, int& maxDepth, int& triPerLeaf, int& minTriPerLeaf, int& maxTriPerLeaf, int current_depth);
-
-    void displayBVH();
-
-    void displayBVH(int index, std::string prefix);
-
-    [[nodiscard]] bool open() const {
-        return window.open() && isOpen;
-    }
-
-    void resetAccumulation() {
-        frameCount = 0;
-        sampleCount = 0;
-    }
-
-    void updateItemSmooth(float& item, const float value) const {
-        item = smoothing * item + (1.0f - smoothing) * value;
-    }
-
     void startAddJob(const std::string& path, const std::string& texturePath);
 
     void startLoadJob(const std::string& path);
@@ -350,6 +312,17 @@ class Scene {
     }
 
     void savePNG(const std::string& filename);
+
+    [[nodiscard]] bool open() const {
+        return window.open() && isOpen;
+    }
+    void resetAccumulation() {
+        frameCount = 0;
+        sampleCount = 0;
+    }
+    void updateItemSmooth(float& item, const float value) const {
+        item = smoothing * item + (1.0f - smoothing) * value;
+    }
 };
 
 #endif //SCENE_H

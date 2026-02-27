@@ -36,16 +36,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cd06d447-a7c8-42f4-a8e5-4bf88ac1888b" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/Camera.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DebugView.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/imgui.ini" beforeDir="false" afterPath="$PROJECT_DIR$/imgui.ini" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/shaders/raytracer.frag" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/raytracer.frag" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/shaders/structs.glsl" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/structs.glsl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Camera.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Camera.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Material.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Material.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Rendering/Shader.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/Shader.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Rendering/Uniform.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/Uniform.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/SceneUI.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/SceneUI.cpp" afterDir="false" />
@@ -287,7 +284,7 @@
       <workItem from="1771990427463" duration="1961000" />
       <workItem from="1771996128380" duration="3587000" />
       <workItem from="1772070352528" duration="5132000" />
-      <workItem from="1772167083335" duration="6425000" />
+      <workItem from="1772167083335" duration="7725000" />
     </task>
     <servers />
   </component>

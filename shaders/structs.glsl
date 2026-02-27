@@ -10,6 +10,14 @@ struct Camera {
     bool  focusDistancePlane;
 };
 
+struct DebugView {
+    bool enable;
+    int mode;
+    int triTh;
+    int aabbTh;
+    float depthScale;
+};
+
 struct Material {
 
     // Opaque

@@ -413,7 +413,7 @@ void SceneUI::render(Scene& scene) {
 
         ui_resetAccum |= ImGui::Checkbox("Next Event Estimation (NEE)", &scene.NEE);
 
-        ui_resetAccum |= ImGui::Checkbox("Debug Mode" , &scene.debugView);
+        ui_resetAccum |= ImGui::Checkbox("Debug Mode" , &scene.debugView.enable);
 
         ImGui::End();
     }
@@ -491,15 +491,15 @@ void SceneUI::render(Scene& scene) {
     }
 
     // debug settings
-    if (scene.debugView) {
+    if (scene.debugView.enable) {
         ImGui::Begin("Debug Mode");
 
         const char* names[] = { "Normals", "Heatmap", "Depth" };
 
         // Use a custom getter function
-        int debugMode = scene.debugMode;
+        int debugMode = scene.debugView.mode;
         if (ImGui::SliderInt("Debug Mode", &debugMode, 0, 2, names[debugMode])) {
-            scene.debugMode = static_cast<DebugMode>(debugMode);
+            scene.debugView.mode = static_cast<DebugMode>(debugMode);
             ui_resetAccum = true;
         }
 
@@ -507,11 +507,11 @@ void SceneUI::render(Scene& scene) {
             case Normals:
                 break;
             case Heatmap:
-                ui_resetAccum |= ImGui::SliderInt("Triangle Threshold", &scene.triTh, 1, 50);
-                ui_resetAccum |= ImGui::SliderInt("AABB Threshold", &scene.aabbTh, 1, 250);
+                ui_resetAccum |= ImGui::SliderInt("Triangle Threshold", &scene.debugView.triTh, 1, 50);
+                ui_resetAccum |= ImGui::SliderInt("AABB Threshold", &scene.debugView.aabbTh, 1, 250);
                 break;
             case Depth:
-                ui_resetAccum |= ImGui::SliderFloat("Depth Scale", &scene.depthScale, 1, 5000);
+                ui_resetAccum |= ImGui::SliderFloat("Depth Scale", &scene.debugView.depthScale, 1, 5000);
             default: ;
         }
 

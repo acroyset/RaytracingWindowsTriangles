@@ -18,18 +18,26 @@
     },
     "Floor": {
         "active": true,
-        "diffuseColor": [
-            1.0,
-            1.0,
-            1.0,
-            0.0
-        ],
-        "specularColor": [
-            0.0,
-            0.0,
-            0.0,
-            -1.0
-        ]
+        "material": {
+            "absorption": 0.0,
+            "diffuseColor": [
+                0.949999988079071,
+                0.949999988079071,
+                0.949999988079071
+            ],
+            "diffuseRoughness": 1.0,
+            "emissionStrength": 0.0,
+            "indexOfRefraction": 1.0,
+            "specularColor": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "specularProbability": 0.0,
+            "specularRoughness": 0.0,
+            "transparency": 0.0,
+            "type": "Specular"
+        }
     },
     "Models": [
         {
@@ -96,7 +104,7 @@
                     "specularProbability": 0.0,
                     "specularRoughness": 0.0,
                     "transparency": 0.0,
-                    "type": "Opaque"
+                    "type": "Specular"
                 }
             ],
             "TextureID": 0,
@@ -222,7 +230,7 @@
                     "specularProbability": 0.0,
                     "specularRoughness": 0.08908708393573761,
                     "transparency": 0.0,
-                    "type": "Opaque"
+                    "type": "Specular"
                 },
                 {
                     "absorption": 0.0,
@@ -242,7 +250,7 @@
                     "specularProbability": 0.0,
                     "specularRoughness": 0.08908708393573761,
                     "transparency": 0.0,
-                    "type": "Opaque"
+                    "type": "Specular"
                 },
                 {
                     "absorption": 0.0,
@@ -262,7 +270,7 @@
                     "specularProbability": 0.0,
                     "specularRoughness": 0.08908708393573761,
                     "transparency": 0.0,
-                    "type": "Opaque"
+                    "type": "Specular"
                 },
                 {
                     "absorption": 0.0,
@@ -498,7 +506,7 @@
             0.49805158376693726,
             0.010001035407185555
         ],
-        "sunStrength": 1000.0
+        "sunStrength": 80.60099792480469
     },
     "Textures": {
         "Paths": [

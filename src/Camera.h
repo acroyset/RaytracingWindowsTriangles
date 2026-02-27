@@ -5,7 +5,6 @@
 #ifndef UNIFORMBLOCKS_H
 #define UNIFORMBLOCKS_H
 
-// CameraUniforms.h
 #include "Rendering/Uniform.h"
 
 struct Camera {

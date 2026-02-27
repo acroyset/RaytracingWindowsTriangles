@@ -267,10 +267,6 @@ void Scene::removeModel(int index) {
     emissiveTrisStale = true;
 }
 
-int Scene::getNumBVHNodes() const {
-    return int(BVHnodes.size());
-}
-
 int Scene::getNumTris() const {
     return int(triangles.size()/3);
 }
@@ -296,24 +292,18 @@ void Scene::createUniforms() {
     uTimeSinceStart = raytracer.createUniform<float>("timeSinceStart");
     uSampleCount    = raytracer.createUniform<int>("sampleCount");
 
-    uNumNodes  = raytracer.createUniform<int>("numNodes");
     uSamples   = raytracer.createUniform<int>("samples");
     uAA        = raytracer.createUniform<int>("aa");
     uBounceLim = raytracer.createUniform<int>("bounceLim");
 
     uSkyActive = raytracer.createUniform<bool>("skyActive");
-    uSkyColor  = raytracer.createUniform<vec3>("skyColor");
     uSunDir    = raytracer.createUniform<vec3>("sunDir");
     uSunColor  = raytracer.createUniform<vec3>("sunColor");
 
     uFloorActive   = raytracer.createUniform<bool>("floorActive");
     uFloorMaterial = raytracer.createUniformBlock<Material>("floorMaterial");
 
-    uDebugView     = raytracer.createUniform<bool>("debugView");
-    uDebugMode     = raytracer.createUniform<int>("debugMode");
-    uTriThreshold  = raytracer.createUniform<int>("triTh");
-    uAABBThreshold = raytracer.createUniform<int>("aabbTh");
-    uDepthScale    = raytracer.createUniform<float>("depthScale");
+    uDebugView     = raytracer.createUniformBlock<DebugView>("debugView");
 
     uTextureScales = raytracer.createUniform<float>("textureScales");
 
@@ -335,13 +325,11 @@ void Scene::setUniformsRTX() const {
     uTimeSinceStart.set(window.getTimeSinceStart());
     uSampleCount.set(sampleCount);
 
-    uNumNodes.set(getNumBVHNodes());
     uSamples.set(samples);
     uAA.set(aa);
     uBounceLim.set(bounceLim);
 
     uSkyActive.set(skyActive);
-    uSkyColor.set(skyColor);
     uSunDir.set(sunDir);
     uSunColor.set(sunColor*sunStrength);
 
@@ -349,10 +337,6 @@ void Scene::setUniformsRTX() const {
     uFloorMaterial.set(floorMaterial);
 
     uDebugView.set(debugView);
-    uDebugMode.set(debugMode);
-    uTriThreshold.set(triTh);
-    uAABBThreshold.set(aabbTh);
-    uDepthScale.set(depthScale);
 
     uTextureScales.setArray(textureScales.data(), 64);
 
@@ -977,68 +961,3 @@ void Scene::savePNG(const std::string& filename) {
     stbi_flip_vertically_on_write(true);
     stbi_write_png(filename.c_str(), width, height, 4, ldr.data(), width * 4);
 }
-
-
-
-/*
-int Scene::numTriBelow(int index) {
-    int childA = this->childA[index];
-    int childB = this->childB[index];
-
-    if (childB > index and childA > index) {
-        return numTriBelow(childA) + numTriBelow(childB);
-    }
-    return -childB;
-}
-
-void Scene::get_BVH_stats(int index, int& leafNodes, int& depth, int& minDepth, int& maxDepth, int& triPerLeaf, int& minTriPerLeaf, int& maxTriPerLeaf, int current_depth) {
-    if (models.empty()) return;
-    int childA = this->childA[index];
-    int childB = this->childB[index];
-    if (childA > 0) {
-        get_BVH_stats(childA, leafNodes, depth, minDepth, maxDepth, triPerLeaf, minTriPerLeaf, maxTriPerLeaf, current_depth+1);
-        get_BVH_stats(childB, leafNodes, depth, minDepth, maxDepth, triPerLeaf, minTriPerLeaf, maxTriPerLeaf, current_depth+1);
-        return;
-    }
-    int triStart = -childA;
-    int numTris = -childB;
-    leafNodes++;
-    depth += current_depth;
-    triPerLeaf += numTris;
-    if (current_depth > maxDepth) maxDepth = current_depth;
-    if (current_depth < minDepth) minDepth = current_depth;
-    if (numTris > maxTriPerLeaf) maxTriPerLeaf = numTris;
-    if (numTris < minTriPerLeaf) minTriPerLeaf = numTris;
-}
-
-void Scene::displayBVH() {
-    for (const int model : models) {
-        std::cout << model << " ";
-    }
-    std::cout << std::endl;
-    for (const int model : models) {
-        const std::string prefix;
-        displayBVH(model, prefix);
-    }
-}
-
-void Scene::displayBVH(int index, std::string prefix) {
-    vec3 bboxMin = boundingBoxMin[index];
-    vec3 bboxMax = boundingBoxMax[index];
-    int childA = this->childA[index];
-    int childB = this->childB[index];
-    int numTris = numTriBelow(index);
-    //if (numTris < 100000) return;
-    std::cout << prefix << "Index: " << index << "  -  Tris: " << numTris << std::endl;
-    std::cout << prefix << "Bounding Box Min: " << bboxMin.x << ", " << bboxMin.y << ", " << bboxMin.z << ", " << childA << std::endl;
-    std::cout << prefix << "Bounding Box Max: " << bboxMax.x << ", " << bboxMax.y << ", " << bboxMax.z << ", " << childB << std::endl;
-    if (childB > index and childA > index) {
-        prefix += "  ";
-        displayBVH(childA, prefix);
-        std::cout << std::endl;
-        displayBVH(childB, prefix);
-        return;
-    }
-    std::cout << prefix << "Triangles: " << numTris << std::endl;
-}
-*/
