@@ -37,16 +37,9 @@
   <component name="ChangeListManager">
     <list default="true" id="cd06d447-a7c8-42f4-a8e5-4bf88ac1888b" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/imgui.ini" beforeDir="false" afterPath="$PROJECT_DIR$/imgui.ini" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scenes/scene1.json" beforeDir="false" afterPath="$PROJECT_DIR$/scenes/scene1.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/shaders/raytracer.frag" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/raytracer.frag" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/shaders/structs.glsl" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/structs.glsl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/BaseModel.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/BaseModel.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/BaseModel.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/BaseModel.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/SceneUI.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/SceneUI.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -284,7 +277,7 @@
       <workItem from="1772244402801" duration="17000" />
       <workItem from="1772244650617" duration="4254000" />
       <workItem from="1772590519776" duration="750000" />
-      <workItem from="1772758135154" duration="3569000" />
+      <workItem from="1772758135154" duration="4327000" />
     </task>
     <servers />
   </component>

@@ -133,8 +133,7 @@ class Scene {
     std::vector<vec3> modelMin;
     std::vector<vec3> modelMax;
     std::vector<vec3> modelCenter;
-
-    // Model Info
+    std::vector<int> modelIndex;
 
     std::vector<ModelOffset> modelOffsets;
 

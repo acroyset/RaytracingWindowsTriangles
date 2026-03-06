@@ -141,6 +141,7 @@ void Scene::addModel(const Model& model, const std::string& texturePath) {
 
     bool useTexture = !model.base.texCoords.empty() && !texturePath.empty();
     int textureID = useTexture ? (pendingClearTextures ? 0 : int(textures.size())) + int(pendingTextures.size()) : -1;
+    modelIndex.emplace_back(modelIndex.size());
 
     bool reuse = false;
 
@@ -283,11 +284,14 @@ void Scene::createTLAS() {
 
     int numModels = int(models.size());
 
+    modelMin.clear();
+    modelMax.clear();
+    modelCenter.clear();
+
     modelMin.reserve(numModels);
     modelMax.reserve(numModels);
     modelCenter.reserve(numModels);
     for (int i = 0; i < numModels; ++i) {
-        std::cout << i << " " << models[i].name << " " << modelOffsets[i].BVHnodes << std::endl;
         modelMin.emplace_back(BVHtriangleNodes[modelOffsets[i].BVHnodes].getMin());
         modelMax.emplace_back(BVHtriangleNodes[modelOffsets[i].BVHnodes].getMax());
         modelCenter.emplace_back((modelMin.back()+modelMax.back())/2.0f);
@@ -447,7 +451,7 @@ void Scene::split(int numTestsPerAxis, int BVHindex, int depth) {
             numA++;
             startB++;
             int swap = startA + numA - 1;
-            std::swap(modelOffsets[i], modelOffsets[swap]);
+            std::swap(modelIndex[i], modelIndex[swap]);
             std::swap(modelCenter[i], modelCenter[swap]);
             std::swap(modelMin[i], modelMin[swap]);
             std::swap(modelMax[i], modelMax[swap]);
@@ -724,8 +728,6 @@ void Scene::updateFrame() {
             }
             pendingTextures.clear();
         }
-
-        createTLAS();
 
         resetAccumulation();
 

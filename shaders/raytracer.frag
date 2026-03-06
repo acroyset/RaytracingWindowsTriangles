@@ -20,12 +20,13 @@ layout(std430, binding = 1)  buffer ssboVertices { vec4 vertices[]; };
 layout(std430, binding = 2)  buffer ssboTexCoords { vec2 texCoords[]; };
 layout(std430, binding = 3)  buffer ssboNormals { vec4 normals[]; };
 layout(std430, binding = 4)  buffer ssboMaterials { Material materials[]; };
-layout(std430, binding = 5)  buffer ssboBVHnodes { BVHnode BVHnodes[]; };
-layout(std430, binding = 6)  buffer ssboModelOffsets { ModelOffset modelOffsets[]; };
-layout(std430, binding = 7)  buffer ssboModelTransformations { mat4 modelTransformations[]; };
-layout(std430, binding = 8)  buffer ssboModelInvTransformations { mat4 modelInvTransformations[]; };
-layout(std430, binding = 9)  buffer ssboEmissiveTris { ivec2 emissiveTris[]; };
-layout(std430, binding = 10) buffer ssboEmissiveModelTriangleNum { ivec2 emissiveModelTriangleNum[]; };
+layout(std430, binding = 5)  buffer ssboBVHtriangleNodes { BVHnode BVHtriangleNodes[]; };
+layout(std430, binding = 6)  buffer ssboBVHmodelNodes { BVHnode BVHmodelNodes[]; };
+layout(std430, binding = 7)  buffer ssboModelOffsets { ModelOffset modelOffsets[]; };
+layout(std430, binding = 8)  buffer ssboModelTransformations { mat4 modelTransformations[]; };
+layout(std430, binding = 9)  buffer ssboModelInvTransformations { mat4 modelInvTransformations[]; };
+layout(std430, binding = 10)  buffer ssboEmissiveTris { ivec2 emissiveTris[]; };
+layout(std430, binding = 11) buffer ssboEmissiveModelTriangleNum { ivec2 emissiveModelTriangleNum[]; };
 
 
 uniform int   numModels;
@@ -453,7 +454,7 @@ Hit traverseBVH(int modelIndex, Ray ray, Ray rayLocal, mat4 M, mat4 invM, float 
     stack[sp++] = offset.BVHnodes;
 
     while (sp > 0){
-        BVHnode node = BVHnodes[stack[--sp]];
+        BVHnode node = BVHtriangleNodes[stack[--sp]];
 
         if (leaf(node)){
             int start = startIdx(node);
@@ -475,8 +476,8 @@ Hit traverseBVH(int modelIndex, Ray ray, Ray rayLocal, mat4 M, mat4 invM, float 
         } else {
             int A = childA(node) + offset.BVHnodes;
             int B = childB(node) + offset.BVHnodes;
-            BVHnode childA_Idx = BVHnodes[A];
-            BVHnode childB_Idx = BVHnodes[B];
+            BVHnode childA_Idx = BVHtriangleNodes[A];
+            BVHnode childB_Idx = BVHtriangleNodes[B];
 
             aabbTest += 2;
             float dA = intersectAABB(rayLocal, getMin(childA_Idx), getMax(childA_Idx));
@@ -513,7 +514,7 @@ Hit findBestTri(Ray ray, out int triTest, out int aabbTest){
         mat4 M    = modelTransformations[modelIdx];
         mat4 invM = modelInvTransformations[modelIdx];
 
-        BVHnode root = BVHnodes[modelOffsets[modelIdx].BVHnodes];
+        BVHnode root = BVHtriangleNodes[modelOffsets[modelIdx].BVHnodes];
 
         Ray rayLocal = worldToLocalRay(ray, invM);
 
@@ -538,7 +539,7 @@ bool shadowRayBlocked(Ray ray, float maxDist, int excludeTriID) {
         Ray rayLocal = worldToLocalRay(ray, invM);
 
         ModelOffset offset = modelOffsets[modelIdx];
-        BVHnode root = BVHnodes[offset.BVHnodes];
+        BVHnode root = BVHtriangleNodes[offset.BVHnodes];
 
         // Quick AABB reject
         if (intersectAABB(rayLocal, getMin(root), getMax(root)) >= INF) continue;
@@ -553,7 +554,7 @@ bool shadowRayBlocked(Ray ray, float maxDist, int excludeTriID) {
         stack[sp++] = offset.BVHnodes;
 
         while (sp > 0) {
-            BVHnode node = BVHnodes[stack[--sp]];
+            BVHnode node = BVHtriangleNodes[stack[--sp]];
 
             if (leaf(node)) {
                 int start = startIdx(node);
@@ -575,8 +576,8 @@ bool shadowRayBlocked(Ray ray, float maxDist, int excludeTriID) {
             } else {
                 int A = childA(node) + offset.BVHnodes;
                 int B = childB(node) + offset.BVHnodes;
-                BVHnode nA = BVHnodes[A];
-                BVHnode nB = BVHnodes[B];
+                BVHnode nA = BVHtriangleNodes[A];
+                BVHnode nB = BVHtriangleNodes[B];
 
                 float dA = intersectAABB(rayLocal, getMin(nA), getMax(nA));
                 float dB = intersectAABB(rayLocal, getMin(nB), getMax(nB));
@@ -865,7 +866,7 @@ void main(){
     vec3 total = vec3(0.0);
     int aaCycle = frameCount % (aa*aa);
 
-    float maxBrighness = 50;
+    float maxBrighness = 1000;
 
     for (int s=0; s<samples; ++s) {
         Ray ray = calculateInitialRay(aaCycle, screen, state);
