@@ -57,9 +57,12 @@ struct DataPackage {
     int normals;
     int normalsBytes;
 
-    int BVHNodesSent;
-    int BVHNodes;
-    int BVHNodesBytes;
+    int BVHtriangleNodesSent;
+    int BVHtriangleNodes;
+    int BVHtriangleNodesBytes;
+
+    int BVHmodelNodes;
+    int BVHmodelNodesBytes;
 
     int models;
     int modelsBytes;
@@ -127,13 +130,18 @@ class Scene {
     std::map<std::string, BaseModel> precomputedModels;
     std::vector<Model> models;
 
+    std::vector<vec3> modelMin;
+    std::vector<vec3> modelMax;
+    std::vector<vec3> modelCenter;
+
     // Model Info
 
     std::vector<ModelOffset> modelOffsets;
 
     // BVH
 
-    std::vector<BVHnode> BVHnodes;
+    std::vector<BVHnode> BVHtriangleNodes;
+    std::vector<BVHnode> BVHmodelNodes;
 
     // NEE
 
@@ -186,7 +194,8 @@ class Scene {
     SSBO<vec2> ssboTexCoords;
     SSBO<vec4> ssboNormals;
     SSBO<Material> ssboMaterials;
-    SSBO<BVHnode> ssboBVHnodes;
+    SSBO<BVHnode> ssboBVHtriangleNodes;
+    SSBO<BVHnode> ssboBVHmodelNodes;
     SSBO<ModelOffset> ssboModelOffsets;
     SSBO<mat4> ssboModelTransformations;
     SSBO<mat4> ssboModelInvTransformations;
@@ -255,6 +264,7 @@ class Scene {
     std::atomic<float> progressMax{};
 
     std::thread::id mainThreadID = std::this_thread::get_id();
+    ThreadPool pool{std::thread::hardware_concurrency()};
 
     // Keys
     std::map<GLuint, bool> trackedKeysPressed{};
@@ -274,6 +284,15 @@ class Scene {
     void addModel(const Model& model, const std::string& texturePath = "");
 
     void removeModel(int index);
+
+
+    void createTLAS();
+
+    [[nodiscard]] float evaluateSplit(int start, int end, int axis, float pos) const;
+
+    Split chooseSplit(int numTestsPerAxis, const BVHnode &node);
+
+    void split(int numTestsPerAxis, int BVHindex, int depth);
 
     [[nodiscard]] int getNumTris() const;
 

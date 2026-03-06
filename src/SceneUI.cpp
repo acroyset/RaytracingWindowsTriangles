@@ -554,17 +554,18 @@ void SceneUI::render(Scene& scene) {
                 ImGui::Text("%s", size.c_str());
             };
 
-            Row("Triangles",          package.triangles,         package.trianglesSent,     bytesToReadable(package.triangleBytes)          );
-            Row("Vertices",           package.vertices,          package.verticesSent,      bytesToReadable(package.verticesBytes)          );
-            Row("Tex Coords",         package.texCoords,         package.texCoordsSent,     bytesToReadable(package.texCoordsBytes)         );
-            Row("Normals",            package.normals,           package.normalsSent,       bytesToReadable(package.normalsBytes)           );
-            Row("BVH Nodes",          package.BVHNodes,          package.BVHNodesSent,      bytesToReadable(package.BVHNodesBytes)          );
-            Row("Models",             package.models,            package.models,            bytesToReadable(package.modelsBytes)            );
-            Row("Emissive Models",    package.emissiveModels,    package.emissiveModels,    bytesToReadable(package.emissiveModelsBytes)    );
-            Row("Emissive Triangles", package.emissiveTriangles, package.emissiveTriangles, bytesToReadable(package.emissiveTrianglesBytes) );
-            Row("Materials",          package.materials,         package.materials,         bytesToReadable(package.materialsBytes)         );
-            Row("Textures",           package.textures,          package.textures,          bytesToReadable(package.texturesBytes)          );
-            Row("Transforms",         package.transforms,        package.transforms,        bytesToReadable(package.transformsBytes)        );
+            Row("Triangles",          package.triangles,         package.trianglesSent,        bytesToReadable(package.triangleBytes)          );
+            Row("Vertices",           package.vertices,          package.verticesSent,         bytesToReadable(package.verticesBytes)          );
+            Row("Tex Coords",         package.texCoords,         package.texCoordsSent,        bytesToReadable(package.texCoordsBytes)         );
+            Row("Normals",            package.normals,           package.normalsSent,          bytesToReadable(package.normalsBytes)           );
+            Row("BVH Triangle Nodes", package.BVHtriangleNodes,  package.BVHtriangleNodesSent, bytesToReadable(package.BVHtriangleNodesBytes)  );
+            Row("BVH Model Nodes",    package.BVHmodelNodes,     package.BVHmodelNodes,        bytesToReadable(package.BVHmodelNodesBytes)     );
+            Row("Models",             package.models,            package.models,               bytesToReadable(package.modelsBytes)            );
+            Row("Emissive Models",    package.emissiveModels,    package.emissiveModels,       bytesToReadable(package.emissiveModelsBytes)    );
+            Row("Emissive Triangles", package.emissiveTriangles, package.emissiveTriangles,    bytesToReadable(package.emissiveTrianglesBytes) );
+            Row("Materials",          package.materials,         package.materials,            bytesToReadable(package.materialsBytes)         );
+            Row("Textures",           package.textures,          package.textures,             bytesToReadable(package.texturesBytes)          );
+            Row("Transforms",         package.transforms,        package.transforms,           bytesToReadable(package.transformsBytes)        );
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);

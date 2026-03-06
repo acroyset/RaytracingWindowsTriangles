@@ -8,6 +8,10 @@
 #include "../external/stb_image_write.h"
 
 
+#define BVH_MAX_DEPTH 16
+#define BVH_TESTS_PER_AXIS 5
+
+
 using Clock = std::chrono::high_resolution_clock;
 
 auto start = Clock::now();
@@ -16,6 +20,13 @@ void setBasisVectors(const vec3& forward, vec3& up, vec3& right) {
     constexpr vec3 world_up(0, 1, 0);
     right = normalize(cross(forward, world_up));
     up = normalize(cross(right, forward));
+}
+
+inline float nodeCost(const BVHnode &node) {
+    int numModels = node.getEndIdx()-node.getStartIdx();
+    const vec3 size = node.getMax()-node.getMin();
+    const float halfArea = size.x * (size.y + size.z) + size.y * size.z;
+    return halfArea * float(numModels);
 }
 
 Scene::Scene() {
@@ -125,7 +136,7 @@ void Scene::addModel(const Model& model, const std::string& texturePath) {
     int Voffset = int(vertices.size());
     int TXoffset = int(texCoords.size());
     int Noffset = int(normals.size());
-    int BBoffset = int(BVHnodes.size());
+    int BBoffset = int(BVHtriangleNodes.size());
     int Moffset = getNumMaterials();
 
     bool useTexture = !model.base.texCoords.empty() && !texturePath.empty();
@@ -169,7 +180,7 @@ void Scene::addModel(const Model& model, const std::string& texturePath) {
         }
 
         for (auto node : model.base.BVHnodes) {
-            BVHnodes.emplace_back(node);
+            BVHtriangleNodes.emplace_back(node);
         }
     }
 
@@ -244,8 +255,8 @@ void Scene::removeModel(int index) {
                       normals.begin() + offsets.normal + numNormals);
 
 
-        BVHnodes.erase(BVHnodes.begin() + offsets.BVHnodes,
-                       BVHnodes.begin() + offsets.BVHnodes + numBVHnodes);
+        BVHtriangleNodes.erase(BVHtriangleNodes.begin() + offsets.BVHnodes,
+                       BVHtriangleNodes.begin() + offsets.BVHnodes + numBVHnodes);
 
 
         for (int i = index+1; i < models.size(); ++i) {
@@ -266,6 +277,218 @@ void Scene::removeModel(int index) {
     newData = true;
     emissiveTrisStale = true;
 }
+
+
+void Scene::createTLAS() {
+
+    int numModels = int(models.size());
+
+    modelMin.reserve(numModels);
+    modelMax.reserve(numModels);
+    modelCenter.reserve(numModels);
+    for (int i = 0; i < numModels; ++i) {
+        std::cout << i << " " << models[i].name << " " << modelOffsets[i].BVHnodes << std::endl;
+        modelMin.emplace_back(BVHtriangleNodes[modelOffsets[i].BVHnodes].getMin());
+        modelMax.emplace_back(BVHtriangleNodes[modelOffsets[i].BVHnodes].getMax());
+        modelCenter.emplace_back((modelMin.back()+modelMax.back())/2.0f);
+    }
+
+    BVHnode root;
+
+    for (int i = 0; i < numModels; ++i) {
+        const vec3& tMin = modelMin[i];
+        const vec3& tMax = modelMax[i];
+
+        root.growToInclude(tMin, tMax);
+    }
+
+    root.setStartIdx(0);
+    root.setEndIdx(numModels-1);
+
+    BVHmodelNodes.emplace_back(root);
+
+    split(BVH_TESTS_PER_AXIS, 0, BVH_MAX_DEPTH-1);
+}
+
+float Scene::evaluateSplit(const int start, const int end, const int axis, const float pos) const {
+    BVHnode nodeA;
+    BVHnode nodeB;
+
+    int numA = 0;
+    int numB = 0;
+
+    for (int i = start; i < end; ++i) {
+        const vec3& tMin = modelMin[i];
+        const vec3& tMax = modelMax[i];
+
+        vec3 center = modelCenter[i];
+
+        if (center[axis] < pos) {
+            nodeA.growToInclude(tMin, tMax);
+            numA++;
+        } else {
+            nodeB.growToInclude(tMin, tMax);
+            numB++;
+        }
+    }
+
+    nodeA.setStartIdx(0);
+    nodeA.setEndIdx(numA);
+    nodeB.setStartIdx(0);
+    nodeB.setEndIdx(numB);
+
+    return nodeCost(nodeA) + nodeCost(nodeB);
+}
+
+Split Scene::chooseSplit(const int numTestsPerAxis, const BVHnode &node) {
+
+    int start = node.getStartIdx();
+    int end = node.getEndIdx();
+
+    auto best = Split();
+    std::mutex bestLock;
+
+    for (int axis = 0; axis < 3; ++axis) {
+
+        float centerMin = std::numeric_limits<float>::max();
+        float centerMax = -std::numeric_limits<float>::max();
+
+        for (int i = start; i < end; ++i) {
+            float c = modelCenter[i][axis];
+            centerMin = std::min(centerMin, c);
+            centerMax = std::max(centerMax, c);
+        }
+
+        for (int i = 0; i < numTestsPerAxis; ++i) {
+            float splitT = float(i+1) / float(numTestsPerAxis+1);
+            float pos = centerMin + (centerMax - centerMin) * splitT;
+
+            if (end-start > 200) {
+
+                pool.enqueue([this, &best, start, end, &bestLock](int a, float p) {
+                  float cost = evaluateSplit(start, end, a, p);
+
+                  std::lock_guard lock(bestLock);
+                  if (cost < best.cost) {
+                    best.cost = cost;
+                    best.pos  = p;
+                    best.axis = a;
+                  }
+                }, axis, pos);
+
+
+            } else {
+                float cost = evaluateSplit(start, end, axis, pos);
+
+                if (cost < best.cost) {
+                    best.pos = pos;
+                    best.cost = cost;
+                    best.axis = axis;
+                }
+            }
+        }
+    }
+
+    pool.wait_for_tasks();
+
+    return best;
+
+}
+
+void Scene::split(int numTestsPerAxis, int BVHindex, int depth) {
+
+    BVHnode& node = BVHmodelNodes[BVHindex];
+    int start = node.getStartIdx();
+    int end = node.getEndIdx();
+
+    if (depth <= 1) {
+        if (end-start > 10) {
+            std::cerr << "Hit depth limit with " << end-start << " models" << std::endl;
+        }
+        return;
+    }
+
+    BVHnode childA;
+    BVHnode childB;
+
+    int numA = 0, numB = 0;
+    int startA = start, startB = start;
+
+    Split bestSplit = chooseSplit(numTestsPerAxis, node);
+    if (bestSplit.cost >= nodeCost(node)) {return;}
+
+    if (bestSplit.axis == -1) {
+        vec3 min = node.getMin();
+        vec3 max = node.getMax();
+        vec3 size = max - min;
+
+        if (size.x > size.y && size.x > size.z) {
+            bestSplit.axis = 0;
+        } else if (size.y > size.z && size.y > size.x) {
+            bestSplit.axis = 1;
+        } else {
+            bestSplit.axis = 2;
+        }
+
+        bestSplit.pos = (min[bestSplit.axis]+max[bestSplit.axis])/2;
+
+        std::cerr << "Fallback to center split" << std::endl;
+    }
+    //std::cout << depth << ' ' << splitAxix << ' ' << splitPos << std::endl;
+
+    for (int i = start; i < end; i++) {
+        const vec3& tMin = modelMin[i];
+        const vec3& tMax = modelMax[i];
+
+        vec3 center = modelCenter[i];
+        bool modelInA = center[bestSplit.axis] < bestSplit.pos;
+        if (modelInA) {
+            childA.growToInclude(tMin, tMax);
+            numA++;
+            startB++;
+            int swap = startA + numA - 1;
+            std::swap(modelOffsets[i], modelOffsets[swap]);
+            std::swap(modelCenter[i], modelCenter[swap]);
+            std::swap(modelMin[i], modelMin[swap]);
+            std::swap(modelMax[i], modelMax[swap]);
+        } else {
+            childB.growToInclude(tMin, tMax);
+            numB++;
+        }
+    }
+
+    //std::cout << depth << std::endl;
+    //std::cout << "  " << numA << ' ' << numB << ' ' << splitAxis << ' ' << splitPos << std::endl;
+    //std::cout << "  " << minA.x << ' ' << minA.y << ' ' << minA.z << std::endl;
+    //std::cout << "  " << maxA.x << ' ' << maxA.y << ' ' << maxA.z << std::endl;
+    //std::cout << "  " << minB.x << ' ' << minB.y << ' ' << minB.z << std::endl;
+    //std::cout << "  " << maxB.x << ' ' << maxB.y << ' ' << maxB.z << std::endl;
+
+    if (numA > 0 and numB > 0) {
+        childA.setStartIdx(startA);
+        childA.setEndIdx(startA+numA);
+        childB.setStartIdx(startB);
+        childB.setEndIdx(startB+numB);
+
+        int indexA = int(BVHmodelNodes.size());
+        int indexB = indexA + 1;
+
+        node.setChildA(indexA);
+        node.setChildB(indexB);
+
+        BVHmodelNodes.emplace_back(childA);
+        BVHmodelNodes.emplace_back(childB);
+
+        split(numTestsPerAxis, indexA, depth-1);
+        split(numTestsPerAxis, indexB, depth-1);
+
+    } else if (numA > 10) {
+        std::cerr << "Big Leaf Node  " << numA << " tri" << std::endl;
+    } else if (numB > 10) {
+        std::cerr << "Big Leaf Node  " << numB << " tri" << std::endl;
+    }
+}
+
 
 int Scene::getNumTris() const {
     return int(triangles.size()/3);
@@ -371,12 +594,13 @@ void Scene::set_ssbo() {
     ssboTexCoords.set(texCoords, 2);
     ssboNormals.set(normals, 3);
     ssboMaterials.set(materials, 4);
-    ssboBVHnodes.set(BVHnodes, 5);
-    ssboModelOffsets.set(modelOffsets, 6);
-    ssboModelTransformations.set(modelTransforms, 7);
-    ssboModelInvTransformations.set(modelInvTransforms, 8);
-    ssboEmissiveTris.set(emissiveTris, 9);
-    ssboEmissiveModelTriangleNum.set(emissiveModelTriangleNum, 10);
+    ssboBVHtriangleNodes.set(BVHtriangleNodes, 5);
+    ssboBVHmodelNodes.set(BVHmodelNodes, 6);
+    ssboModelOffsets.set(modelOffsets, 7);
+    ssboModelTransformations.set(modelTransforms, 8);
+    ssboModelInvTransformations.set(modelInvTransforms, 9);
+    ssboEmissiveTris.set(emissiveTris, 10);
+    ssboEmissiveModelTriangleNum.set(emissiveModelTriangleNum, 11);
 
 }
 
@@ -501,6 +725,8 @@ void Scene::updateFrame() {
             pendingTextures.clear();
         }
 
+        createTLAS();
+
         resetAccumulation();
 
         set_ssbo();
@@ -553,19 +779,20 @@ void Scene::updateFrame() {
 void Scene::displayStats() const {
     DataPackage package = lastSentPackage;
 
-    std::cout << "Triangles: "        << lastSentPackage.triangles         << " (" << bytesToReadable(package.triangleBytes)          << ")" << std::endl;
-    std::cout << "Vertices: "         << lastSentPackage.vertices          << " (" << bytesToReadable(package.verticesBytes)          << ")" << std::endl;
-    std::cout << "Texture Coords: "   << lastSentPackage.texCoords         << " (" << bytesToReadable(package.texCoordsBytes)         << ")" << std::endl;
-    std::cout << "Normals: "          << lastSentPackage.normals           << " (" << bytesToReadable(package.normalsBytes)           << ")" << std::endl;
-    std::cout << "BVH Nodes: "        << lastSentPackage.BVHNodes          << " (" << bytesToReadable(package.BVHNodesBytes)          << ")" << std::endl;
-    std::cout                                                                                                                                << std::endl;
-    std::cout << "Models: "           << lastSentPackage.models            << " (" << bytesToReadable(package.modelsBytes)            << ")" << std::endl;
-    std::cout << "Emissive Models"    << lastSentPackage.emissiveModels    << " (" << bytesToReadable(package.emissiveModelsBytes)    << ")" << std::endl;
-    std::cout << "Emissive Triangles" << lastSentPackage.emissiveTriangles << " (" << bytesToReadable(package.emissiveTrianglesBytes) << ")" << std::endl;
-    std::cout << "Materials: "        << lastSentPackage.materials         << " (" << bytesToReadable(package.materialsBytes)         << ")" << std::endl;
-    std::cout << "Textures: "         << lastSentPackage.textures          << " (" << bytesToReadable(package.texturesBytes)          << ")" << std::endl;
-    std::cout << "Transformations: "  << lastSentPackage.transforms        << " (" << bytesToReadable(package.transformsBytes)        << ")" << std::endl;
-    std::cout << "Total Data Sent: "  << bytesToReadable(package.totalSize) << std::endl;
+    std::cout << "Triangles: "          << package.triangles         << " (" << bytesToReadable(package.triangleBytes)          << ")" << std::endl;
+    std::cout << "Vertices: "           << package.vertices          << " (" << bytesToReadable(package.verticesBytes)          << ")" << std::endl;
+    std::cout << "Texture Coords: "     << package.texCoords         << " (" << bytesToReadable(package.texCoordsBytes)         << ")" << std::endl;
+    std::cout << "Normals: "            << package.normals           << " (" << bytesToReadable(package.normalsBytes)           << ")" << std::endl;
+    std::cout << "BVH Triangle Nodes: " << package.BVHtriangleNodes  << " (" << bytesToReadable(package.BVHtriangleNodesBytes)  << ")" << std::endl;
+    std::cout << "BVH Model Nodes: "    << package.BVHmodelNodes     << " (" << bytesToReadable(package.BVHmodelNodesBytes)     << ")" << std::endl;
+    std::cout                                                                                                                                  << std::endl;
+    std::cout << "Models: "             << package.models            << " (" << bytesToReadable(package.modelsBytes)            << ")" << std::endl;
+    std::cout << "Emissive Models"      << package.emissiveModels    << " (" << bytesToReadable(package.emissiveModelsBytes)    << ")" << std::endl;
+    std::cout << "Emissive Triangles"   << package.emissiveTriangles << " (" << bytesToReadable(package.emissiveTrianglesBytes) << ")" << std::endl;
+    std::cout << "Materials: "          << package.materials         << " (" << bytesToReadable(package.materialsBytes)         << ")" << std::endl;
+    std::cout << "Textures: "           << package.textures          << " (" << bytesToReadable(package.texturesBytes)          << ")" << std::endl;
+    std::cout << "Transformations: "    << package.transforms        << " (" << bytesToReadable(package.transformsBytes)        << ")" << std::endl;
+    std::cout << "Total Data Sent: "    << bytesToReadable(package.totalSize) << std::endl;
     std::cout << std::endl;
 }
 
@@ -573,36 +800,38 @@ DataPackage Scene::dataSent() const {
     DataPackage result{};
 
     for (const Model& model : models) {
-        result.triangles  += int(model.base.triangles.size())/3;
-        result.vertices   += int(model.base.vertices.size());
-        result.texCoords  += int(model.base.texCoords.size());
-        result.normals    += int(model.base.normals.size());
-        result.BVHNodes   += int(model.base.BVHnodes.size());
-        result.models     ++;
-        result.materials  += int(model.materials.size());
-        result.transforms ++;
+        result.triangles        += int(model.base.triangles.size())/3;
+        result.vertices         += int(model.base.vertices.size());
+        result.texCoords        += int(model.base.texCoords.size());
+        result.normals          += int(model.base.normals.size());
+        result.BVHtriangleNodes += int(model.base.BVHnodes.size());
+        result.models           ++;
+        result.materials        += int(model.materials.size());
+        result.transforms       ++;
     }
+    result.BVHmodelNodes     = int(BVHmodelNodes.size());
     result.emissiveModels    = int(emissiveModelTriangleNum.size());
     result.emissiveTriangles = int(emissiveTris.size());
     result.textures          = int(textures.size());
 
-    result.trianglesSent = int(triangles.size())/3;
-    result.verticesSent  = int(vertices.size());
-    result.texCoordsSent = int(texCoords.size());
-    result.normalsSent   = int(normals.size());
-    result.BVHNodesSent  = int(BVHnodes.size());
+    result.trianglesSent        = int(triangles.size())/3;
+    result.verticesSent         = int(vertices.size());
+    result.texCoordsSent        = int(texCoords.size());
+    result.normalsSent          = int(normals.size());
+    result.BVHtriangleNodesSent = int(BVHtriangleNodes.size());
 
-    result.triangleBytes          = result.trianglesSent     * int(sizeof(ivec4)) * 3;
-    result.verticesBytes          = result.verticesSent      * int(sizeof(vec4));
-    result.texCoordsBytes         = result.texCoordsSent     * int(sizeof(vec2));
-    result.normalsBytes           = result.normalsSent       * int(sizeof(vec4));
-    result.BVHNodesBytes          = result.BVHNodesSent      * int(sizeof(BVHnode));
+    result.triangleBytes          = result.trianglesSent        * int(sizeof(ivec4)) * 3;
+    result.verticesBytes          = result.verticesSent         * int(sizeof(vec4));
+    result.texCoordsBytes         = result.texCoordsSent        * int(sizeof(vec2));
+    result.normalsBytes           = result.normalsSent          * int(sizeof(vec4));
+    result.BVHtriangleNodesBytes  = result.BVHtriangleNodesSent * int(sizeof(BVHnode));
+    result.BVHmodelNodesBytes     = result.BVHmodelNodes        * int(sizeof(BVHnode));
 
-    result.modelsBytes            = result.models            * int(sizeof(ModelOffset));
-    result.emissiveModelsBytes    = result.emissiveModels    * int(sizeof(ivec2));
-    result.emissiveTrianglesBytes = result.emissiveTriangles * int(sizeof(ivec2));
-    result.materialsBytes         = result.materials         * int(sizeof(Material));
-    result.transformsBytes        = result.transforms        * int(sizeof(Transformation));
+    result.modelsBytes            = result.models               * int(sizeof(ModelOffset));
+    result.emissiveModelsBytes    = result.emissiveModels       * int(sizeof(ivec2));
+    result.emissiveTrianglesBytes = result.emissiveTriangles    * int(sizeof(ivec2));
+    result.materialsBytes         = result.materials            * int(sizeof(Material));
+    result.transformsBytes        = result.transforms           * int(sizeof(Transformation));
 
     result.texturesBytes = 0;
     for (const Texture& t : textures) {
@@ -614,7 +843,8 @@ DataPackage Scene::dataSent() const {
         result.verticesBytes +
         result.texCoordsBytes +
         result.normalsBytes +
-        result.BVHNodesBytes +
+        result.BVHtriangleNodesBytes +
+        result.BVHmodelNodesBytes +
         result.modelsBytes +
         result.emissiveModelsBytes +
         result.emissiveTrianglesBytes +
@@ -691,7 +921,7 @@ void Scene::loadJSON(const std::string& filename) {
     vertices.clear();
     texCoords.clear();
     normals.clear();
-    BVHnodes.clear();
+    BVHtriangleNodes.clear();
     models.clear();
     modelOffsets.clear();
 

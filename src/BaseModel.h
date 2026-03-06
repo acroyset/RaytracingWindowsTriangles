@@ -115,9 +115,9 @@ public:
 
 class BVHnode {
     float minX, minY, minZ;// xyz: bbox min
-    int childA_TriStart; // childA, -TriStart
+    int childA_StartIdx; // childA, -StartIdx
     float maxX, maxY, maxZ;// xyz: bbox max
-    int childB_NumTri; // childB, -NumTri
+    int childB_EndIdx; // childB, -EndIdx
 
 public:
 
@@ -128,12 +128,12 @@ public:
         maxX = -std::numeric_limits<float>::infinity();
         maxY = -std::numeric_limits<float>::infinity();
         maxZ = -std::numeric_limits<float>::infinity();
-        childA_TriStart = 0;
-        childB_NumTri = 0;
+        childA_StartIdx = 0;
+        childB_EndIdx = 0;
     }
 
     [[nodiscard]] bool leaf() const {
-        return childA_TriStart <= 0;
+        return childA_StartIdx <= 0;
     }
 
     [[nodiscard]] vec3 getMin() const {
@@ -143,31 +143,31 @@ public:
         return {maxX, maxY, maxZ};
     }
     [[nodiscard]] int getChildA() const {
-        if (childA_TriStart <= 0) std::cerr << "Tried to access child A of leaf node" << std::endl;
-        return childA_TriStart;
+        if (childA_StartIdx <= 0) std::cerr << "Tried to access child A of leaf node" << std::endl;
+        return childA_StartIdx;
     }
     [[nodiscard]] int getChildB() const {
-        if (childB_NumTri <= 0) std::cerr << "Tried to access child B of leaf node" << std::endl;
-        return childB_NumTri;
+        if (childB_EndIdx <= 0) std::cerr << "Tried to access child B of leaf node" << std::endl;
+        return childB_EndIdx;
     }
-    [[nodiscard]] int getTriStart() const {
-        if (childA_TriStart > 0) std::cerr << "Tried to access triStart of non leaf node" << std::endl;
-        return -childA_TriStart;
+    [[nodiscard]] int getStartIdx() const {
+        if (childA_StartIdx > 0) std::cerr << "Tried to access startIdx of non leaf node" << std::endl;
+        return -childA_StartIdx;
     }
-    [[nodiscard]] int getNumTri() const {
-        if (childB_NumTri > 0) std::cerr << "Tried to access numTri of non leaf node" << std::endl;
-        return -childB_NumTri;
+    [[nodiscard]] int getEndIdx() const {
+        if (childB_EndIdx > 0) std::cerr << "Tried to access endIdx of non leaf node" << std::endl;
+        return -childB_EndIdx;
     }
 
     [[nodiscard]] vec3 getCenter() const {
         return 0.5f*(getMin() + getMax());
     }
 
-    void setChildA(const int a) { childA_TriStart = a; }
-    void setChildB(const int b) { childB_NumTri = b; }
+    void setChildA(const int a) { childA_StartIdx = a; }
+    void setChildB(const int b) { childB_EndIdx = b; }
 
-    void setTriStart(const int triStart) { childA_TriStart = -triStart; }
-    void setNumTri(const int numTri) { childB_NumTri = -numTri; }
+    void setStartIdx(const int triStart) { childA_StartIdx = -triStart; }
+    void setEndIdx(const int numTri) { childB_EndIdx = -numTri; }
 
     void setMin(const vec3& min) {
         minX = min.x;

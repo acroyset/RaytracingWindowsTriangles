@@ -6,10 +6,10 @@ layout (location = 2) out vec4 outNormal;   // first-hit world normal AOV
 
 in vec2 fragCoord; // [0,1]
 
-const int MAX_MODELS = 64;
-const int MAX_TEXTURES = 64;
+const int MAX_MODELS = 32;
+const int MAX_TEXTURES = 32;
 const int MAX_STACK_SIZE = 48;
-const int MAX_REFRACTIONS = 16;
+const int MAX_REFRACTIONS = 4;
 const float PI = 3.14159265359;
 const float EPS = 1e-12;
 const float INF = 1.0/0.0;
@@ -20,7 +20,7 @@ layout(std430, binding = 1)  buffer ssboVertices { vec4 vertices[]; };
 layout(std430, binding = 2)  buffer ssboTexCoords { vec2 texCoords[]; };
 layout(std430, binding = 3)  buffer ssboNormals { vec4 normals[]; };
 layout(std430, binding = 4)  buffer ssboMaterials { Material materials[]; };
-layout(std430, binding = 5)  buffer ssboBoundingBoxMin { BVHnode BVHnodes[]; };
+layout(std430, binding = 5)  buffer ssboBVHnodes { BVHnode BVHnodes[]; };
 layout(std430, binding = 6)  buffer ssboModelOffsets { ModelOffset modelOffsets[]; };
 layout(std430, binding = 7)  buffer ssboModelTransformations { mat4 modelTransformations[]; };
 layout(std430, binding = 8)  buffer ssboModelInvTransformations { mat4 modelInvTransformations[]; };
@@ -435,12 +435,10 @@ Ray worldToLocalRay(Ray ray, mat4 invM){
 }
 
 // Traverse one model’s BVH entirely in LOCAL space. Returns the best LOACAL distance.
-Hit traverseBVH(int modelIndex, Ray ray, mat4 M, mat4 invM, float bestTW, inout int triTest, inout int aabbTest){
+Hit traverseBVH(int modelIndex, Ray ray, Ray rayLocal, mat4 M, mat4 invM, float bestTW, inout int triTest, inout int aabbTest){
 
     Hit hit;
     hit.hit = false;
-
-    Ray rayLocal = worldToLocalRay(ray, invM);
 
     hit.t = INF;
     if (bestTW < INF) {
@@ -458,9 +456,9 @@ Hit traverseBVH(int modelIndex, Ray ray, mat4 M, mat4 invM, float bestTW, inout 
         BVHnode node = BVHnodes[stack[--sp]];
 
         if (leaf(node)){
-            int start = triStart(node);
-            int num = numTri(node);
-            for (int j = start; j < start+num; ++j){
+            int start = startIdx(node);
+            int end = endIdx(node);
+            for (int j = start; j < end; ++j){
                 triTest++;
                 ivec4 tri1, tri2, tri3;
                 getTriangle(j, modelIndex, tri1, tri2, tri3);
@@ -511,56 +509,18 @@ Hit findBestTri(Ray ray, out int triTest, out int aabbTest){
     hit.hit = false;
     hit.t = INF;
 
-    // Build sorted list of models by distance
-    ModelDistance modelDists[MAX_MODELS];
-
-    for (int i = 0; i < numModels; i++){
-        mat4 M    = modelTransformations[i];
-        mat4 invM = modelInvTransformations[i];
-
-        Ray rayLocal = worldToLocalRay(ray, invM);
-
-        // Get root AABB bounds in local space
-        BVHnode root = BVHnodes[modelOffsets[i].BVHnodes];
-
-        aabbTest++;
-        float tLocal = intersectAABB(rayLocal, getMin(root), getMax(root));
-
-        if (tLocal >= INF){
-            modelDists[i].index = i;
-            modelDists[i].dist2 = INF;
-            continue;
-        }
-
-        vec3 hitLocal = rayLocal.dir*tLocal + rayLocal.pos;
-        vec3 hitWorld = (M * vec4(hitLocal, 1)).xyz;
-
-        vec3 diff = hitWorld-ray.pos;
-
-        modelDists[i].index = i;
-        modelDists[i].dist2 = dot(diff, diff);
-    }
-
-    // Simple insertion sort (good for small numModels)
-    for (int i = 1; i < numModels; i++){
-        ModelDistance key = modelDists[i];
-        int j = i - 1;
-        while (j >= 0 && modelDists[j].dist2 > key.dist2){
-            modelDists[j + 1] = modelDists[j];
-            j--;
-        }
-        modelDists[j + 1] = key;
-    }
-
-    // Traverse models in sorted order
-    for (int i = 0; i < numModels; i++){
-        if (modelDists[i].dist2 >= INF) continue;
-        int modelIdx = modelDists[i].index;
-
+    for (int modelIdx = 0; modelIdx < numModels; modelIdx++){
         mat4 M    = modelTransformations[modelIdx];
         mat4 invM = modelInvTransformations[modelIdx];
 
-        Hit h = traverseBVH(modelIdx, ray, M, invM, hit.t, triTest, aabbTest);
+        BVHnode root = BVHnodes[modelOffsets[modelIdx].BVHnodes];
+
+        Ray rayLocal = worldToLocalRay(ray, invM);
+
+        aabbTest++;
+        if (intersectAABB(rayLocal, getMin(root), getMax(root)) >= INF) continue;
+
+        Hit h = traverseBVH(modelIdx, ray, rayLocal, M, invM, hit.t, triTest, aabbTest);
 
         if (h.hit && h.t < hit.t){
             hit = h;
@@ -596,9 +556,9 @@ bool shadowRayBlocked(Ray ray, float maxDist, int excludeTriID) {
             BVHnode node = BVHnodes[stack[--sp]];
 
             if (leaf(node)) {
-                int start = triStart(node);
-                int num   = numTri(node);
-                for (int j = start; j < start + num; j++) {
+                int start = startIdx(node);
+                int end = endIdx(node);
+                for (int j = start; j < end; j++) {
                     if (j == excludeTriID) continue;
 
                     ivec4 t1, t2, t3;
@@ -696,13 +656,13 @@ vec3 sampleDirectLight(vec3 hitPos, vec3 normal, vec3 diffuseColor, inout uint s
     float pdf = 1.0 / (float(numEmissiveModels) * float(count) * area);
 
     // Contribution
-    vec3 Le = tri.material.diffuseColor.rgb * tri.material.emissionStrength;
+    vec3 Le = diffuseColor * tri.material.emissionStrength;
     vec3 BRDF = diffuseColor / PI;
     float G = cosA * cosB / dist2;
 
     return vis * Le * BRDF * G / pdf;
 }
-vec3 sampleSun(vec3 hitPos, vec3 normal, Material material, inout uint state) {
+vec3 sampleSun(vec3 hitPos, vec3 normal, vec3 diffuseColor, inout uint state) {
     if (!skyActive) return vec3(0);
 
     // Build a random direction inside the sun's cone
@@ -733,7 +693,7 @@ vec3 sampleSun(vec3 hitPos, vec3 normal, Material material, inout uint state) {
     float pdf = 1.0 / solidAngle;
 
     // sunColor is already multiplied by sunStrength in setUniformsRTX
-    vec3 BRDF = material.diffuseColor.rgb / PI;
+    vec3 BRDF = diffuseColor / PI;
     return vis * sunColor * BRDF * cosA / pdf;
 }
 
@@ -808,7 +768,7 @@ vec3 trace(Ray ray, inout uint state){
                 if (!isSpecular && !isTransparent){
                     color += throughput * sampleDirectLight(ray.pos, normalWorld, diffuseColor, state);
 
-                    color += throughput * sampleSun(ray.pos, normalWorld, material, state);
+                    color += throughput * sampleSun(ray.pos, normalWorld, diffuseColor, state);
                 }
 
                 prevSpecular = isSpecular || isTransparent;
@@ -839,14 +799,14 @@ vec3 trace(Ray ray, inout uint state){
                 }
 
                 bool isSpecular = randomValue(state) <= floorMaterial.specularProbability;
+                vec3 diffuseColor = (isSpecular) ? floorMaterial.specularColor.rgb : floorMaterial.diffuseColor.rgb;
 
                 if (!isSpecular) {
                     color += throughput * sampleDirectLight(ray.pos, n, floorMaterial.diffuseColor.rgb, state);
-                    color += throughput * sampleSun(ray.pos, n, floorMaterial, state);
+                    color += throughput * sampleSun(ray.pos, n, diffuseColor, state);
                 }
 
                 prevSpecular = isSpecular;
-                vec3 diffuseColor = (isSpecular) ? floorMaterial.specularColor.rgb : floorMaterial.diffuseColor.rgb;
 
                 if (bounce == 0) {
                     vec3 albedo   = diffuseColor;
@@ -872,7 +832,7 @@ vec3 trace(Ray ray, inout uint state){
             break;
         }
 
-        if (russianRoulet(throughput, state) && bounce >= 1) {
+        if (russianRoulet(throughput, state) && bounce >= 3) {
             russianRouletBreak = true;
             break;
         }
@@ -905,7 +865,7 @@ void main(){
     vec3 total = vec3(0.0);
     int aaCycle = frameCount % (aa*aa);
 
-    float maxBrighness = 1000;
+    float maxBrighness = 50;
 
     for (int s=0; s<samples; ++s) {
         Ray ray = calculateInitialRay(aaCycle, screen, state);

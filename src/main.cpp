@@ -7,7 +7,7 @@ int main() {
 
     Timer t;
 
-    scene.startLoadJob("scenes/scene5.json");
+    scene.startLoadJob("scenes/scene1.json");
 
     std::cout << std::endl;
     std::cout << "Total build time: " << t.reset() << std::endl;

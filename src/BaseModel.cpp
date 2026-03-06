@@ -109,7 +109,7 @@ Transformation center(std::vector<vec3>& points) {
 }
 
 inline float nodeCost(const BVHnode &node) {
-    int numTris = node.getNumTri();
+    int numTris = node.getEndIdx()-node.getStartIdx();
     const vec3 size = node.getMax()-node.getMin();
     const float halfArea = size.x * (size.y + size.z) + size.y * size.z;
     return halfArea * float(numTris);
@@ -488,8 +488,8 @@ void BaseModel::createBVH(const int depth, const int numTestsPerAxis, int triSta
         root.growToInclude(tMin, tMax);
     }
 
-    root.setTriStart(triStart);
-    root.setNumTri(numTris);
+    root.setStartIdx(triStart);
+    root.setEndIdx(triStart + numTris);
 
     BVHnodes.emplace_back(root);
 
@@ -540,16 +540,18 @@ float BaseModel::evaluateSplit(const int triStart, const int numTri, const int a
         }
     }
 
-    nodeA.setNumTri(numA);
-    nodeB.setNumTri(numB);
+    nodeA.setStartIdx(0);
+    nodeA.setEndIdx(numA);
+    nodeB.setStartIdx(0);
+    nodeB.setEndIdx(numB);
 
     return nodeCost(nodeA) + nodeCost(nodeB);
 }
 
 Split BaseModel::chooseSplit(const int numTestsPerAxis, const BVHnode &node) {
 
-    int triStart = node.getTriStart();
-    int numTri = node.getNumTri();
+    int triStart = node.getStartIdx();
+    int numTri = node.getEndIdx() - triStart;
 
     auto best = Split();
     std::mutex bestLock;
@@ -604,8 +606,8 @@ Split BaseModel::chooseSplit(const int numTestsPerAxis, const BVHnode &node) {
 void BaseModel::split(int numTestsPerAxis, int BVHindex, int depth) {
 
     BVHnode& node = BVHnodes[BVHindex];
-    int triStart = node.getTriStart();
-    int numTris = node.getNumTri();
+    int triStart = node.getStartIdx();
+    int numTris = node.getEndIdx() - triStart;
 
     if (depth <= 1) {
         if (numTris > 10) {
@@ -675,10 +677,10 @@ void BaseModel::split(int numTestsPerAxis, int BVHindex, int depth) {
     //std::cout << "  " << maxB.x << ' ' << maxB.y << ' ' << maxB.z << std::endl;
 
     if (numA > 0 and numB > 0) {
-        childA.setTriStart(startA);
-        childA.setNumTri(numA);
-        childB.setTriStart(startB);
-        childB.setNumTri(numB);
+        childA.setStartIdx(startA);
+        childA.setEndIdx(startA + numA);
+        childB.setStartIdx(startB);
+        childB.setEndIdx(startB + numB);
 
         int indexA = int(BVHnodes.size());
         int indexB = indexA + 1;

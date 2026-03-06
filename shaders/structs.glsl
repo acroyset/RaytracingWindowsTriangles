@@ -93,9 +93,9 @@ struct ModelDistance {
 
 struct BVHnode {
     float minX, minY, minZ;// xyz: bbox min
-    int childA_TriStart; // childA, -TriStart
+    int childA_StartIdx; // childA, -StartIdx
     float maxX, maxY, maxZ;// xyz: bbox max
-    int childB_NumTri; // childB, -NumTri
+    int childB_EndIdx; // childB, -EndIdx
 };
 
 vec3 getMin(BVHnode node){
@@ -105,22 +105,22 @@ vec3 getMax(BVHnode node){
     return vec3(node.maxX, node.maxY, node.maxZ);
 }
 int childA(BVHnode node){
-    int w = node.childA_TriStart;
+    int w = node.childA_StartIdx;
     if (w <= 0) return -1;
     return w;
 }
 int childB(BVHnode node){
-    int w = node.childB_NumTri;
+    int w = node.childB_EndIdx;
     if (w <= 0) return -1;
     return w;
 }
-int triStart(BVHnode node){
-    int w = node.childA_TriStart;
+int startIdx(BVHnode node){
+    int w = node.childA_StartIdx;
     if (w > 0) return -1;
     return -w;
 }
-int numTri(BVHnode node){
-    int w = node.childB_NumTri;
+int endIdx(BVHnode node){
+    int w = node.childB_EndIdx;
     if (w > 0) return -1;
     return -w;
 }
