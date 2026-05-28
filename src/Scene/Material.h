@@ -5,7 +5,7 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 #include <glm/vec3.hpp>
-#include "Rendering/Uniform.h"
+#include "../Rendering/Uniform.h"
 
 using namespace glm;
 

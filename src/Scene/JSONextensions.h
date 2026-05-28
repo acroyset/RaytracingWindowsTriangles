@@ -10,7 +10,7 @@
 
 #include "Material.h"
 #include "Transformation.h"
-#include "../external/json.hpp"
+#include "../../external/json.hpp"
 
 using json = nlohmann::json;
 

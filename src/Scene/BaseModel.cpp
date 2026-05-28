@@ -2,14 +2,14 @@
 // Created by acroy on 7/26/2025.
 //
 
-#include "BaseModel.h"
+#include "../BaseModel.h"
 #include <fstream>
 #include <iostream>
 #include <cstring>
 #include <sstream>
 
 #include "Transformation.h"
-#include "Rendering/Timer.h"
+#include "../Rendering/Timer.h"
 
 #define BVH_MAX_DEPTH 48
 #define BVH_TESTS_PER_AXIS 5

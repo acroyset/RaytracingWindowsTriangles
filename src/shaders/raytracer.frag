@@ -195,18 +195,24 @@ Ray calculateInitialRay(int aaCycle, vec2 screenCoord, inout uint state){
 
     vec2 coord = screenCoord + jitter;
 
-    float fovRadX = radians(camera.fovDeg);
-    coord *= tan(0.5*fovRadX);
+    float tanHalfFov = tan(0.5 * radians(camera.fovDeg));
+    vec2 viewParams = vec2(tanHalfFov) * camera.focusDistance;
 
-    vec3 lensPoint = vec3(randPointDisk(state)*camera.aperture*camera.focusDistance, 0);
-    vec3 focusPoint = camera.focusDistance*vec3(coord, 1);
+    // Focus point in world space (like the Unity code)
+    vec3 focusPointLocal = vec3(coord * viewParams, camera.focusDistance);
+    vec3 focusPoint = camera.pos
+        + focusPointLocal.x * camera.right
+        + focusPointLocal.y * camera.up
+        + focusPointLocal.z * camera.forward;
 
-    vec3 dir = normalize(focusPoint-lensPoint);
+    // Lens jitter in world space
+    vec2 diskSample = randPointDisk(state) * camera.aperture;
+    vec3 lensOffset = diskSample.x * camera.right + diskSample.y * camera.up;
 
     Ray ray;
-    ray.pos = camera.pos+lensPoint;
-    ray.dir = dir.x * camera.right + dir.y * camera.up + dir.z * camera.forward;
-    ray.invDir = 1/ray.dir;
+    ray.pos    = camera.pos + lensOffset;
+    ray.dir    = normalize(focusPoint - ray.pos);
+    ray.invDir = 1.0 / ray.dir;
 
     return ray;
 }

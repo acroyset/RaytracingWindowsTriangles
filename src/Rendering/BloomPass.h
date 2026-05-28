@@ -5,7 +5,7 @@
 #ifndef BLOOMPASS_H
 #define BLOOMPASS_H
 
-#include "Rendering/ShaderPass.h"
+#include "ShaderPass.h"
 #include <string>
 #include <glad/glad.h>
 

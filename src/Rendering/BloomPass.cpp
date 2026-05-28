@@ -8,7 +8,7 @@
 
 GLuint BloomPass::buildProgram(const std::string& fragPath) const {
     std::string ver  = "#version " + glslVersion + "\n";
-    std::string vert = ver + readFile("shaders/fullscreen.vert");
+    std::string vert = ver + readFile("src/shaders/fullscreen.vert");
     std::string frag = ver + readFile(fragPath.c_str());
 
     GLuint vs = compileShader(GL_VERTEX_SHADER,   vert);
@@ -59,11 +59,11 @@ void BloomPass::buildAllPrograms() {
     if (upProg)        glDeleteProgram(upProg);
     if (compositeProg) glDeleteProgram(compositeProg);
 
-    threshProg    = buildProgram("shaders/bloom_threshold.frag");
-    downHProg     = buildProgram("shaders/bloom_downsample_h.frag");
-    downVProg     = buildProgram("shaders/bloom_downsample_v.frag");
-    upProg        = buildProgram("shaders/bloom_upsample.frag");
-    compositeProg = buildProgram("shaders/bloom_composite.frag");
+    threshProg    = buildProgram("src/shaders/bloom_threshold.frag");
+    downHProg     = buildProgram("src/shaders/bloom_downsample_h.frag");
+    downVProg     = buildProgram("src/shaders/bloom_downsample_v.frag");
+    upProg        = buildProgram("src/shaders/bloom_upsample.frag");
+    compositeProg = buildProgram("src/shaders/bloom_composite.frag");
 
     cacheUniforms();
 }

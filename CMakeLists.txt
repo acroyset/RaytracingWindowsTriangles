@@ -15,13 +15,13 @@ include_directories(glm)
 # --- Executable (CREATE THE TARGET FIRST) ---
 add_executable(RaytracingWindowsTriangles
         src/main.cpp
-        src/Scene.cpp
-        src/BaseModel.cpp
+        src/Core/Scene.cpp
+        src/Scene/BaseModel.cpp
         src/Rendering/ShaderWindow.cpp
         src/Rendering/Texture.cpp
-        src/SceneUI.cpp
+        src/Core/SceneUI.cpp
         src/Rendering/Shader.cpp
-        src/BloomPass.cpp
+        src/Rendering/BloomPass.cpp
 )
 target_include_directories(RaytracingWindowsTriangles PRIVATE
         external/glad/include

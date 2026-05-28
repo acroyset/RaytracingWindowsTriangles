@@ -5,7 +5,7 @@
 #ifndef UNIFORMBLOCKS_H
 #define UNIFORMBLOCKS_H
 
-#include "Rendering/Uniform.h"
+#include "../Rendering/Uniform.h"
 
 struct Camera {
     vec3  pos;

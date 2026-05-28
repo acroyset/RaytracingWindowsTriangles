@@ -10,30 +10,30 @@
 #include <future>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include "Rendering/ShaderWindow.h"
-#include "Rendering/Uniform.h"
+#include "../Rendering/ShaderWindow.h"
+#include "../Rendering/Uniform.h"
 #include <glm/gtc/type_ptr.hpp>
-#include "Transformation.h"
-#include "Material.h"
+#include "../Scene/Transformation.h"
+#include "../Scene/Material.h"
 #include <glm/glm.hpp>
 #include <string>
-#include "BaseModel.h"
+#include "../Scene/BaseModel.h"
 #include <iomanip>
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include "Rendering/SSBO.h"
+#include "../Rendering/SSBO.h"
 #include <map>
-#include "Model.h"
-#include "JSONextensions.h"
+#include "../Scene/Model.h"
+#include "../Scene/JSONextensions.h"
 #include "SceneUI.h"
 #include <OpenImageDenoise/oidn.hpp>
 
-#include "BloomPass.h"
-#include "Camera.h"
-#include "Rendering/Shader.h"
-#include "Camera.h"
-#include "DebugView.h"
+#include "../Rendering/BloomPass.h"
+#include "../Scene/Camera.h"
+#include "../Rendering/Shader.h"
+#include "../Scene/Camera.h"
+#include "../Scene/DebugView.h"
 
 #define GLAD_GL_IMPLEMENTATION
 
@@ -112,9 +112,9 @@ class Scene {
     friend SceneUI;
 
     ShaderWindow window{"Raytracer"};
-    Shader raytracer{"shaders/fullscreen.vert", "shaders/raytracer.frag", window.getGLSLVersion(), {"shaders/structs.glsl"}};
+    Shader raytracer{"src/shaders/fullscreen.vert", "src/shaders/raytracer.frag", window.getGLSLVersion(), {"shaders/structs.glsl"}};
     BloomPass bloom;
-    Shader postProcessing{"shaders/fullscreen.vert", "shaders/postProcessing.frag", window.getGLSLVersion()};
+    Shader postProcessing{"src/shaders/fullscreen.vert", "src/shaders/postProcessing.frag", window.getGLSLVersion()};
 
     SceneUI ui{};
     bool isOpen = true;

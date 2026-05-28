@@ -5,7 +5,7 @@
 #ifndef DEBUGVIEW_H
 #define DEBUGVIEW_H
 
-#include "Rendering/Uniform.h"
+#include "../Rendering/Uniform.h"
 
 enum DebugMode {
     Normals,

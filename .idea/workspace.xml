@@ -21,7 +21,12 @@
   </component>
   <component name="CMakeRunConfigurationManager">
     <generated>
-      <config projectName="Project" targetName="imgui_glfw_opengl3" />
+      <config projectName="RaytracingWindowsTriangles" targetName="imgui_glfw_opengl3" />
+      <config projectName="RaytracingWindowsTriangles" targetName="uninstall" />
+      <config projectName="RaytracingWindowsTriangles" targetName="glfw" />
+      <config projectName="RaytracingWindowsTriangles" targetName="glad" />
+      <config projectName="RaytracingWindowsTriangles" targetName="update_mappings" />
+      <config projectName="RaytracingWindowsTriangles" targetName="RaytracingWindowsTriangles" />
     </generated>
   </component>
   <component name="CMakeSettings">
@@ -32,11 +37,31 @@
   <component name="ChangeListManager">
     <list default="true" id="cd06d447-a7c8-42f4-a8e5-4bf88ac1888b" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/imgui.ini" beforeDir="false" afterPath="$PROJECT_DIR$/imgui.ini" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/shaders/raytracer.frag" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/raytracer.frag" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/SceneUI.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/SceneUI.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shaders/bloom_composite.frag" beforeDir="false" afterPath="$PROJECT_DIR$/src/shaders/bloom_composite.frag" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shaders/bloom_downsample_h.frag" beforeDir="false" afterPath="$PROJECT_DIR$/src/shaders/bloom_downsample_h.frag" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shaders/bloom_downsample_v.frag" beforeDir="false" afterPath="$PROJECT_DIR$/src/shaders/bloom_downsample_v.frag" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shaders/bloom_threshold.frag" beforeDir="false" afterPath="$PROJECT_DIR$/src/shaders/bloom_threshold.frag" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shaders/bloom_upsample.frag" beforeDir="false" afterPath="$PROJECT_DIR$/src/shaders/bloom_upsample.frag" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shaders/fullscreen.vert" beforeDir="false" afterPath="$PROJECT_DIR$/src/shaders/fullscreen.vert" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shaders/postProcessing.frag" beforeDir="false" afterPath="$PROJECT_DIR$/src/shaders/postProcessing.frag" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shaders/raytracer.frag" beforeDir="false" afterPath="$PROJECT_DIR$/src/shaders/raytracer.frag" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shaders/structs.glsl" beforeDir="false" afterPath="$PROJECT_DIR$/src/shaders/structs.glsl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/BaseModel.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/BaseModel.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/BaseModel.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/BaseModel.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/BloomPass.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/BloomPass.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/BloomPass.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/BloomPass.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Camera.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/Camera.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/DebugView.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/DebugView.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/FileBrowser.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Core/FileBrowser.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/JSONextensions.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/JSONextensions.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Material.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/Material.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Model.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/Model.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Core/Scene.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Core/Scene.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/SceneUI.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Core/SceneUI.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/SceneUI.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Core/SceneUI.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Transformation.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/Transformation.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -65,14 +90,14 @@
   }
 }</component>
   <component name="HighlightingSettingsPerFile">
-    <setting file="file://$PROJECT_DIR$/src/BaseModel.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/src/BaseModel.h" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/src/Material.h" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/src/Rendering/Shader.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/src/Scene.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/src/Scene.h" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/src/SceneUI.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/src/SceneUI.h" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/Core/Scene.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/Core/Scene.h" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/Core/SceneUI.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/Core/SceneUI.h" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/Rendering/Shader.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/Scene/BaseModel.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/Scene/BaseModel.h" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/Scene/Material.h" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/main.cpp" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="ProjectApplicationVersion">
@@ -125,11 +150,11 @@
       <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTrianglesFrag" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\acroy\Desktop\C++Projects\Graphics\RaytracingWindowsTriangles\src\Core" />
+      <recent name="C:\Users\acroy\Desktop\C++Projects\Graphics\RaytracingWindowsTriangles\src\Scene" />
+      <recent name="C:\Users\acroy\Desktop\C++Projects\Graphics\RaytracingWindowsTriangles\src" />
+      <recent name="C:\Users\acroy\Desktop\C++Projects\Graphics\RaytracingWindowsTriangles\src\Rendering" />
       <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\assets\models\Cyberpunk" />
-      <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\assets\models" />
-      <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\renders" />
-      <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\external" />
-      <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\scenes" />
     </key>
   </component>
   <component name="RunManager" selected="CMake Application.RaytracingWindowsTriangles">
@@ -286,7 +311,7 @@
       <workItem from="1776657001132" duration="3394000" />
       <workItem from="1778022210793" duration="8000" />
       <workItem from="1778022965245" duration="8000" />
-      <workItem from="1779948056786" duration="136000" />
+      <workItem from="1779948056786" duration="4336000" />
     </task>
     <servers />
   </component>

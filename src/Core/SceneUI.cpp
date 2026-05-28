@@ -3,7 +3,7 @@
 //
 
 #include "Scene.h"
-#include "SceneUI.h"
+#include "../SceneUI.h"
 
 inline bool DragFloat3(const char* label, vec3& v, float speed = 0.01f, float min = 0.0f, float max = 0.0f) {
     return ImGui::DragFloat3(label, value_ptr(v), speed, min, max);
@@ -237,7 +237,7 @@ void SceneUI::render(Scene& scene) {
 
             if (dof) {
                 ImGui::Indent();
-                ui_resetAccum |= ImGui::SliderFloat("Aperture", &scene.camera.aperture, 0.001f, 0.5f);
+                ui_resetAccum |= ImGui::SliderFloat("Aperture", &scene.camera.aperture, 0.001f, 10.0f);
                 ui_resetAccum |= ImGui::SliderFloat("Focus Distance", &scene.camera.focusDistance, 0.0f, 1000.0f);
                 ui_resetAccum |= ImGui::Checkbox("Focus Distance Plane", &scene.camera.focusDistancePlane);
                 ImGui::Unindent();
