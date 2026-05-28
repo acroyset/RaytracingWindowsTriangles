@@ -200,6 +200,7 @@ class Scene {
     SSBO<mat4> ssboModelInvTransformations;
     SSBO<ivec2> ssboEmissiveTris;
     SSBO<ivec2> ssboEmissiveModelTriangleNum;
+    SSBO<int> ssboModelIndices;
 
     DataPackage lastSentPackage{};
 

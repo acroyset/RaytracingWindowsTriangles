@@ -1,0 +1,1314 @@
+{
+    "Camera": {
+        "aperture": 0.0,
+        "focusDistance": 195.531005859375,
+        "forward": [
+            0.977353036403656,
+            0.1008545532822609,
+            -0.18603652715682983
+        ],
+        "fovDeg": 51.268001556396484,
+        "position": [
+            -214.80545043945313,
+            13.54551887512207,
+            94.54552459716797
+        ],
+        "sensitivity": 0.029999999329447746,
+        "speed": 52.64099884033203
+    },
+    "Floor": {
+        "active": false,
+        "material": {
+            "absorption": 0.0,
+            "diffuseColor": [
+                0.949999988079071,
+                0.949999988079071,
+                0.949999988079071
+            ],
+            "diffuseRoughness": 1.0,
+            "emissionStrength": 0.0,
+            "indexOfRefraction": 1.0,
+            "specularColor": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "specularProbability": 0.0,
+            "specularRoughness": 0.0,
+            "transparency": 0.0,
+            "type": "Specular"
+        }
+    },
+    "Models": [
+        {
+            "Filename": "assets\\models\\cube.obj",
+            "Materials": [
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "diffuseRoughness": 0.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.2999999523162842,
+                    "specularColor": [
+                        0.9558823704719543,
+                        0.9558823704719543,
+                        0.9558823704719543
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 1.0,
+                    "type": "Transparent"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    -153.0,
+                    2.0,
+                    114.0
+                ],
+                "rotation": [
+                    0.0,
+                    -0.3804817497730255,
+                    0.0
+                ],
+                "scale": [
+                    2.0,
+                    2.0,
+                    2.0
+                ]
+            }
+        },
+        {
+            "Filename": "assets\\models\\dragon800K.obj",
+            "Materials": [
+                {
+                    "absorption": 0.20000000298023224,
+                    "diffuseColor": [
+                        0.8480392098426819,
+                        0.0,
+                        0.0
+                    ],
+                    "diffuseRoughness": 0.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.2999999523162842,
+                    "specularColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 1.0,
+                    "type": "Transparent"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    0.0,
+                    70.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    -2.844886541366577,
+                    0.0
+                ],
+                "scale": [
+                    100.0,
+                    100.0,
+                    100.0
+                ]
+            }
+        },
+        {
+            "Filename": "assets\\models\\dragon800K.obj",
+            "Materials": [
+                {
+                    "absorption": 0.20000000298023224,
+                    "diffuseColor": [
+                        1.0,
+                        0.7941176891326904,
+                        0.0
+                    ],
+                    "diffuseRoughness": 0.38999998569488525,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.2999999523162842,
+                    "specularColor": [
+                        0.9313725233078003,
+                        0.9313725233078003,
+                        0.9313725233078003
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 1.0,
+                    "type": "Transparent"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    -57.0,
+                    17.5,
+                    75.0
+                ],
+                "rotation": [
+                    0.0,
+                    -2.7087509632110596,
+                    0.0
+                ],
+                "scale": [
+                    25.0,
+                    25.0,
+                    25.0
+                ]
+            }
+        },
+        {
+            "Filename": "assets\\models\\lucy.obj",
+            "Materials": [
+                {
+                    "absorption": 0.10000000149011612,
+                    "diffuseColor": [
+                        0.9166666865348816,
+                        0.9166666865348816,
+                        0.9166666865348816
+                    ],
+                    "diffuseRoughness": 0.35199999809265137,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.3009999990463257,
+                    "specularColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "specularProbability": 1.0,
+                    "specularRoughness": 0.35600000619888306,
+                    "transparency": 1.0,
+                    "type": "Transparent"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    -126.0,
+                    30.0,
+                    9.0
+                ],
+                "rotation": [
+                    0.0,
+                    -3.9863319396972656,
+                    0.0
+                ],
+                "scale": [
+                    30.0,
+                    30.0,
+                    30.0
+                ]
+            }
+        },
+        {
+            "Filename": "assets\\models\\bull.obj",
+            "Materials": [
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.9264705777168274,
+                        0.0,
+                        0.0
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "specularProbability": 0.04699999839067459,
+                    "specularRoughness": 0.0,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    -102.0,
+                    7.5,
+                    114.0
+                ],
+                "rotation": [
+                    0.0,
+                    -2.5202553272247314,
+                    0.0
+                ],
+                "scale": [
+                    15.0,
+                    15.0,
+                    15.0
+                ]
+            }
+        },
+        {
+            "Filename": "assets\\models\\sphere.obj",
+            "Materials": [
+                {
+                    "absorption": 0.10000000149011612,
+                    "diffuseColor": [
+                        0.9264705777168274,
+                        0.9264705777168274,
+                        0.9264705777168274
+                    ],
+                    "diffuseRoughness": 0.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.2999999523162842,
+                    "specularColor": [
+                        0.9411764740943909,
+                        0.9411764740943909,
+                        0.9411764740943909
+                    ],
+                    "specularProbability": 1.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 1.0,
+                    "type": "Transparent"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    -135.0,
+                    7.5,
+                    66.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    7.5,
+                    7.5,
+                    7.5
+                ]
+            }
+        },
+        {
+            "Filename": "assets\\models\\dragon800K.obj",
+            "Materials": [
+                {
+                    "absorption": 0.05299999937415123,
+                    "diffuseColor": [
+                        0.18627452850341797,
+                        0.7367358207702637,
+                        1.0
+                    ],
+                    "diffuseRoughness": 0.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.3200000524520874,
+                    "specularColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 1.0,
+                    "type": "Transparent"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    156.0,
+                    100.0,
+                    294.0
+                ],
+                "rotation": [
+                    0.0,
+                    -0.10821040719747543,
+                    0.0
+                ],
+                "scale": [
+                    150.0,
+                    150.0,
+                    150.0
+                ]
+            }
+        },
+        {
+            "Filename": "assets\\models\\bunny.obj",
+            "Materials": [
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                }
+            ],
+            "TextureID": 0,
+            "Transformation": {
+                "position": [
+                    -138.0,
+                    9.0,
+                    115.0
+                ],
+                "rotation": [
+                    0.0,
+                    -1.9512780904769897,
+                    0.0
+                ],
+                "scale": [
+                    3.0,
+                    3.0,
+                    3.0
+                ]
+            }
+        },
+        {
+            "Filename": "assets\\models\\cube.obj",
+            "Materials": [
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "diffuseRoughness": 0.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.2999999523162842,
+                    "specularColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 1.0,
+                    "type": "Transparent"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    -138.0,
+                    3.0,
+                    115.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    3.0,
+                    3.0,
+                    3.0
+                ]
+            }
+        },
+        {
+            "Filename": "assets\\models\\sphere.obj",
+            "Materials": [
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.936274528503418,
+                        0.7660550475120544,
+                        0.49108514189720154
+                    ],
+                    "diffuseRoughness": 0.0,
+                    "emissionStrength": 42.007999420166016,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 0.0,
+                    "type": "Emissive"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    -159.0,
+                    2.0,
+                    63.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    2.0,
+                    2.0,
+                    2.0
+                ]
+            }
+        },
+        {
+            "Filename": "assets\\models\\sphere.obj",
+            "Materials": [
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "specularProbability": 1.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    -162.0,
+                    2.0,
+                    56.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    2.0,
+                    2.0,
+                    2.0
+                ]
+            }
+        },
+        {
+            "Filename": "assets\\models\\sphere.obj",
+            "Materials": [
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "specularProbability": 1.0,
+                    "specularRoughness": 0.24300000071525574,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    -165.0,
+                    2.0,
+                    48.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    2.0,
+                    2.0,
+                    2.0
+                ]
+            }
+        },
+        {
+            "Filename": "assets\\models\\sphere.obj",
+            "Materials": [
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "specularProbability": 1.0,
+                    "specularRoughness": 0.6110000014305115,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    -168.0,
+                    2.0,
+                    40.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    2.0,
+                    2.0,
+                    2.0
+                ]
+            }
+        },
+        {
+            "Filename": "assets\\models\\cube.obj",
+            "Materials": [
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                }
+            ],
+            "TextureID": 1,
+            "Transformation": {
+                "position": [
+                    0.0,
+                    -10.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    500.0,
+                    10.0,
+                    500.0
+                ]
+            }
+        },
+        {
+            "Filename": "assets\\models\\flowerPot\\flowerPot.obj",
+            "Materials": [
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.7843137383460999,
+                        0.7843137383460999,
+                        0.7843137383460999
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "specularProbability": 0.1679999977350235,
+                    "specularRoughness": 0.0,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.07843136787414551,
+                        0.050911590456962585,
+                        0.0
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.05882352590560913,
+                        0.03818369284272194,
+                        0.0
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.08908706903457642,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "diffuseRoughness": 0.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 1.0,
+                    "type": "Transparent"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.004336569458246231,
+                        0.039215683937072754,
+                        0.0009611680870875716
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "specularProbability": 0.00800000037997961,
+                    "specularRoughness": 0.22200000286102295,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    -150.0,
+                    2.700000047683716,
+                    108.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    33.0,
+                    33.0,
+                    33.0
+                ]
+            }
+        },
+        {
+            "Filename": "assets\\models\\bull.obj",
+            "Materials": [
+                {
+                    "absorption": 0.20000000298023224,
+                    "diffuseColor": [
+                        0.8235292434692383,
+                        0.0,
+                        1.0
+                    ],
+                    "diffuseRoughness": 0.29499998688697815,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.3289999961853027,
+                    "specularColor": [
+                        0.9117646813392639,
+                        0.9117646813392639,
+                        0.9117646813392639
+                    ],
+                    "specularProbability": 1.0,
+                    "specularRoughness": 0.29600000381469727,
+                    "transparency": 1.0,
+                    "type": "Transparent"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    -105.0,
+                    10.0,
+                    21.0
+                ],
+                "rotation": [
+                    0.0,
+                    -0.46076691150665283,
+                    0.0
+                ],
+                "scale": [
+                    20.0,
+                    20.0,
+                    20.0
+                ]
+            }
+        },
+        {
+            "Filename": "assets\\models\\sphere.obj",
+            "Materials": [
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "diffuseRoughness": 0.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.319000005722046,
+                    "specularColor": [
+                        0.9460784196853638,
+                        0.9460784196853638,
+                        0.9460784196853638
+                    ],
+                    "specularProbability": 1.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 1.0,
+                    "type": "Transparent"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    -141.0,
+                    2.0,
+                    75.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    2.0,
+                    2.0,
+                    2.0
+                ]
+            }
+        },
+        {
+            "Filename": "assets\\models\\sphere.obj",
+            "Materials": [
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.9656862616539001,
+                        0.9656862616539001,
+                        0.9656862616539001
+                    ],
+                    "diffuseRoughness": 0.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.319000005722046,
+                    "specularColor": [
+                        0.970588207244873,
+                        0.970588207244873,
+                        0.970588207244873
+                    ],
+                    "specularProbability": 1.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 1.0,
+                    "type": "Transparent"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    -141.0,
+                    1.0,
+                    79.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            }
+        },
+        {
+            "Filename": "assets\\models\\sphere.obj",
+            "Materials": [
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "diffuseRoughness": 0.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.3020000457763672,
+                    "specularColor": [
+                        0.9607843160629272,
+                        0.9607843160629272,
+                        0.9607843160629272
+                    ],
+                    "specularProbability": 1.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 1.0,
+                    "type": "Transparent"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    -138.0,
+                    0.5,
+                    81.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    0.5,
+                    0.5,
+                    0.5
+                ]
+            }
+        },
+        {
+            "Filename": "assets\\models\\bunny.obj",
+            "Materials": [
+                {
+                    "absorption": 1.0,
+                    "diffuseColor": [
+                        0.0,
+                        0.4803921580314636,
+                        0.09890424460172653
+                    ],
+                    "diffuseRoughness": 0.22300000488758087,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.2999999523162842,
+                    "specularColor": [
+                        0.830161452293396,
+                        1.0,
+                        0.813725471496582
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.22699999809265137,
+                    "transparency": 1.0,
+                    "type": "Transparent"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    -153.0,
+                    6.0,
+                    114.0
+                ],
+                "rotation": [
+                    0.0,
+                    -1.7383478879928589,
+                    0.0
+                ],
+                "scale": [
+                    2.0,
+                    2.0,
+                    2.0
+                ]
+            }
+        },
+        {
+            "Filename": "assets\\models\\dragon800K.obj",
+            "Materials": [
+                {
+                    "absorption": 0.5,
+                    "diffuseColor": [
+                        0.13494804501533508,
+                        0.7647058963775635,
+                        0.0
+                    ],
+                    "diffuseRoughness": 0.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.2999999523162842,
+                    "specularColor": [
+                        0.8921568393707275,
+                        0.8921568393707275,
+                        0.8921568393707275
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 1.0,
+                    "type": "Transparent"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    -117.0,
+                    3.5,
+                    78.0
+                ],
+                "rotation": [
+                    0.0,
+                    -5.358160972595215,
+                    0.0
+                ],
+                "scale": [
+                    5.0,
+                    5.0,
+                    5.0
+                ]
+            }
+        },
+        {
+            "Filename": "assets\\models\\lucy.obj",
+            "Materials": [
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.0,
+                        0.4215686321258545,
+                        0.2727796733379364
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "specularProbability": 0.09300000220537186,
+                    "specularRoughness": 0.0,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    -150.0,
+                    5.0,
+                    123.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.5445427298545837,
+                    0.0
+                ],
+                "scale": [
+                    5.0,
+                    5.0,
+                    5.0
+                ]
+            }
+        },
+        {
+            "Filename": "assets\\models\\dragon800K.obj",
+            "Materials": [
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.077854685485363,
+                        0.0,
+                        0.08823531866073608
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "specularProbability": 0.08900000154972076,
+                    "specularRoughness": 0.0,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    -62.98400115966797,
+                    20.93000030517578,
+                    170.9720001220703
+                ],
+                "rotation": [
+                    0.0,
+                    -0.3211405873298645,
+                    0.0
+                ],
+                "scale": [
+                    30.0,
+                    30.0,
+                    30.0
+                ]
+            }
+        },
+        {
+            "Filename": "assets\\models\\tree\\tree.obj",
+            "Materials": [
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.10784316062927246,
+                        0.06660901010036469,
+                        0.0
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                },
+                {
+                    "absorption": 0.0,
+                    "diffuseColor": [
+                        0.007569203618913889,
+                        0.10294115543365479,
+                        0.010374238714575768
+                    ],
+                    "diffuseRoughness": 1.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.0,
+                    "specularColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "specularProbability": 0.024000000208616257,
+                    "specularRoughness": 0.4090000092983246,
+                    "transparency": 0.0,
+                    "type": "Specular"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    -137.9290008544922,
+                    9.5,
+                    129.0709991455078
+                ],
+                "rotation": [
+                    0.0,
+                    -0.0872664600610733,
+                    0.0
+                ],
+                "scale": [
+                    9.991000175476074,
+                    9.991000175476074,
+                    9.991000175476074
+                ]
+            }
+        },
+        {
+            "Filename": "assets\\models\\bunny.obj",
+            "Materials": [
+                {
+                    "absorption": 0.5,
+                    "diffuseColor": [
+                        0.09861600399017334,
+                        0.0,
+                        0.8382352590560913
+                    ],
+                    "diffuseRoughness": 0.0,
+                    "emissionStrength": 0.0,
+                    "indexOfRefraction": 1.3029999732971191,
+                    "specularColor": [
+                        0.843137264251709,
+                        0.843137264251709,
+                        0.843137264251709
+                    ],
+                    "specularProbability": 0.0,
+                    "specularRoughness": 0.0,
+                    "transparency": 1.0,
+                    "type": "Transparent"
+                }
+            ],
+            "TextureID": -1,
+            "Transformation": {
+                "position": [
+                    -131.8509979248047,
+                    3.700000047683716,
+                    29.927000045776367
+                ],
+                "rotation": [
+                    0.0,
+                    -0.43284162878990173,
+                    0.0
+                ],
+                "scale": [
+                    3.809999942779541,
+                    3.809999942779541,
+                    3.809999942779541
+                ]
+            }
+        }
+    ],
+    "Settings": {
+        "aa": 5,
+        "bounceLim": 16
+    },
+    "Sky": {
+        "active": true,
+        "color": [
+            0.5,
+            0.699999988079071,
+            0.8999999761581421
+        ],
+        "sunColor": [
+            1.0,
+            0.890426754951477,
+            0.5343137383460999
+        ],
+        "sunDir": [
+            0.8670898079872131,
+            0.49805158376693726,
+            0.010001035407185555
+        ],
+        "sunStrength": 271.2560119628906
+    },
+    "Textures": {
+        "Paths": [
+            "assets\\textures\\marble.png",
+            "assets\\textures\\wood.png"
+        ],
+        "Scales": [
+            0.03009999915957451,
+            0.06599999964237213,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+        ]
+    }
+}

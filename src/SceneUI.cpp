@@ -518,9 +518,9 @@ void SceneUI::render(Scene& scene) {
         ImGui::End();
     }
 
-    // scene data
+    // scene memory
     {
-        ImGui::Begin("Scene Data");
+        ImGui::Begin("Scene Memory");
 
         DataPackage package = scene.lastSentPackage;
 

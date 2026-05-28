@@ -25,8 +25,9 @@ layout(std430, binding = 6)  buffer ssboBVHmodelNodes { BVHnode BVHmodelNodes[];
 layout(std430, binding = 7)  buffer ssboModelOffsets { ModelOffset modelOffsets[]; };
 layout(std430, binding = 8)  buffer ssboModelTransformations { mat4 modelTransformations[]; };
 layout(std430, binding = 9)  buffer ssboModelInvTransformations { mat4 modelInvTransformations[]; };
-layout(std430, binding = 10)  buffer ssboEmissiveTris { ivec2 emissiveTris[]; };
+layout(std430, binding = 10) buffer ssboEmissiveTris { ivec2 emissiveTris[]; };
 layout(std430, binding = 11) buffer ssboEmissiveModelTriangleNum { ivec2 emissiveModelTriangleNum[]; };
+layout(std430, binding = 12) buffer ssboModelIndices {int modelIndices[]; };
 
 
 uniform int   numModels;
@@ -63,7 +64,8 @@ uniform sampler2D textures[MAX_TEXTURES];
 uniform float     textureScales[MAX_TEXTURES];
 
 
-int   stack[MAX_STACK_SIZE];
+int   stackTLAS[MAX_STACK_SIZE];
+int   stackBLAS[MAX_STACK_SIZE];
 float iorStack[MAX_REFRACTIONS];
 int   iorSize = 1;
 
@@ -451,10 +453,10 @@ Hit traverseBVH(int modelIndex, Ray ray, Ray rayLocal, mat4 M, mat4 invM, float 
     ModelOffset offset = modelOffsets[modelIndex];
 
     int sp = 0;
-    stack[sp++] = offset.BVHnodes;
+    stackBLAS[sp++] = offset.BVHnodes;
 
     while (sp > 0){
-        BVHnode node = BVHtriangleNodes[stack[--sp]];
+        BVHnode node = BVHtriangleNodes[stackBLAS[--sp]];
 
         if (leaf(node)){
             int start = startIdx(node);
@@ -489,8 +491,8 @@ Hit traverseBVH(int modelIndex, Ray ray, Ray rayLocal, mat4 M, mat4 invM, float 
             int   iNear = nearA ? A  : B;
             int   iFar  = nearA ? B  : A;
 
-            if (dFar < hit.t  && dFar < INF)  stack[sp++] = iFar;
-            if (dNear < hit.t && dNear < INF) stack[sp++] = iNear;
+            if (dFar < hit.t  && dFar < INF)  stackBLAS[sp++] = iFar;
+            if (dNear < hit.t && dNear < INF) stackBLAS[sp++] = iNear;
 
             if (sp > MAX_STACK_SIZE) break;
         }
@@ -533,6 +535,89 @@ Hit findBestTri(Ray ray, out int triTest, out int aabbTest){
 
     return hit;
 }
+
+/*
+Hit findBestTri(Ray ray, out int triTest, out int aabbTest){
+
+    Hit hit;
+    hit.hit = false;
+
+    hit.t = INF;
+
+    BVHnode root = BVHmodelNodes[0];
+
+    aabbTest++;
+    if (intersectAABB(ray, getMin(root), getMax(root)) >= INF) return hit;
+
+
+    int sp = 0;
+    stackTLAS[sp++] = 0;
+
+    while (sp > 0){
+        BVHnode node = BVHmodelNodes[stackTLAS[--sp]];
+
+        if (leaf(node)){
+            int start = startIdx(node);
+            int end = endIdx(node);
+            for (int i = start; i < end; ++i){
+                int modelIdx = modelIndices[i];
+
+                mat4 M    = modelTransformations[modelIdx];
+                mat4 invM = modelInvTransformations[modelIdx];
+
+                BVHnode root = BVHtriangleNodes[modelOffsets[modelIdx].BVHnodes];
+
+                Ray rayLocal = worldToLocalRay(ray, invM);
+
+                aabbTest++;
+                float rootDist = intersectAABB(rayLocal, getMin(root), getMax(root));
+
+                if (rootDist >= INF) continue;
+
+                // prune this model if its BLAS root can't beat current best hit
+                vec3 bestHitPosW = ray.pos + hit.t * ray.dir;
+                vec3 bestHitPosL = (invM * vec4(bestHitPosW, 1.0)).xyz;
+                float bestTL = hit.hit ? length(bestHitPosL - rayLocal.pos) : INF;
+
+                if (rootDist >= bestTL) continue;
+
+                Hit h = traverseBVH(modelIdx, ray, rayLocal, M, invM, hit.t, triTest, aabbTest);
+
+                if (h.hit && h.t < hit.t){
+                    hit = h;
+                    hit.modelID = modelIdx;
+                }
+
+            }
+        } else {
+            int A = childA(node);
+            int B = childB(node);
+            BVHnode childA_Idx = BVHmodelNodes[A];
+            BVHnode childB_Idx = BVHmodelNodes[B];
+
+            aabbTest += 2;
+            float dA = intersectAABB(ray, getMin(childA_Idx), getMax(childA_Idx));
+            float dB = intersectAABB(ray, getMin(childB_Idx), getMax(childB_Idx));
+
+            bool nearA = (dA <= dB);
+            float dNear = nearA ? dA : dB;
+            float dFar  = nearA ? dB : dA;
+            int   iNear = nearA ? A  : B;
+            int   iFar  = nearA ? B  : A;
+
+            if (dFar < hit.t  && dFar < INF) stackTLAS[sp++] = iFar;
+            if (dNear < hit.t && dNear < INF) stackTLAS[sp++] = iNear;
+
+            if (sp > MAX_STACK_SIZE) break;
+        }
+    }
+
+    hit.tri = createTri(hit.triID, hit.modelID);
+
+    return hit;
+}
+*/
+
 bool shadowRayBlocked(Ray ray, float maxDist, int excludeTriID) {
     for (int modelIdx = 0; modelIdx < numModels; modelIdx++) {
         mat4 invM = modelInvTransformations[modelIdx];
@@ -551,10 +636,10 @@ bool shadowRayBlocked(Ray ray, float maxDist, int excludeTriID) {
         float localMaxDist = maxDist * localScale;
 
         int sp = 0;
-        stack[sp++] = offset.BVHnodes;
+        stackBLAS[sp++] = offset.BVHnodes;
 
         while (sp > 0) {
-            BVHnode node = BVHtriangleNodes[stack[--sp]];
+            BVHnode node = BVHtriangleNodes[stackBLAS[--sp]];
 
             if (leaf(node)) {
                 int start = startIdx(node);
@@ -582,8 +667,8 @@ bool shadowRayBlocked(Ray ray, float maxDist, int excludeTriID) {
                 float dA = intersectAABB(rayLocal, getMin(nA), getMax(nA));
                 float dB = intersectAABB(rayLocal, getMin(nB), getMax(nB));
 
-                if (dB < localMaxDist && dB < INF) stack[sp++] = B;
-                if (dA < localMaxDist && dA < INF) stack[sp++] = A;
+                if (dB < localMaxDist && dB < INF) stackBLAS[sp++] = B;
+                if (dA < localMaxDist && dA < INF) stackBLAS[sp++] = A;
             }
         }
     }

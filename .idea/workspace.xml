@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="BackendCodeEditorMiscSettings">
-    <option name="/Default/Environment/Hierarchy/GeneratedFilesCacheKey/Timestamp/@EntryValue" value="3" type="long" />
+    <option name="/Default/Environment/Hierarchy/GeneratedFilesCacheKey/Timestamp/@EntryValue" value="4" type="long" />
     <option name="/Default/Housekeeping/FeatureSuggestion/FeatureSuggestionManager/DisabledSuggesters/=SwitchToGoToActionSuggester/@EntryIndexedValue" value="true" type="bool" />
     <option name="/Default/Housekeeping/GlobalSettingsUpgraded/IsUpgraded/@EntryValue" value="true" type="bool" />
     <option name="/Default/Housekeeping/LiveTemplatesHousekeeping/HotspotSessionHintIsShown/@EntryValue" value="true" type="bool" />
@@ -21,12 +21,7 @@
   </component>
   <component name="CMakeRunConfigurationManager">
     <generated>
-      <config projectName="RaytracingWindowsTriangles" targetName="uninstall" />
-      <config projectName="RaytracingWindowsTriangles" targetName="imgui_glfw_opengl3" />
-      <config projectName="RaytracingWindowsTriangles" targetName="glfw" />
-      <config projectName="RaytracingWindowsTriangles" targetName="glad" />
-      <config projectName="RaytracingWindowsTriangles" targetName="update_mappings" />
-      <config projectName="RaytracingWindowsTriangles" targetName="RaytracingWindowsTriangles" />
+      <config projectName="Project" targetName="imgui_glfw_opengl3" />
     </generated>
   </component>
   <component name="CMakeSettings">
@@ -37,9 +32,12 @@
   <component name="ChangeListManager">
     <list default="true" id="cd06d447-a7c8-42f4-a8e5-4bf88ac1888b" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/imgui.ini" beforeDir="false" afterPath="$PROJECT_DIR$/imgui.ini" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/shaders/raytracer.frag" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/raytracer.frag" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/SceneUI.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/SceneUI.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -67,13 +65,13 @@
   }
 }</component>
   <component name="HighlightingSettingsPerFile">
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/src/BaseModel.cpp" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/src/Scene.cpp" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/src/Scene.h" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/BaseModel.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/BaseModel.h" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/Material.h" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/Rendering/Shader.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/Scene.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/Scene.h" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/SceneUI.cpp" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/SceneUI.h" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/main.cpp" root0="FORCE_HIGHLIGHTING" />
   </component>
@@ -108,7 +106,7 @@
     &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/acroy/Desktop/C++ Projects/Graphics/RaytracingWindowsTriangles/external&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/acroy/Desktop/C++Projects/Graphics/RaytracingWindowsTriangles&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -127,14 +125,19 @@
       <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTrianglesFrag" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\assets\models\Cyberpunk" />
+      <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\assets\models" />
       <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\renders" />
       <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\external" />
-      <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\assets\models" />
       <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\scenes" />
-      <recent name="C:\Users\acroy\Desktop\C++ Projects\Graphics\RaytracingWindowsTriangles\assets\models\tuilips" />
     </key>
   </component>
   <component name="RunManager" selected="CMake Application.RaytracingWindowsTriangles">
+    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="RaytracingWindowsTriangles" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="RaytracingWindowsTriangles" TARGET_NAME="RaytracingWindowsTriangles" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="RaytracingWindowsTriangles" RUN_TARGET_NAME="RaytracingWindowsTriangles">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -166,12 +169,12 @@
       </method>
     </configuration>
     <list>
-      <item itemvalue="CMake Application.RaytracingWindowsTriangles" />
-      <item itemvalue="CMake Application.docs" />
       <item itemvalue="CMake Application.glad" />
-      <item itemvalue="CMake Application.glfw" />
+      <item itemvalue="CMake Application.RaytracingWindowsTriangles" />
       <item itemvalue="CMake Application.uninstall" />
+      <item itemvalue="CMake Application.glfw" />
       <item itemvalue="CMake Application.update_mappings" />
+      <item itemvalue="CMake Application.docs" />
     </list>
   </component>
   <component name="TaskManager">
@@ -278,6 +281,12 @@
       <workItem from="1772244650617" duration="4254000" />
       <workItem from="1772590519776" duration="750000" />
       <workItem from="1772758135154" duration="4327000" />
+      <workItem from="1776635964960" duration="7000" />
+      <workItem from="1776635984414" duration="10087000" />
+      <workItem from="1776657001132" duration="3394000" />
+      <workItem from="1778022210793" duration="8000" />
+      <workItem from="1778022965245" duration="8000" />
+      <workItem from="1779948056786" duration="136000" />
     </task>
     <servers />
   </component>

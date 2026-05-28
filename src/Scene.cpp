@@ -282,7 +282,11 @@ void Scene::removeModel(int index) {
 
 void Scene::createTLAS() {
 
+    return;
+
     int numModels = int(models.size());
+
+    BVHmodelNodes.clear();
 
     modelMin.clear();
     modelMax.clear();
@@ -292,8 +296,29 @@ void Scene::createTLAS() {
     modelMax.reserve(numModels);
     modelCenter.reserve(numModels);
     for (int i = 0; i < numModels; ++i) {
-        modelMin.emplace_back(BVHtriangleNodes[modelOffsets[i].BVHnodes].getMin());
-        modelMax.emplace_back(BVHtriangleNodes[modelOffsets[i].BVHnodes].getMax());
+        modelIndex[i] = i;
+        Model model = models[i];
+        mat4 M = model.transformation.matrix;
+
+        vec3 minL = BVHtriangleNodes[modelOffsets[i].BVHnodes].getMin();
+        vec3 maxL = BVHtriangleNodes[modelOffsets[i].BVHnodes].getMax();
+
+        vec3 corners[8] = {
+            {minL.x, minL.y, minL.z}, {maxL.x, minL.y, minL.z},
+            {minL.x, maxL.y, minL.z}, {maxL.x, maxL.y, minL.z},
+            {minL.x, minL.y, maxL.z}, {maxL.x, minL.y, maxL.z},
+            {minL.x, maxL.y, maxL.z}, {maxL.x, maxL.y, maxL.z}
+        };
+
+        vec3 minW(std::numeric_limits<float>::infinity()), maxW(-std::numeric_limits<float>::infinity());
+        for (auto corner : corners) {
+            vec3 p = M * vec4(corner, 1.0f);
+            minW = min(minW, p);
+            maxW = max(maxW, p);
+        }
+
+        modelMin.emplace_back(minW);
+        modelMax.emplace_back(maxW);
         modelCenter.emplace_back((modelMin.back()+modelMax.back())/2.0f);
     }
 
@@ -307,7 +332,7 @@ void Scene::createTLAS() {
     }
 
     root.setStartIdx(0);
-    root.setEndIdx(numModels-1);
+    root.setEndIdx(numModels);
 
     BVHmodelNodes.emplace_back(root);
 
@@ -404,6 +429,7 @@ void Scene::split(int numTestsPerAxis, int BVHindex, int depth) {
     BVHnode& node = BVHmodelNodes[BVHindex];
     int start = node.getStartIdx();
     int end = node.getEndIdx();
+    int numModels = end - start;
 
     if (depth <= 1) {
         if (end-start > 10) {
@@ -411,6 +437,8 @@ void Scene::split(int numTestsPerAxis, int BVHindex, int depth) {
         }
         return;
     }
+
+    if (numModels <= 1) {return;}
 
     BVHnode childA;
     BVHnode childB;
@@ -587,6 +615,7 @@ void Scene::set_ssbo() {
     std::vector<Material> materials;
     std::vector<mat4> modelTransforms;
     std::vector<mat4> modelInvTransforms;
+
     for (const auto& model : models) {
         for (const Material& m : model.materials) materials.emplace_back(m);
         modelTransforms.emplace_back(model.transformation.matrix);
@@ -605,6 +634,7 @@ void Scene::set_ssbo() {
     ssboModelInvTransformations.set(modelInvTransforms, 9);
     ssboEmissiveTris.set(emissiveTris, 10);
     ssboEmissiveModelTriangleNum.set(emissiveModelTriangleNum, 11);
+    ssboModelIndices.set(modelIndex, 12);
 
 }
 
@@ -730,6 +760,8 @@ void Scene::updateFrame() {
         }
 
         resetAccumulation();
+
+        createTLAS();
 
         set_ssbo();
         newData = false;
