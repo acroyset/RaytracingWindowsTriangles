@@ -62,6 +62,14 @@ uniform DebugView  debugView;
 
 uniform sampler2D textures[MAX_TEXTURES];
 uniform float     textureScales[MAX_TEXTURES];
+uniform sampler3D volumeDensityTexture;
+uniform bool      useVolumeDensityTexture;
+uniform int       volumeRaymarchMaxSteps;
+uniform float     volumeRaymarchStepSize;
+uniform float     volumeDensityCutoff;
+uniform float     volumeDensityCutoffSoftness;
+uniform float     volumeTextureWorldScale;
+uniform float     volumeTransmittanceCutoff;
 
 
 int    stackTLAS[MAX_STACK_SIZE];
@@ -121,7 +129,6 @@ float randomValue(inout uint state) {
     return float(randomUint(state)) * (1.0 / 4294967295.0);
 }
 float randomValueNormalDistribution(inout uint state) {
-    // Thanks to https://stackoverflow.com/a/6178290
     float theta = 2 * PI * randomValue(state);
     float rho = sqrt(-2 * log(randomValue(state)));
     return rho * cos(theta);
@@ -133,7 +140,6 @@ vec2 randPointDisk(inout uint state){
     return pointOnCircle * sqrt(randomValue(state));
 }
 vec3 randPointSphere(inout uint state) {
-    // Thanks to https://math.stackexchange.com/a/1585996
     float x = randomValueNormalDistribution(state);
     float y = randomValueNormalDistribution(state);
     float z = randomValueNormalDistribution(state);
@@ -375,60 +381,32 @@ vec3 calculateRefractionDir(vec3 normal, vec3 dir, float diffuseRoughness, float
     vec3 refr = eta * dir + (eta * cos_i - sqrt(disc)) * n;
     return normalize(refr + diffuseRoughness * 0.5 * randPointSphere(state));
 }
-bool handleVolumetrics(Hit hit, inout Ray ray, inout vec3 throughput, inout uint state) {
-    if (mediumSize > 1) {
-        Medium cur = mediumStack[mediumSize - 1];
-        if (cur.particleSize > 0.0) {
-            // Scattering coefficient — denser/larger particles scatter more
-            float scatterCoeff = cur.absorbsion * cur.particleSize;
+float volumeAnisotropy(float particleSize) {
+    float wavelength = 0.55; // visible light midpoint in microns
+    float x = 2.0 * PI * particleSize / wavelength;
+    if (x < 0.1) return 0.0;
+    if (x < 1.0) return 0.75 * ((x - 0.1) / 0.9);
+    return clamp(0.75 + 0.20 * (1.0 - exp(-(x - 1.0) * 0.5)), 0.0, 0.95);
+}
 
-            // Sample a scatter distance exponentially distributed
-            float scatterDist = -log(max(randomValue(state), EPS)) / max(scatterCoeff, EPS);
+float sampleVolumeDensity(vec3 worldPos) {
+    float density = 1.0;
 
-            if (scatterDist < hit.t) {
-                // Scatter happened before the surface — go back to scatter point
-                ray.pos -= ray.dir * (hit.t - scatterDist);
-
-                // Pick new direction weighted by phase function
-                // Use HG phase with g derived from particle size
-                // Simple approximation: sample a random direction biased by g
-                float wavelength = 0.55; // visible light midpoint in microns
-                float x = 2.0 * PI * cur.particleSize / wavelength;
-                float g = 0.0;
-                if (x >= 0.1 && x < 1.0) {
-                    g = 0.75 * ((x - 0.1) / 0.9);
-                } else if (x >= 1.0) {
-                    g = clamp(0.75 + 0.20 * (1.0 - exp(-(x - 1.0) * 0.5)), 0.0, 0.95);
-                }
-
-                // Sample HG direction
-                float cosTheta;
-                if (abs(g) < EPS) {
-                    cosTheta = 1.0 - 2.0 * randomValue(state); // isotropic
-                } else {
-                    float s = (1.0 - g * g) / (1.0 - g + 2.0 * g * randomValue(state));
-                    cosTheta = (1.0 + g * g - s * s) / (2.0 * g);
-                }
-                cosTheta = clamp(cosTheta, -1.0, 1.0);
-                float sinTheta = sqrt(max(0.0, 1.0 - cosTheta * cosTheta));
-                float phi = randomValue(state) * 2.0 * PI;
-
-                // Build ONB around current ray direction
-                vec3 w = ray.dir;
-                vec3 u = normalize(abs(w.x) > 0.9 ? cross(w, vec3(0,1,0)) : cross(w, vec3(1,0,0)));
-                vec3 v = cross(w, u);
-
-                ray.dir    = normalize(w * cosTheta + u * cos(phi) * sinTheta + v * sin(phi) * sinTheta);
-                ray.invDir = 1.0 / ray.dir;
-
-                // Throughput: phase function / pdf cancels for HG importance sampling
-                throughput *= cur.color;
-
-                return true;
-            }
-        }
+    if (useVolumeDensityTexture) {
+        vec3 uvw = fract(worldPos * volumeTextureWorldScale);
+        density = texture(volumeDensityTexture, uvw).r;
     }
-    return false;
+
+    float cutoff = clamp(volumeDensityCutoff, 0.0, 0.999);
+    float x = max((density - cutoff) / max(1.0 - cutoff, EPS), 0.0);
+    density = pow(x, max(volumeDensityCutoffSoftness, EPS));
+    return density;
+}
+
+void absorbTransparentMedium(Medium medium, float dist, inout vec3 throughput) {
+    if (medium.type != 1 || medium.absorbsion <= 0.0 || dist <= SELF_INTERSECT) return;
+    vec3 absorbColor = clamp(medium.color, vec3(0.0), vec3(1.0));
+    throughput *= exp(-dist * medium.absorbsion * (1.0 - absorbColor));
 }
 
 vec3 calculateNewDirection(vec3 normal, vec3 dir, Material material, bool entering, bool isSpecular, inout uint state){
@@ -557,6 +535,7 @@ void updateMediumStack(bool entering, Material material){
             mediumStack[mediumSize].absorbsion        = material.absorption;
             mediumStack[mediumSize].color             = material.diffuseColor.rgb;
             mediumStack[mediumSize].particleSize      = material.diffuseRoughness;
+            mediumStack[mediumSize].type              = material.type;
             mediumSize++;
         }
     } else {
@@ -667,7 +646,7 @@ Hit findBestTri(Ray ray, out int triTest, out int aabbTest){
         }
     }
 
-    hit.tri = createTri(hit.triID, hit.modelID);
+    if (hit.hit) hit.tri = createTri(hit.triID, hit.modelID);
 
     return hit;
 }
@@ -810,6 +789,67 @@ bool shadowRayBlocked(Ray ray, float maxDist, int excludeTriID) {
     }
     return false;
 }
+bool volumeShadowRayBlocked(Ray ray, float maxDist) {
+    for (int modelIdx = 0; modelIdx < numModels; modelIdx++) {
+        mat4 invM = modelInvTransformations[modelIdx];
+        Ray rayLocal = worldToLocalRay(ray, invM);
+
+        ModelOffset offset = modelOffsets[modelIdx];
+        BVHnode root = BVHtriangleNodes[offset.BVHnodes];
+
+        if (intersectAABB(rayLocal, getMin(root), getMax(root)) >= INF) continue;
+
+        vec3 scaledDir = (invM * vec4(ray.dir, 0.0)).xyz;
+        float localScale = length(scaledDir);
+        float localMaxDist = maxDist * localScale;
+
+        int sp = 0;
+        stackBLAS[sp++] = offset.BVHnodes;
+
+        while (sp > 0) {
+            BVHnode node = BVHtriangleNodes[stackBLAS[--sp]];
+
+            if (leaf(node)) {
+                int start = startIdx(node);
+                int end = endIdx(node);
+                for (int j = start; j < end; j++) {
+                    ivec4 t1, t2, t3;
+                    getTriangle(j, modelIdx, t1, t2, t3);
+
+                    Material material = materials[int(t1.w) + offset.material];
+                    if (material.type == 1 || material.type == 3) continue;
+
+                    vec3 v0 = vertices[t1.x + offset.vertex].xyz;
+                    vec3 v1 = vertices[t2.x + offset.vertex].xyz;
+                    vec3 v2 = vertices[t3.x + offset.vertex].xyz;
+
+                    Hit h = rayTriangleIntersect(rayLocal, v0, v1, v2);
+                    if (h.hit && h.t < localMaxDist) return true;
+                }
+            } else {
+                int A = childA(node) + offset.BVHnodes;
+                int B = childB(node) + offset.BVHnodes;
+                BVHnode nA = BVHtriangleNodes[A];
+                BVHnode nB = BVHtriangleNodes[B];
+
+                float dA = intersectAABB(rayLocal, getMin(nA), getMax(nA));
+                float dB = intersectAABB(rayLocal, getMin(nB), getMax(nB));
+
+                if (dB < localMaxDist && dB < INF) stackBLAS[sp++] = B;
+                if (dA < localMaxDist && dA < INF) stackBLAS[sp++] = A;
+            }
+        }
+    }
+    return false;
+}
+
+float findVolumeExitDistance(Ray ray) {
+    int triTest = 0;
+    int aabbTest = 0;
+    Hit hit = findBestTri(ray, triTest, aabbTest);
+    if (!hit.hit || hit.tri.material.type != 3) return 0.0;
+    return hit.t;
+}
 
 // Russian Roulette
 bool russianRoulet(inout vec3 color, inout uint state){
@@ -919,11 +959,140 @@ vec3 sampleSun(vec3 hitPos, vec3 normal, vec3 diffuseColor, inout uint state) {
     return vis * sunColor * BRDF * cosA / pdf;
 }
 
+vec3 volumeTransmittanceToLight(vec3 samplePos, vec3 lightDir, Medium medium) {
+    Ray lightRay;
+    lightRay.pos = samplePos + lightDir * SELF_INTERSECT;
+    lightRay.dir = lightDir;
+    lightRay.invDir = 1.0 / lightDir;
+
+    float maxDist = findVolumeExitDistance(lightRay);
+    if (maxDist <= SELF_INTERSECT) return vec3(1.0);
+
+    vec3 mediumColor = clamp(medium.color, vec3(0.0), vec3(1.0));
+    vec3 transmittance = vec3(1.0);
+    float stepDistance = max(volumeRaymarchStepSize, SELF_INTERSECT);
+    float t = 0.0;
+
+    for (int i = 0; i < volumeRaymarchMaxSteps; i++) {
+        if (t >= maxDist) break;
+
+        float stepSize = min(stepDistance, maxDist - t);
+        vec3 p = lightRay.pos + lightRay.dir * (t + 0.5 * stepSize);
+        float density = max(sampleVolumeDensity(p), 0.0);
+
+        if (density > EPS) {
+            float baseCoeff = medium.absorbsion * density;
+            vec3 scatterCoeff = baseCoeff * medium.particleSize * mediumColor;
+            vec3 absorbCoeff = baseCoeff * (1.0 - mediumColor);
+            vec3 extinction = max(scatterCoeff + absorbCoeff, vec3(0.0));
+            transmittance *= exp(-extinction * stepSize);
+        }
+
+        t += stepDistance;
+    }
+
+    return transmittance;
+}
+
+vec3 sampleVolumeLight(vec3 samplePos, vec3 viewDir, Medium medium) {
+    vec3 light = vec3(0.0);
+    float g = volumeAnisotropy(medium.particleSize);
+
+    if (skyActive) {
+        const float cosMax = 0.9975;
+        float sunSolidAngle = 2.0 * PI * (1.0 - cosMax);
+
+        vec3 w = sunDir;
+        vec3 u = normalize(abs(w.x) > 0.9 ? cross(w, vec3(0,1,0)) : cross(w, vec3(1,0,0)));
+        vec3 v = cross(w, u);
+        float rimSin = sqrt(max(0.0, 1.0 - cosMax * cosMax));
+
+        vec3 sunSample0 = w;
+        vec3 sunSample1 = normalize(w * cosMax + u * rimSin);
+        vec3 sunSample2 = normalize(w * cosMax - u * rimSin);
+        vec3 sunSample3 = normalize(w * cosMax + v * rimSin);
+        vec3 sunSample4 = normalize(w * cosMax - v * rimSin);
+
+        float sunPhase =
+            henyeyGreensteinPhase(clamp(dot(sunSample0, viewDir), -1.0, 1.0), g) +
+            henyeyGreensteinPhase(clamp(dot(sunSample1, viewDir), -1.0, 1.0), g) +
+            henyeyGreensteinPhase(clamp(dot(sunSample2, viewDir), -1.0, 1.0), g) +
+            henyeyGreensteinPhase(clamp(dot(sunSample3, viewDir), -1.0, 1.0), g) +
+            henyeyGreensteinPhase(clamp(dot(sunSample4, viewDir), -1.0, 1.0), g);
+        sunPhase *= 0.2;
+
+        Ray shadowRay;
+        shadowRay.pos = samplePos + sunDir * SELF_INTERSECT;
+        shadowRay.dir = sunDir;
+        shadowRay.invDir = 1.0 / sunDir;
+
+        float sunVisible = volumeShadowRayBlocked(shadowRay, INF) ? 0.0 : 1.0;
+        vec3 sunTransmittance = volumeTransmittanceToLight(samplePos, sunDir, medium);
+        light += sunVisible * sunTransmittance * sunColor * sunPhase * sunSolidAngle;
+
+        vec3 skyAverage =
+            sampleSky(vec3( 1.0,  0.0,  0.0)) +
+            sampleSky(vec3(-1.0,  0.0,  0.0)) +
+            sampleSky(vec3( 0.0,  1.0,  0.0)) +
+            sampleSky(vec3( 0.0, -1.0,  0.0)) +
+            sampleSky(vec3( 0.0,  0.0,  1.0)) +
+            sampleSky(vec3( 0.0,  0.0, -1.0));
+        light += skyAverage / 6.0;
+    }
+
+    return light;
+}
+
+void raymarchVolume(Ray ray, float maxDist, Medium medium, inout vec3 color, inout vec3 throughput, inout uint state) {
+    if (medium.type != 3 || medium.particleSize <= 0.0 || medium.absorbsion <= 0.0 || maxDist <= SELF_INTERSECT) return;
+
+    vec3 transmittance = vec3(1.0);
+    vec3 inscatter = vec3(0.0);
+
+    float stepDistance = max(volumeRaymarchStepSize, SELF_INTERSECT);
+    float jitter = randomValue(state) * min(stepDistance, maxDist);
+    float t = jitter;
+
+    for (int i = 0; i < volumeRaymarchMaxSteps; i++) {
+        if (t >= maxDist) break;
+
+        float stepSize = min(stepDistance, maxDist - t);
+        vec3 samplePos = ray.pos + ray.dir * (t + 0.5 * stepSize);
+        float density = max(sampleVolumeDensity(samplePos), 0.0);
+
+        if (density > EPS) {
+            vec3 mediumColor = clamp(medium.color, vec3(0.0), vec3(1.0));
+            float baseCoeff = medium.absorbsion * density;
+            vec3 scatterCoeff = baseCoeff * medium.particleSize * mediumColor;
+            vec3 absorbCoeff = baseCoeff * (1.0 - mediumColor);
+            vec3 extinction = max(scatterCoeff + absorbCoeff, vec3(0.0));
+
+            vec3 stepTrans = exp(-extinction * stepSize);
+            vec3 volumeLight = sampleVolumeLight(samplePos, ray.dir, medium);
+            vec3 scatterAlbedo = scatterCoeff / max(extinction, vec3(EPS));
+            vec3 scatterWeight = (vec3(1.0) - stepTrans) * scatterAlbedo;
+            inscatter += transmittance * scatterWeight * volumeLight;
+            transmittance *= stepTrans;
+
+            if (max(max(transmittance.r, transmittance.g), transmittance.b) < volumeTransmittanceCutoff) {
+                transmittance = vec3(0.0);
+                break;
+            }
+        }
+
+        t += stepDistance;
+    }
+
+    color += throughput * inscatter;
+    throughput *= transmittance;
+}
+
 vec3 trace(Ray ray, inout uint state){
     mediumStack[0].indexOfRefraction = 1.0;
     mediumStack[0].absorbsion        = 0.0;
     mediumStack[0].particleSize      = 0.0;
     mediumStack[0].color             = vec3(1.0);
+    mediumStack[0].type              = 0;
     mediumSize = 1;
 
     vec3 color      = vec3(0.0);  // accumulated radiance
@@ -939,6 +1108,12 @@ vec3 trace(Ray ray, inout uint state){
 
         if (hit.hit){
             if (camera.focusDistancePlane && hit.t > camera.focusDistance && bounce == 0) throughput *= vec3(0.5, 0.9, 0.5);
+
+            if (mediumSize > 1) {
+                Medium cur = mediumStack[mediumSize - 1];
+                absorbTransparentMedium(cur, hit.t, throughput);
+                raymarchVolume(ray, hit.t, cur, color, throughput, state);
+            }
 
             mat4 M    = modelTransformations[hit.modelID];
             mat4 invM = modelInvTransformations[hit.modelID];
@@ -956,18 +1131,6 @@ vec3 trace(Ray ray, inout uint state){
 
             bool entering = dot(ray.dir, normalWorld) < 0.0;
             if (!entering) normalWorld = -normalWorld;
-
-            if (mediumSize > 1) {
-                Medium cur = mediumStack[mediumSize - 1];
-
-                // Beer-Lambert absorption
-                if (isTransparent) {
-                    throughput *= exp(-hit.t * cur.absorbsion * (1.0 - cur.color));
-                }
-
-                // Volumetric scattering — did it scatter before reaching the surface?
-                if (handleVolumetrics(hit, ray, throughput, state)) continue; // scattered mid-segment, don't touch surface
-            }
 
             if (isTransparent || isVolumetric) {
                 updateMediumStack(entering, material);
@@ -1033,6 +1196,12 @@ vec3 trace(Ray ray, inout uint state){
             float t = (floorY - ray.pos.y) / ray.dir.y;
 
             if (t > SELF_INTERSECT){
+                if (mediumSize > 1) {
+                    Medium cur = mediumStack[mediumSize - 1];
+                    absorbTransparentMedium(cur, t, throughput);
+                    raymarchVolume(ray, t, cur, color, throughput, state);
+                }
+
                 ray.pos += ray.dir * t;
                 vec3 n = vec3(0, 1, 0);
 
@@ -1061,7 +1230,8 @@ vec3 trace(Ray ray, inout uint state){
                 throughput *= diffuseColor;
                 ray.dir = calculateNewDirection(n, ray.dir, floorMaterial, false, isSpecular, state);
                 ray.invDir = 1.0 / ray.dir;
-            } else {
+            }
+            else {
                 color += throughput * getEnviormentLight(ray.dir);
                 break;
             }

@@ -78,6 +78,7 @@ public:
 
     [[nodiscard]] Texture createTexture(const std::string& uniformName);
     [[nodiscard]] Texture createTexture(const std::string& uniformName, const std::string& path);
+    [[nodiscard]] int reserveTextureUnit() { return getNextUnit(); }
     void releaseTexture(const Texture& t) { freeUnits.push_back(t.getUnit()); }
 
     [[nodiscard]] GLuint getProgram() const { return program; }

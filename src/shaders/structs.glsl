@@ -63,6 +63,7 @@ struct Medium{
     float indexOfRefraction;
     float absorbsion;
     float particleSize;
+    int type;
 };
 
 struct Triangle{

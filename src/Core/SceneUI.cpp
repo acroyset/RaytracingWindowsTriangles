@@ -121,16 +121,18 @@ static bool DrawMaterialInspector(Material& m, int matIndex, int textureID, bool
     ImGui::Spacing();
 
     // --- Base color / texture ---
-    if (constraints.allowTexture && textureID != -1) {
-        ImGui::TextDisabled("Texture bound (ID %d).", textureID);
-    }
-    else {
+    if (type != Volumetric) {
+        if (constraints.allowTexture && textureID != -1) {
+            ImGui::TextDisabled("Texture bound (ID %d).", textureID);
+        }
+        else {
         if (type == Emissive) {
             changed |= ImGui::ColorEdit3("Emission Color", &diffuseColor.x);
         } else if (type == Transparent) {
             changed |= ImGui::ColorEdit3("Absorb Color", &diffuseColor.x);
         } else {
             changed |= ImGui::ColorEdit3("Base Color", &diffuseColor.x);
+        }
         }
     }
 
@@ -169,7 +171,7 @@ static bool DrawMaterialInspector(Material& m, int matIndex, int textureID, bool
         ImGui::SeparatorText("Volume");
         changed |= ImGui::ColorEdit3("Scatter Color", &diffuseColor.x);
         changed |= ImGui::SliderFloat("Particle Size (um)", &diffuseRoughness, 0.001f, 10.0f);
-        changed |= ImGui::SliderFloat("Scatter Density", &absorption, 0.0f, 10.0f);
+        changed |= ImGui::DragFloat("Scatter Density", &absorption, 0.0005f, 0.0f, 0.1f, "%.4f");
     }
 
     if (changed) {
@@ -435,6 +437,32 @@ void SceneUI::render(Scene& scene) {
 
         ui_resetAccum |= ImGui::Checkbox("Next Event Estimation (NEE)", &scene.NEE);
 
+        if (ImGui::CollapsingHeader("Volumetrics")) {
+            ImGui::SeparatorText("Raymarch");
+            ui_resetAccum |= ImGui::Checkbox("Use 3D Density Texture", &scene.volumeUseDensityTexture);
+            ui_resetAccum |= ImGui::SliderInt("Max Steps", &scene.volumeRaymarchMaxSteps, 1, 512);
+            ui_resetAccum |= ImGui::DragFloat("Step Size", &scene.volumeRaymarchStepSize, 0.25f, 0.001f, 500.0f, "%.3f");
+            ui_resetAccum |= ImGui::SliderFloat("Density Cutoff", &scene.volumeDensityCutoff, 0.0f, 0.99f);
+            ui_resetAccum |= ImGui::SliderFloat("Cutoff Softness", &scene.volumeDensityCutoffSoftness, 0.1f, 8.0f);
+            ui_resetAccum |= ImGui::DragFloat("Transmittance Cutoff", &scene.volumeTransmittanceCutoff, 0.0001f, 0.0f, 0.1f, "%.5f");
+
+            ImGui::SeparatorText("Worley Texture");
+            bool regenerateVolume = false;
+            regenerateVolume |= ImGui::SliderInt("Resolution", &scene.volumeNoiseResolution, 8, 128);
+            regenerateVolume |= ImGui::SliderInt("Cells", &scene.volumeWorleyCells, 1, 32);
+            regenerateVolume |= ImGui::SliderInt("Octaves", &scene.volumeWorleyOctaves, 1, 6);
+            regenerateVolume |= ImGui::SliderFloat("Persistence", &scene.volumeWorleyPersistence, 0.0f, 1.0f);
+
+            if (regenerateVolume) scene.volumeNoiseSettingsDirty = true;
+            if (scene.volumeNoiseSettingsDirty) ImGui::TextDisabled("Noise settings changed.");
+
+            if (ImGui::Button("Regenerate Worley Texture")) {
+                scene.generateWorleyVolumeTexture();
+                scene.volumeNoiseSettingsDirty = false;
+                ui_resetAccum = true;
+            }
+        }
+
         ui_resetAccum |= ImGui::Checkbox("Debug Mode" , &scene.debugView.enable);
 
         ImGui::End();
@@ -661,6 +689,35 @@ void SceneUI::render(Scene& scene) {
         bool typeChange = false;
         changedM |= DrawMaterialInspector(m, selectedColor, offsets.textureID, typeChange);
         if (typeChange) scene.emissiveTrisStale = true;
+
+        if (m.getType() == Volumetric) {
+            ImGui::Separator();
+            ImGui::Text("Density Texture");
+            ImGui::TextDisabled(scene.volumeDensityTextureReady ? "Generated Worley 3D texture" : "No generated texture");
+
+            if (ImGui::Checkbox("Use Density Texture", &scene.volumeUseDensityTexture)) {
+                ui_resetAccum = true;
+            }
+
+            if (ImGui::DragFloat("Density Texture Scale", &scene.volumeTextureWorldScale, 0.00005f, 0.0001f, 1.0f, "%.5f")) {
+                ui_resetAccum = true;
+            }
+
+            if (ImGui::SliderFloat("Density Cutoff", &scene.volumeDensityCutoff, 0.0f, 0.99f)) {
+                ui_resetAccum = true;
+            }
+
+            if (ImGui::SliderFloat("Cutoff Softness", &scene.volumeDensityCutoffSoftness, 0.1f, 8.0f)) {
+                ui_resetAccum = true;
+            }
+
+            if (scene.volumeNoiseSettingsDirty) ImGui::TextDisabled("Noise settings changed.");
+            if (ImGui::Button("Regenerate Density Texture")) {
+                scene.generateWorleyVolumeTexture();
+                scene.volumeNoiseSettingsDirty = false;
+                ui_resetAccum = true;
+            }
+        }
 
         ImGui::Unindent();
 

@@ -46,6 +46,8 @@ inline void to_json(json& j, const MaterialType& t) {
             return;
         case Emissive:
             j = "Emissive";
+        case Volumetric:
+            j = "Volumetric";
     }
 }
 inline void from_json(const json& j, MaterialType& t) {
@@ -55,6 +57,8 @@ inline void from_json(const json& j, MaterialType& t) {
         t = Transparent;
     } else if (j == "Emissive") {
         t = Emissive;
+    } else if (j == "Volumetric") {
+        t = Volumetric;
     }
 }
 

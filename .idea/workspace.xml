@@ -36,15 +36,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cd06d447-a7c8-42f4-a8e5-4bf88ac1888b" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/imgui.ini" beforeDir="false" afterPath="$PROJECT_DIR$/imgui.ini" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scenes/render5.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/scenes/scene7.json" beforeDir="false" afterPath="$PROJECT_DIR$/scenes/scene7.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Core/Scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Core/Scene.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Core/Scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Core/Scene.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Core/SceneUI.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Core/SceneUI.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Scene/BaseModel.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/BaseModel.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Scene/Material.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/Material.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Rendering/Shader.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/Shader.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Scene/JSONextensions.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/JSONextensions.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/shaders/raytracer.frag" beforeDir="false" afterPath="$PROJECT_DIR$/src/shaders/raytracer.frag" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/shaders/structs.glsl" beforeDir="false" afterPath="$PROJECT_DIR$/src/shaders/structs.glsl" afterDir="false" />
     </list>
@@ -292,7 +292,7 @@
       <workItem from="1778022965245" duration="8000" />
       <workItem from="1779948056786" duration="4336000" />
       <workItem from="1779995407782" duration="3573000" />
-      <workItem from="1780017528705" duration="1893000" />
+      <workItem from="1780017528705" duration="9722000" />
     </task>
     <servers />
   </component>

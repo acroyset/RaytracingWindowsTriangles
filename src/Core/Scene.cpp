@@ -7,6 +7,11 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../../external/stb_image_write.h"
 
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <limits>
+
 
 #define BVH_MAX_DEPTH 16
 #define BVH_TESTS_PER_AXIS 5
@@ -15,6 +20,50 @@
 using Clock = std::chrono::high_resolution_clock;
 
 auto start = Clock::now();
+
+static uint32_t hashVolumeCell(int x, int y, int z, int octave) {
+    uint32_t h = uint32_t(x) * 73856093u ^ uint32_t(y) * 19349663u ^ uint32_t(z) * 83492791u ^ uint32_t(octave) * 2654435761u;
+    h ^= h >> 16;
+    h *= 0x7feb352du;
+    h ^= h >> 15;
+    h *= 0x846ca68bu;
+    h ^= h >> 16;
+    return h;
+}
+
+static float hashVolumeFloat(uint32_t h) {
+    return float(h & 0x00ffffffu) / float(0x01000000u);
+}
+
+static float smoothstep01(float x) {
+    x = std::clamp(x, 0.0f, 1.0f);
+    return x * x * (3.0f - 2.0f * x);
+}
+
+static float worleyF1(const vec3& p, int cells, int octave) {
+    vec3 cellPos = p * float(cells);
+    ivec3 base = floor(cellPos);
+    float bestDist2 = 1.0e20f;
+
+    for (int dz = -1; dz <= 1; dz++) {
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                ivec3 c = base + ivec3(dx, dy, dz);
+                ivec3 wrapped = (c % cells + cells) % cells;
+
+                uint32_t hx = hashVolumeCell(wrapped.x, wrapped.y, wrapped.z, octave * 3 + 0);
+                uint32_t hy = hashVolumeCell(wrapped.x, wrapped.y, wrapped.z, octave * 3 + 1);
+                uint32_t hz = hashVolumeCell(wrapped.x, wrapped.y, wrapped.z, octave * 3 + 2);
+
+                vec3 feature = vec3(c) + vec3(hashVolumeFloat(hx), hashVolumeFloat(hy), hashVolumeFloat(hz));
+                vec3 delta = feature - cellPos;
+                bestDist2 = std::min(bestDist2, dot(delta, delta));
+            }
+        }
+    }
+
+    return std::sqrt(bestDist2) / std::sqrt(3.0f);
+}
 
 void setBasisVectors(const vec3& forward, vec3& up, vec3& right) {
     constexpr vec3 world_up(0, 1, 0);
@@ -88,6 +137,8 @@ Scene::Scene(const int samples, const int aa, const int bounceLim)
     createUniforms();
 
     skyTexture = raytracer.createTexture("skyTex", "assets/textures/sky.png");
+    volumeDensityTextureUnit = raytracer.reserveTextureUnit();
+    generateWorleyVolumeTexture();
 
     textureScales.fill(0.0f);
 
@@ -561,8 +612,81 @@ void Scene::createUniforms() {
     uDebugView     = raytracer.createUniformBlock<DebugView>("debugView");
 
     uTextureScales = raytracer.createUniform<float>("textureScales");
+    uVolumeDensityTexture = raytracer.createUniform<int>("volumeDensityTexture");
+    uUseVolumeDensityTexture = raytracer.createUniform<bool>("useVolumeDensityTexture");
+    uVolumeRaymarchMaxSteps = raytracer.createUniform<int>("volumeRaymarchMaxSteps");
+    uVolumeRaymarchStepSize = raytracer.createUniform<float>("volumeRaymarchStepSize");
+    uVolumeDensityCutoff = raytracer.createUniform<float>("volumeDensityCutoff");
+    uVolumeDensityCutoffSoftness = raytracer.createUniform<float>("volumeDensityCutoffSoftness");
+    uVolumeTextureWorldScale = raytracer.createUniform<float>("volumeTextureWorldScale");
+    uVolumeTransmittanceCutoff = raytracer.createUniform<float>("volumeTransmittanceCutoff");
 
     uEnvYaw = raytracer.createUniform<float>("uEnvYaw");
+}
+
+void Scene::generateWorleyVolumeTexture() {
+    const int resolution = std::max(volumeNoiseResolution, 4);
+    const int baseCells = std::max(volumeWorleyCells, 1);
+    const int octaves = std::max(volumeWorleyOctaves, 1);
+
+    std::vector<float> density(size_t(resolution) * size_t(resolution) * size_t(resolution));
+    float minDensity = std::numeric_limits<float>::max();
+    float maxDensity = std::numeric_limits<float>::lowest();
+
+    for (int z = 0; z < resolution; z++) {
+        for (int y = 0; y < resolution; y++) {
+            for (int x = 0; x < resolution; x++) {
+                vec3 p = (vec3(x, y, z) + vec3(0.5f)) / float(resolution);
+
+                float value = 0.0f;
+                float amplitude = 1.0f;
+                float amplitudeSum = 0.0f;
+
+                for (int octave = 0; octave < octaves; octave++) {
+                    int cells = baseCells << octave;
+                    float f1 = worleyF1(p, cells, octave);
+                    float cellular = 1.0f - smoothstep01(f1);
+                    value += cellular * amplitude;
+                    amplitudeSum += amplitude;
+                    amplitude *= volumeWorleyPersistence;
+                }
+
+                value = amplitudeSum > 0.0f ? value / amplitudeSum : 0.0f;
+                value = smoothstep01(value);
+
+                size_t idx = size_t(x) + size_t(y) * size_t(resolution) + size_t(z) * size_t(resolution) * size_t(resolution);
+                density[idx] = value;
+                minDensity = std::min(minDensity, value);
+                maxDensity = std::max(maxDensity, value);
+            }
+        }
+    }
+
+    const float invRange = 1.0f / std::max(maxDensity - minDensity, 1.0e-6f);
+    std::vector<unsigned char> density8(density.size());
+    for (size_t i = 0; i < density.size(); i++) {
+        float normalized = (density[i] - minDensity) * invRange;
+        density8[i] = static_cast<unsigned char>(std::clamp(normalized, 0.0f, 1.0f) * 255.0f + 0.5f);
+    }
+
+    if (volumeDensityTexture == 0) glGenTextures(1, &volumeDensityTexture);
+
+    GLint prevAlign;
+    glGetIntegerv(GL_UNPACK_ALIGNMENT, &prevAlign);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    glBindTexture(GL_TEXTURE_3D, volumeDensityTexture);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_R8, resolution, resolution, resolution, 0, GL_RED, GL_UNSIGNED_BYTE, density8.data());
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_REPEAT);
+    glBindTexture(GL_TEXTURE_3D, 0);
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, prevAlign);
+
+    volumeDensityTextureReady = true;
 }
 
 void Scene::setUniformsRTX() const {
@@ -594,10 +718,23 @@ void Scene::setUniformsRTX() const {
     uDebugView.set(debugView);
 
     uTextureScales.setArray(textureScales.data(), 64);
+    uVolumeDensityTexture.set(volumeDensityTextureUnit);
+    uUseVolumeDensityTexture.set(volumeDensityTextureReady && volumeUseDensityTexture);
+    uVolumeRaymarchMaxSteps.set(volumeRaymarchMaxSteps);
+    uVolumeRaymarchStepSize.set(volumeRaymarchStepSize);
+    uVolumeDensityCutoff.set(volumeDensityCutoff);
+    uVolumeDensityCutoffSoftness.set(volumeDensityCutoffSoftness);
+    uVolumeTextureWorldScale.set(volumeTextureWorldScale);
+    uVolumeTransmittanceCutoff.set(volumeTransmittanceCutoff);
 
     uEnvYaw.set(0.0f);
 
     skyTexture.bind();
+
+    if (volumeDensityTextureReady && volumeDensityTextureUnit >= 0) {
+        glActiveTexture(GL_TEXTURE0 + volumeDensityTextureUnit);
+        glBindTexture(GL_TEXTURE_3D, volumeDensityTexture);
+    }
 
     for (const Texture &tex : textures) {
         tex.bind();
@@ -937,6 +1074,17 @@ void Scene::saveJSON(const std::string& filename) const {
     j["Textures"]["Scales"] = json::array();
     for (float s : textureScales) j["Textures"]["Scales"].push_back(s);
 
+    j["Textures"]["VolumeDensity"] = {
+        {"use", volumeUseDensityTexture},
+        {"scale", volumeTextureWorldScale},
+        {"cutoff", volumeDensityCutoff},
+        {"cutoffSoftness", volumeDensityCutoffSoftness},
+        {"resolution", volumeNoiseResolution},
+        {"cells", volumeWorleyCells},
+        {"octaves", volumeWorleyOctaves},
+        {"persistence", volumeWorleyPersistence}
+    };
+
     std::ofstream f(filename);
     f << j.dump(4);
 }
@@ -1017,6 +1165,18 @@ void Scene::loadJSON(const std::string& filename) {
                 const auto& scales = t["Scales"];
                 const int n = std::min<int>(64, (int)scales.size());
                 for (int i = 0; i < n; ++i) textureScales[i] = scales[i];
+            }
+            if (t.contains("VolumeDensity") && t["VolumeDensity"].is_object()) {
+                const auto& v = t["VolumeDensity"];
+                if (v.contains("use")) volumeUseDensityTexture = v["use"].get<bool>();
+                if (v.contains("scale")) volumeTextureWorldScale = v["scale"].get<float>();
+                if (v.contains("cutoff")) volumeDensityCutoff = v["cutoff"].get<float>();
+                if (v.contains("cutoffSoftness")) volumeDensityCutoffSoftness = v["cutoffSoftness"].get<float>();
+                if (v.contains("resolution")) volumeNoiseResolution = v["resolution"].get<int>();
+                if (v.contains("cells")) volumeWorleyCells = v["cells"].get<int>();
+                if (v.contains("octaves")) volumeWorleyOctaves = v["octaves"].get<int>();
+                if (v.contains("persistence")) volumeWorleyPersistence = v["persistence"].get<float>();
+                generateWorleyVolumeTexture();
             }
         }
     }

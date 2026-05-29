@@ -8,6 +8,7 @@
 
 #include <deque>
 #include <future>
+#include <vector>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "../Rendering/ShaderWindow.h"
@@ -175,7 +176,7 @@ class Scene {
     bool skyActive = true;
     vec3 skyColor = vec3(0.5,0.7,0.9);
     vec3 sunDir = normalize(vec3(0.867, 0.498, 0.01));
-    float sunStrength = 1000;
+    float sunStrength = 250;
     vec3 sunColor = vec3(1, 0.93, 0.31);
 
     // Floor
@@ -237,10 +238,35 @@ class Scene {
     Uniform<float> uEnvYaw{};
 
     Uniform<float> uTextureScales;
+    Uniform<int> uVolumeDensityTexture;
+    Uniform<bool> uUseVolumeDensityTexture;
+    Uniform<int> uVolumeRaymarchMaxSteps;
+    Uniform<float> uVolumeRaymarchStepSize;
+    Uniform<float> uVolumeDensityCutoff;
+    Uniform<float> uVolumeDensityCutoffSoftness;
+    Uniform<float> uVolumeTextureWorldScale;
+    Uniform<float> uVolumeTransmittanceCutoff;
 
     // Textures
 
     Texture skyTexture;
+    GLuint volumeDensityTexture = 0;
+    int volumeDensityTextureUnit = -1;
+    bool volumeDensityTextureReady = false;
+    bool volumeUseDensityTexture = true;
+
+    int volumeRaymarchMaxSteps = 96;
+    float volumeRaymarchStepSize = 50.0f;
+    float volumeDensityCutoff = 0.25f;
+    float volumeDensityCutoffSoftness = 2.0f;
+    float volumeTextureWorldScale = 0.00125f;
+    float volumeTransmittanceCutoff = 0.002f;
+
+    int volumeNoiseResolution = 64;
+    int volumeWorleyCells = 8;
+    int volumeWorleyOctaves = 3;
+    float volumeWorleyPersistence = 0.5f;
+    bool volumeNoiseSettingsDirty = false;
 
     std::vector<Texture> textures;
     std::array<float, 64> textureScales{};
@@ -275,6 +301,7 @@ class Scene {
     Scene(int samples, int aa, int bounceLim);
 
     ~Scene() {
+        if (volumeDensityTexture != 0) glDeleteTextures(1, &volumeDensityTexture);
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();
@@ -299,6 +326,7 @@ class Scene {
     [[nodiscard]] int getNumMaterials() const;
 
     void createUniforms();
+    void generateWorleyVolumeTexture();
 
     void setUniformsRTX() const;
     void setUniformsPP() const;
