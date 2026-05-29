@@ -29,12 +29,12 @@ struct Material {
     float specularRoughness;
     float specularProbability;
 
-    // Transparent
 
     float transparency;
     float indexOfRefraction;
     float absorption;
 
+    // Transparent
     // absorb color = diffuse color
     // roughness = diffuse roughness
 
@@ -42,11 +42,27 @@ struct Material {
     // specular roughness = same
     // specular prob = same
 
-    // Emissive
 
+    // Volumetric
+    // scattering coefficients = diffuseColor
+    // particle size = diffuseRoughness
+
+    // specular color = NA
+    // specular roughness = NA
+    // specular prob = NA
+
+
+    // Emissive
     float emissionStrength;
 
     int type;
+};
+
+struct Medium{
+    vec3 color;
+    float indexOfRefraction;
+    float absorbsion;
+    float particleSize;
 };
 
 struct Triangle{

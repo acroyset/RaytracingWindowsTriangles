@@ -9,7 +9,7 @@
 
 using namespace glm;
 
-enum MaterialType : int {Specular=0, Transparent=1, Emissive=2};
+enum MaterialType : int {Specular=0, Transparent=1, Emissive=2, Volumetric=3};
 
 class Material {
 
@@ -22,12 +22,12 @@ class Material {
     float specularRoughness;
     float specularProbability;
 
-    // Transparent
 
     float transparency;
     float indexOfRefraction;
     float absorption;
 
+    // Transparent
     // absorb color = diffuse color
     // roughness = diffuse roughness
 
@@ -35,8 +35,17 @@ class Material {
     // specular roughness = same
     // specular prob = same
 
-    // Emissive
 
+    // Volumetric
+    // scattering coefficients = diffuseColor
+    // particle size = diffuseRoughness
+
+    // specular color = NA
+    // specular roughness = NA
+    // specular prob = NA
+
+
+    // Emissive
     float emissionStrength;
 
     MaterialType type;

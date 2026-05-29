@@ -36,33 +36,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cd06d447-a7c8-42f4-a8e5-4bf88ac1888b" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/shaders/bloom_composite.frag" beforeDir="false" afterPath="$PROJECT_DIR$/src/shaders/bloom_composite.frag" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/shaders/bloom_downsample_h.frag" beforeDir="false" afterPath="$PROJECT_DIR$/src/shaders/bloom_downsample_h.frag" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/shaders/bloom_downsample_v.frag" beforeDir="false" afterPath="$PROJECT_DIR$/src/shaders/bloom_downsample_v.frag" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/shaders/bloom_threshold.frag" beforeDir="false" afterPath="$PROJECT_DIR$/src/shaders/bloom_threshold.frag" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/shaders/bloom_upsample.frag" beforeDir="false" afterPath="$PROJECT_DIR$/src/shaders/bloom_upsample.frag" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/shaders/fullscreen.vert" beforeDir="false" afterPath="$PROJECT_DIR$/src/shaders/fullscreen.vert" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/shaders/postProcessing.frag" beforeDir="false" afterPath="$PROJECT_DIR$/src/shaders/postProcessing.frag" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/shaders/raytracer.frag" beforeDir="false" afterPath="$PROJECT_DIR$/src/shaders/raytracer.frag" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/shaders/structs.glsl" beforeDir="false" afterPath="$PROJECT_DIR$/src/shaders/structs.glsl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/BaseModel.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/BaseModel.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/BaseModel.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/BaseModel.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/BloomPass.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/BloomPass.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/BloomPass.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Rendering/BloomPass.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Camera.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/Camera.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/DebugView.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/DebugView.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/FileBrowser.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Core/FileBrowser.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/JSONextensions.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/JSONextensions.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Material.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/Material.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Model.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/Model.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Core/Scene.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Core/Scene.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/SceneUI.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Core/SceneUI.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/SceneUI.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Core/SceneUI.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Transformation.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/Transformation.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/imgui.ini" beforeDir="false" afterPath="$PROJECT_DIR$/imgui.ini" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Core/Scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Core/Scene.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Core/Scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Core/Scene.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Core/SceneUI.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Core/SceneUI.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Scene/BaseModel.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/BaseModel.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Scene/Material.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/Material.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/shaders/raytracer.frag" beforeDir="false" afterPath="$PROJECT_DIR$/src/shaders/raytracer.frag" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/shaders/structs.glsl" beforeDir="false" afterPath="$PROJECT_DIR$/src/shaders/structs.glsl" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -95,7 +79,7 @@
     <setting file="file://$PROJECT_DIR$/src/Core/SceneUI.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/Core/SceneUI.h" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/Rendering/Shader.cpp" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/src/Scene/BaseModel.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/Scene/BaseModel.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/Scene/BaseModel.h" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/Scene/Material.h" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/main.cpp" root0="FORCE_HIGHLIGHTING" />
@@ -158,11 +142,6 @@
     </key>
   </component>
   <component name="RunManager" selected="CMake Application.RaytracingWindowsTriangles">
-    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="RaytracingWindowsTriangles" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="RaytracingWindowsTriangles" TARGET_NAME="RaytracingWindowsTriangles" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="RaytracingWindowsTriangles" RUN_TARGET_NAME="RaytracingWindowsTriangles">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -194,12 +173,12 @@
       </method>
     </configuration>
     <list>
-      <item itemvalue="CMake Application.glad" />
       <item itemvalue="CMake Application.RaytracingWindowsTriangles" />
-      <item itemvalue="CMake Application.uninstall" />
-      <item itemvalue="CMake Application.glfw" />
-      <item itemvalue="CMake Application.update_mappings" />
       <item itemvalue="CMake Application.docs" />
+      <item itemvalue="CMake Application.glad" />
+      <item itemvalue="CMake Application.glfw" />
+      <item itemvalue="CMake Application.uninstall" />
+      <item itemvalue="CMake Application.update_mappings" />
     </list>
   </component>
   <component name="TaskManager">
@@ -312,6 +291,8 @@
       <workItem from="1778022210793" duration="8000" />
       <workItem from="1778022965245" duration="8000" />
       <workItem from="1779948056786" duration="4336000" />
+      <workItem from="1779995407782" duration="3573000" />
+      <workItem from="1780017528705" duration="1893000" />
     </task>
     <servers />
   </component>

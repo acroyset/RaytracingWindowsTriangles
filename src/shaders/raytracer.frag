@@ -9,7 +9,7 @@ in vec2 fragCoord; // [0,1]
 const int MAX_MODELS = 32;
 const int MAX_TEXTURES = 32;
 const int MAX_STACK_SIZE = 48;
-const int MAX_REFRACTIONS = 4;
+const int MAX_MEDIUMS = 4;
 const float PI = 3.14159265359;
 const float EPS = 1e-12;
 const float INF = 1.0/0.0;
@@ -64,10 +64,10 @@ uniform sampler2D textures[MAX_TEXTURES];
 uniform float     textureScales[MAX_TEXTURES];
 
 
-int   stackTLAS[MAX_STACK_SIZE];
-int   stackBLAS[MAX_STACK_SIZE];
-float iorStack[MAX_REFRACTIONS];
-int   iorSize = 1;
+int    stackTLAS[MAX_STACK_SIZE];
+int    stackBLAS[MAX_STACK_SIZE];
+Medium mediumStack[MAX_MEDIUMS];
+int    mediumSize = 1;
 
 Triangle createTri(int triIndex, int modelIdx){
     Triangle tri;
@@ -181,6 +181,59 @@ vec2 seamSafeUV(vec2 uv){
     vec2 texel = 1.0/vec2(textureSize(skyTex,0));
     uv = clamp(uv, texel, 1.0-texel);
     return uv;
+}
+// Rayleigh phase function.
+// Good for particles much smaller than the wavelength.
+float rayleighPhase(float cosTheta) {
+    return (3.0f / (16.0f * PI)) * (1.0f + cosTheta * cosTheta);
+}
+
+// Henyey-Greenstein phase function.
+// Approximation for Mie-style forward scattering.
+float henyeyGreensteinPhase(float cosTheta, float g) {
+    float g2 = g * g;
+    float denom = 1.0f + g2 - 2.0f * g * cosTheta;
+
+    return (1.0f - g2) / (4.0f * PI * pow(denom, 1.5));
+}
+
+// Returns probability density per unit solid angle.
+float scatteringProbability(vec3 incomingDirection, vec3 outgoingDirection, float particleRadius, float wavelength) {
+        incomingDirection = normalize(incomingDirection);
+        outgoingDirection = normalize(outgoingDirection);
+
+        // Scattering angle:
+        // incomingDirection points along the ray's travel direction.
+        // outgoingDirection is the new direction after scattering.
+        float cosTheta = dot(incomingDirection, outgoingDirection);
+        cosTheta = clamp(cosTheta, -1.0, 1.0);
+
+    // Size parameter:
+    // x << 1  => Rayleigh
+    // x ~ 1+  => Mie-like behavior
+    float x = 2.0 * PI * particleRadius / wavelength;
+
+    // Rayleigh region
+    if (x < 0.1) {
+        return rayleighPhase(cosTheta);
+    }
+
+    // Approximate anisotropy factor.
+    // g = 0 means isotropic-ish.
+    // g close to 1 means strong forward scattering.
+    float g = 0.0;
+
+    if (x < 1.0) {
+        // Smooth transition from Rayleigh to Mie
+        float t = (x - 0.1) / 0.9;
+        g = 0.75 * t;
+    } else {
+        // Larger particles scatter more forward
+        g = 0.75 + 0.20 * (1.0 - exp(-(x - 1.0) * 0.5));
+    g = clamp(g, 0.0, 0.95);
+    }
+
+    return henyeyGreensteinPhase(cosTheta, g);
 }
 
 // Camera / Path
@@ -303,51 +356,110 @@ vec3 calculateOpaqueDir(vec3 normal, vec3 dir, float roughness, inout uint state
     vec3 reflect = calculateReflectDir(normal, dir);
     return normalize(mix(reflect, random, roughness));
 }
-vec3 calculateRefractionDir(vec3 normal, vec3 dir, float diffuseRoughness, float specularRoughness, float ior, inout uint state, inout vec3 color){
-    bool entering;
-    float m1, m2;
-    vec3 n = normal;
 
-    if (dot(dir, normal) > 0.0){
-        entering = false;
-        m1 = iorStack[iorSize-1];
-        m2 = (iorSize >= 2) ? iorStack[iorSize-2] : 1.0;
-        n  = -normal;
-    } else {
-        entering = true;
-        m1 = (iorSize >= 1) ? iorStack[iorSize-1] : 1.0;
-        m2 = ior;
-        n  = normal;
-    }
+vec3 calculateRefractionDir(vec3 normal, vec3 dir, float diffuseRoughness, float specularRoughness, float m1, float m2, inout uint state){
+    vec3 n = dot(dir, normal) < 0.0 ? normal : -normal;
 
-    float eta = m1/m2;
+    float eta   = m1 / m2;
     float cos_i = clamp(-dot(dir, n), 0.0, 1.0);
-    float r0 = (m1-m2)/(m1+m2); r0*=r0;
-    float reflect_prob = r0 + (1.0-r0)*pow(1.0-cos_i,5.0);
+    float r0    = (m1 - m2) / (m1 + m2); r0 *= r0;
+    float refl  = r0 + (1.0 - r0) * pow(1.0 - cos_i, 5.0);
 
-    if (randomValue(state) < reflect_prob) return calculateOpaqueDir(normal, dir, specularRoughness, state);
+    if (randomValue(state) < refl)
+    return calculateOpaqueDir(normal, dir, specularRoughness, state);
 
-    float disc = 1.0 - eta*eta*(1.0 - cos_i*cos_i);
-    if (disc < 0.0) return calculateOpaqueDir(normal, dir, specularRoughness, state);
+    float disc = 1.0 - eta * eta * (1.0 - cos_i * cos_i);
+    if (disc < 0.0)
+    return calculateOpaqueDir(normal, dir, specularRoughness, state);
 
-    float cos_t = sqrt(disc);
-    vec3 refr = eta*dir + (eta*cos_i - cos_t)*n;
-
-    if (entering) iorStack[iorSize++] = ior; else iorSize--;
-
-    vec3 jitter = randPointSphere(state);
-    vec3 dir2   = normalize(refr + diffuseRoughness * 0.5 * jitter);
-    return dir2;
+    vec3 refr = eta * dir + (eta * cos_i - sqrt(disc)) * n;
+    return normalize(refr + diffuseRoughness * 0.5 * randPointSphere(state));
 }
-vec3 calculateNewDirection(vec3 normal, vec3 dir, Material material, bool isSpcular, inout uint state, inout vec3 color){
+bool handleVolumetrics(Hit hit, inout Ray ray, inout vec3 throughput, inout uint state) {
+    if (mediumSize > 1) {
+        Medium cur = mediumStack[mediumSize - 1];
+        if (cur.particleSize > 0.0) {
+            // Scattering coefficient — denser/larger particles scatter more
+            float scatterCoeff = cur.absorbsion * cur.particleSize;
+
+            // Sample a scatter distance exponentially distributed
+            float scatterDist = -log(max(randomValue(state), EPS)) / max(scatterCoeff, EPS);
+
+            if (scatterDist < hit.t) {
+                // Scatter happened before the surface — go back to scatter point
+                ray.pos -= ray.dir * (hit.t - scatterDist);
+
+                // Pick new direction weighted by phase function
+                // Use HG phase with g derived from particle size
+                // Simple approximation: sample a random direction biased by g
+                float wavelength = 0.55; // visible light midpoint in microns
+                float x = 2.0 * PI * cur.particleSize / wavelength;
+                float g = 0.0;
+                if (x >= 0.1 && x < 1.0) {
+                    g = 0.75 * ((x - 0.1) / 0.9);
+                } else if (x >= 1.0) {
+                    g = clamp(0.75 + 0.20 * (1.0 - exp(-(x - 1.0) * 0.5)), 0.0, 0.95);
+                }
+
+                // Sample HG direction
+                float cosTheta;
+                if (abs(g) < EPS) {
+                    cosTheta = 1.0 - 2.0 * randomValue(state); // isotropic
+                } else {
+                    float s = (1.0 - g * g) / (1.0 - g + 2.0 * g * randomValue(state));
+                    cosTheta = (1.0 + g * g - s * s) / (2.0 * g);
+                }
+                cosTheta = clamp(cosTheta, -1.0, 1.0);
+                float sinTheta = sqrt(max(0.0, 1.0 - cosTheta * cosTheta));
+                float phi = randomValue(state) * 2.0 * PI;
+
+                // Build ONB around current ray direction
+                vec3 w = ray.dir;
+                vec3 u = normalize(abs(w.x) > 0.9 ? cross(w, vec3(0,1,0)) : cross(w, vec3(1,0,0)));
+                vec3 v = cross(w, u);
+
+                ray.dir    = normalize(w * cosTheta + u * cos(phi) * sinTheta + v * sin(phi) * sinTheta);
+                ray.invDir = 1.0 / ray.dir;
+
+                // Throughput: phase function / pdf cancels for HG importance sampling
+                throughput *= cur.color;
+
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+vec3 calculateNewDirection(vec3 normal, vec3 dir, Material material, bool entering, bool isSpecular, inout uint state){
+
+    if (material.type == 3) {
+        return dir; // no deflection at the boundary
+    }
 
     bool isTransparent = material.type == 1 && randomValue(state) <= material.transparency;
 
-    if (isTransparent){
-        return calculateRefractionDir(normal, dir, material.diffuseRoughness, material.specularRoughness, material.indexOfRefraction, state, color);
+    if (isTransparent) {
+        // Stack already pushed/popped — read the two relevant IORs
+        float m1, m2;
+        if (entering) {
+            // we just pushed, so m2 is top, m1 is one below
+            m1 = (mediumSize >= 2) ? mediumStack[mediumSize - 2].indexOfRefraction : 1.0;
+            m2 = mediumStack[mediumSize - 1].indexOfRefraction;
+        } else {
+            // we just popped, so m1 was the popped medium — but it's gone
+            // m2 is now the new top, m1 is the medium we left (store it before pop, or re-derive)
+            // simplest: pass m1/m2 in from trace() directly
+            m1 = mediumStack[mediumSize].indexOfRefraction;  // just-popped slot still holds value
+            m2 = mediumStack[mediumSize - 1].indexOfRefraction;
+        }
+        return calculateRefractionDir(normal, dir,
+        material.diffuseRoughness,
+        material.specularRoughness,
+        m1, m2, state);
     }
 
-    float roughness = isSpcular ? material.specularRoughness : material.diffuseRoughness;
+    float roughness = isSpecular ? material.specularRoughness : material.diffuseRoughness;
     return calculateOpaqueDir(normal, dir, roughness, state);
 }
 
@@ -422,16 +534,34 @@ bool updateColor(Hit hit, inout vec3 color, bool isSpecular, mat4 mat, vec3 diff
     Material material = hit.tri.material;
     bool isTransparent = material.type == 1;
     bool isEmissive = material.type == 2;
+    bool isVolumetric = material.type == 3;
 
     if (isEmissive){
         color *= material.diffuseColor.rgb * material.emissionStrength;
         return true;
     }
 
+    if (isVolumetric){
+
+    }
+
     color *= (isSpecular || isTransparent) ? material.specularColor.rgb : diffuseColor;
 
 
     return false;
+}
+void updateMediumStack(bool entering, Material material){
+    if (entering) {
+        if (mediumSize < MAX_MEDIUMS) {
+            mediumStack[mediumSize].indexOfRefraction = material.indexOfRefraction;
+            mediumStack[mediumSize].absorbsion        = material.absorption;
+            mediumStack[mediumSize].color             = material.diffuseColor.rgb;
+            mediumStack[mediumSize].particleSize      = material.diffuseRoughness;
+            mediumSize++;
+        }
+    } else {
+        if (mediumSize > 1) mediumSize--;
+    }
 }
 
 // Transform world ray (origin,dir) by inverse(M) to local
@@ -790,7 +920,12 @@ vec3 sampleSun(vec3 hitPos, vec3 normal, vec3 diffuseColor, inout uint state) {
 }
 
 vec3 trace(Ray ray, inout uint state){
-    iorStack[0] = 1.0; iorSize = 1;
+    mediumStack[0].indexOfRefraction = 1.0;
+    mediumStack[0].absorbsion        = 0.0;
+    mediumStack[0].particleSize      = 0.0;
+    mediumStack[0].color             = vec3(1.0);
+    mediumSize = 1;
+
     vec3 color      = vec3(0.0);  // accumulated radiance
     vec3 throughput = vec3(1.0);  // path weight
 
@@ -815,10 +950,27 @@ vec3 trace(Ray ray, inout uint state){
             // World normal
             vec3 normalLocal = calculateNormalLocal(hit);
             vec3 normalWorld = toWorldNormal(normalLocal, invM);
-            if (dot(normalWorld, ray.dir) > 0.0) {
-                normalWorld = -normalWorld;
-                if (material.type == 1)
-                throughput *= exp(-hit.t * material.absorption * (1.0 - material.diffuseColor.rgb));
+
+            bool isTransparent = material.type == 1;
+            bool isVolumetric  = material.type == 3;
+
+            bool entering = dot(ray.dir, normalWorld) < 0.0;
+            if (!entering) normalWorld = -normalWorld;
+
+            if (mediumSize > 1) {
+                Medium cur = mediumStack[mediumSize - 1];
+
+                // Beer-Lambert absorption
+                if (isTransparent) {
+                    throughput *= exp(-hit.t * cur.absorbsion * (1.0 - cur.color));
+                }
+
+                // Volumetric scattering — did it scatter before reaching the surface?
+                if (handleVolumetrics(hit, ray, throughput, state)) continue; // scattered mid-segment, don't touch surface
+            }
+
+            if (isTransparent || isVolumetric) {
+                updateMediumStack(entering, material);
             }
 
             // Debug views
@@ -829,7 +981,6 @@ vec3 trace(Ray ray, inout uint state){
 
             // Roll specular
             bool isSpecular = randomValue(state) <= material.specularProbability;
-            bool isTransparent = material.type == 1; // direction handled inside calculateNewDirection
 
             vec3 diffuseColor = hit.tri.useTexture ? getTextureColor(hit, M) : material.diffuseColor.rgb;
 
@@ -847,7 +998,8 @@ vec3 trace(Ray ray, inout uint state){
                     if (prevSpecular) color += throughput * diffuseColor * material.emissionStrength;
                     break;
                 }
-            } else {
+            }
+            else {
                 if (updateColor(hit, throughput, isSpecular, M, diffuseColor)) {
                     color += throughput;
                     break;
@@ -857,7 +1009,7 @@ vec3 trace(Ray ray, inout uint state){
             // NEE — skip for specular and transparent (delta-like BRDFs) or no NEE
             if (NEE) {
 
-                if (!isSpecular && !isTransparent){
+                if (!isSpecular && !isTransparent && !isVolumetric && mediumSize == 1){
                     color += throughput * sampleDirectLight(ray.pos, normalWorld, diffuseColor, state);
 
                     color += throughput * sampleSun(ray.pos, normalWorld, diffuseColor, state);
@@ -871,7 +1023,7 @@ vec3 trace(Ray ray, inout uint state){
 
 
             // New ray direction — calculateNewDirection handles transparency roll internally
-            ray.dir    = calculateNewDirection(normalWorld, ray.dir, material, isSpecular, state, throughput);
+            ray.dir = calculateNewDirection(normalWorld, ray.dir, material, entering, isSpecular, state);
             ray.pos   += normalWorld * EPS * sign(dot(ray.dir, normalWorld));
             ray.invDir = 1.0 / ray.dir;
 
@@ -907,7 +1059,7 @@ vec3 trace(Ray ray, inout uint state){
                 }
 
                 throughput *= diffuseColor;
-                ray.dir    = calculateNewDirection(n, ray.dir, floorMaterial, isSpecular, state, throughput);
+                ray.dir = calculateNewDirection(n, ray.dir, floorMaterial, false, isSpecular, state);
                 ray.invDir = 1.0 / ray.dir;
             } else {
                 color += throughput * getEnviormentLight(ray.dir);

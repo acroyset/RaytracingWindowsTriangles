@@ -2,7 +2,7 @@
 // Created by acroy on 7/26/2025.
 //
 
-#include "../BaseModel.h"
+#include "BaseModel.h"
 #include <fstream>
 #include <iostream>
 #include <cstring>

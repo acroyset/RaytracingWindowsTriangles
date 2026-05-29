@@ -3,7 +3,7 @@
 //
 
 #include "Scene.h"
-#include "../SceneUI.h"
+#include "SceneUI.h"
 
 inline bool DragFloat3(const char* label, vec3& v, float speed = 0.01f, float min = 0.0f, float max = 0.0f) {
     return ImGui::DragFloat3(label, value_ptr(v), speed, min, max);
@@ -24,12 +24,14 @@ struct MaterialConstraints {
     bool allowTransparent = true;
     bool allowEmissive    = true;
     bool allowTexture     = true;
+    bool allowVolumetric  = true;
 };
 
-static const MaterialConstraints FLOOR_CONSTRAINTS = {
+static constexpr MaterialConstraints FLOOR_CONSTRAINTS = {
     .allowTransparent = false,
     .allowEmissive    = false,
     .allowTexture     = false,
+    .allowVolumetric  = false,
 };
 
 static const char* MaterialTypeLabel(MaterialType t) {
@@ -37,6 +39,7 @@ static const char* MaterialTypeLabel(MaterialType t) {
         case Specular:    return "Specular";
         case Transparent: return "Transparent";
         case Emissive:    return "Emissive";
+        case Volumetric:  return "Volumetric";
         default:          return "Unknown";
     }
 }
@@ -62,6 +65,7 @@ static bool DrawMaterialInspector(Material& m, int matIndex, int textureID, bool
     // Coerce disallowed types to Specular
     if (!constraints.allowTransparent && type == Transparent) { type = Specular; changed = true; typeChange = true; }
     if (!constraints.allowEmissive    && type == Emissive)    { type = Specular; changed = true; typeChange = true; }
+    if (!constraints.allowVolumetric  && type == Volumetric)  { type = Specular; changed = true; typeChange = true; }
 
     // --- Header ---
     if (matIndex != -1) ImGui::Text("Material #%d", matIndex);
@@ -76,6 +80,7 @@ static bool DrawMaterialInspector(Material& m, int matIndex, int textureID, bool
     items.push_back("Specular"); itemTypes.push_back(Specular);
     if (constraints.allowTransparent) { items.push_back("Transparent"); itemTypes.push_back(Transparent); }
     if (constraints.allowEmissive)    { items.push_back("Emissive");    itemTypes.push_back(Emissive); }
+    if (constraints.allowVolumetric)  { items.push_back("Volumetric");  itemTypes.push_back(Volumetric); }
 
     // Find current index in filtered list
     int t = 0;
@@ -100,6 +105,11 @@ static bool DrawMaterialInspector(Material& m, int matIndex, int textureID, bool
             if (specularProbability < 0.05f) specularProbability = 1.0f;
             transparency = 0.0f;
             emissionStrength = 0.0f;
+        } else if (type == Volumetric) {
+            diffuseRoughness = 0.1f;   // particle size
+            transparency     = 0.0f;
+            emissionStrength = 0.0f;
+            specularProbability = 0.0f;
         } else { // Opaque
             transparency = 0.0f;
             absorption = 0.0f;
@@ -113,7 +123,8 @@ static bool DrawMaterialInspector(Material& m, int matIndex, int textureID, bool
     // --- Base color / texture ---
     if (constraints.allowTexture && textureID != -1) {
         ImGui::TextDisabled("Texture bound (ID %d).", textureID);
-    } else {
+    }
+    else {
         if (type == Emissive) {
             changed |= ImGui::ColorEdit3("Emission Color", &diffuseColor.x);
         } else if (type == Transparent) {
@@ -127,7 +138,9 @@ static bool DrawMaterialInspector(Material& m, int matIndex, int textureID, bool
     if (type == Emissive) {
         changed |= ImGui::SliderFloat("Emission Strength", &emissionStrength, 0.0f, 250.0f);
 
-    } else if (type == Transparent) {
+    }
+
+    else if (type == Transparent) {
         changed |= ImGui::SliderFloat("Transparency", &transparency, 0.0f, 1.0f);
         changed |= ImGui::SliderFloat("Index of Refraction", &ior, 1.0f, 3.0f);
 
@@ -139,7 +152,9 @@ static bool DrawMaterialInspector(Material& m, int matIndex, int textureID, bool
 
         changed |= ImGui::SliderFloat("Absorption", &absorption, 0.0f, 0.1f);
 
-    } else if (type == Specular) {
+    }
+
+    else if (type == Specular) {
         ImGui::SeparatorText("Surface");
 
         changed |= ImGui::SliderFloat("Diffuse Roughness", &diffuseRoughness, 0.0f, 1.0f);
@@ -148,6 +163,13 @@ static bool DrawMaterialInspector(Material& m, int matIndex, int textureID, bool
         changed |= ImGui::SliderFloat("Specular Roughness", &specularRoughness, 0.0f, 1.0f);
 
         changed |= ImGui::SliderFloat("Specular Probability", &specularProbability, 0.0f, 1.0f);
+    }
+
+    else if (type == Volumetric) {
+        ImGui::SeparatorText("Volume");
+        changed |= ImGui::ColorEdit3("Scatter Color", &diffuseColor.x);
+        changed |= ImGui::SliderFloat("Particle Size (um)", &diffuseRoughness, 0.001f, 10.0f);
+        changed |= ImGui::SliderFloat("Scatter Density", &absorption, 0.0f, 10.0f);
     }
 
     if (changed) {
@@ -162,7 +184,7 @@ static bool DrawMaterialInspector(Material& m, int matIndex, int textureID, bool
 
         m.setTransparency(type == Transparent ? transparency : 0.0f);
         m.setIndexOfRefraction(type == Transparent ? ior : 1.0f);
-        m.setAbsorption(type == Transparent ? absorption : 0.0f);
+        m.setAbsorption(type == Transparent || type == Volumetric ? absorption : 0.0f);
 
         m.setEmissionStrength(type == Emissive ? emissionStrength : 0.0f);
     }

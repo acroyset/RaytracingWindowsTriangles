@@ -112,7 +112,7 @@ class Scene {
     friend SceneUI;
 
     ShaderWindow window{"Raytracer"};
-    Shader raytracer{"src/shaders/fullscreen.vert", "src/shaders/raytracer.frag", window.getGLSLVersion(), {"shaders/structs.glsl"}};
+    Shader raytracer{"src/shaders/fullscreen.vert", "src/shaders/raytracer.frag", window.getGLSLVersion(), {"src/shaders/structs.glsl"}};
     BloomPass bloom;
     Shader postProcessing{"src/shaders/fullscreen.vert", "src/shaders/postProcessing.frag", window.getGLSLVersion()};
 
